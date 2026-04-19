@@ -1,0 +1,67 @@
+/* === Основной контент === */
+.kp-content {
+  margin-top: 0;
+}
+
+/* === Многостраничность === */
+.kp-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.kp-page--continuation {
+  break-before: page;
+  page-break-before: always;
+}
+
+/* Номер страницы */
+.kp-page-mark {
+  position: absolute;
+  z-index: 2;
+  right: 10mm;
+  bottom: 6mm;
+  margin: 0;
+  padding: 0;
+  max-width: 42%;
+  text-align: right;
+  font-size: 9.75pt;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: rgba(16, 24, 40, 0.58);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Контент на продолжающихся страницах */
+.kp-content--continuation {
+  margin-top: 20mm; /* Отступ сверху для страниц без шапки */
+}
+
+/* Подсказка о продолжении таблицы */
+.kp-table-continues {
+  margin: 8px 0 0;
+  padding: 0;
+  text-align: center;
+  font-size: 9pt;
+  line-height: 1.35;
+  color: rgba(16, 24, 40, 0.62);
+}
+
+/* === Печать === */
+@media print {
+  .kp-stack {
+    gap: 0;
+  }
+
+  .kp-page--continuation {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .kp-table-continues {
+    font-size: 8.5pt;
+  }
+}

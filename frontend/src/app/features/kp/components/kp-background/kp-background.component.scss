@@ -1,0 +1,50 @@
+.kp-sheet {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 20px auto;
+  background: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.kp-sheet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--kp-bg);
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: contain;     /* Вписывает изображение полностью, сохраняя пропорции */
+  background-attachment: local; /* Фон прокручивается с содержимым */
+}
+
+.kp-sheet__content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: 15mm 12mm 20mm;  /* Убираем верхний отступ, он теперь в kp-header */
+}
+
+/* Для печати - обеспечиваем корректное отображение фона */
+@media print {
+  .kp-sheet {
+    width: 210mm;
+    height: 297mm;
+    min-height: 297mm;
+    max-height: 297mm;
+    margin: 0;
+    overflow: hidden;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .kp-sheet::before {
+    background-size: contain;
+    background-position: center top;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

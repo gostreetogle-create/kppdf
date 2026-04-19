@@ -1,0 +1,24 @@
+<!-- Итоговый блок -->
+<div class="kp-totals">
+  <div class="kp-total-line kp-total-line--main">
+    <span class="kp-total-label">Итого:</span>
+    <span class="kp-total-amount">{{ totals().subtotal | number:'1.0-0' }} ₽</span>
+  </div>
+  <div class="kp-total-line kp-total-line--vat">
+    <span class="kp-total-label">В том числе НДС {{ totals().vatPercent }}%:</span>
+    <span class="kp-total-amount">{{ totals().vatAmount | number:'1.0-0' }} ₽</span>
+  </div>
+  <div class="kp-total-line kp-total-line--final">
+    <span class="kp-total-label">Всего к оплате:</span>
+    <span class="kp-total-amount">{{ totals().total | number:'1.0-0' }} ₽</span>
+  </div>
+</div>
+
+<!-- Дополнительные условия -->
+@if (conditions().length > 0) {
+  <div class="kp-conditions">
+    @for (condition of conditions(); track $index) {
+      <p>{{ condition }}</p>
+    }
+  </div>
+}

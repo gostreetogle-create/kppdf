@@ -1,12 +1,13 @@
 <div class="kp-builder">
   <div class="kp-builder__split">
-    <!-- Каталог товаров -->
+    <!-- Каталог товаров слева -->
     <aside class="kp-builder__catalog kp-no-print">
       <app-product-catalog/>
     </aside>
 
-    <!-- Правая часть -->
+    <!-- Правая колонка -->
     <div class="kp-builder__column-right">
+      <!-- Тулбар -->
       <div class="kp-builder__toolbar kp-no-print">
         <button (click)="saveOffer()" class="btn">Сохранить</button>
         <button (click)="print()" class="btn btn-primary">
@@ -14,9 +15,9 @@
         </button>
       </div>
 
+      <!-- Превью документа A4 -->
       <div class="kp-builder__preview">
-        <h2>Коммерческое предложение</h2>
-        <p>Превью документа будет здесь</p>
+        <app-kp-document/>
       </div>
     </div>
   </div>

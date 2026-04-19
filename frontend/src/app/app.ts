@@ -1,9 +1,9 @@
 import { Component, signal } from '@angular/core';
-import {KpBuilderComponent} from './features/kp/kp-builder/kp-builder.component';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [KpBuilderComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

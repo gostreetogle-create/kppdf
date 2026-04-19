@@ -1,0 +1,123 @@
+/* === Таблица товаров === */
+.kp-table-wrap {
+  margin-bottom: 20px;
+}
+
+.kp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+  --kp-table-border: rgba(16, 24, 40, 0.13);
+}
+
+.kp-table th,
+.kp-table td {
+  border: 1px solid var(--kp-table-border);
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.kp-table th {
+  font-weight: 600;
+  text-align: center;
+  background: rgba(248, 250, 252, 0.8);
+}
+
+/* Колонки */
+.kp-col-num {
+  width: 32px;
+}
+
+.kp-col-photo {
+  width: 88px;
+  text-align: center;
+}
+
+.kp-col-name {
+  min-width: 120px;
+}
+
+.kp-col-description {
+  min-width: 100px;
+  max-width: 35%;
+}
+
+.kp-col-qty {
+  width: 56px;
+}
+
+.kp-col-unit {
+  width: 44px;
+}
+
+.kp-col-price,
+.kp-col-sum {
+  width: 80px;
+}
+
+/* Ячейки */
+.kp-cell-num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-cell-photo {
+  text-align: center;
+  padding: 4px;
+}
+
+.kp-thumb {
+  max-width: 72px;
+  max-height: 72px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+}
+
+.kp-cell-name {
+  font-weight: 500;
+}
+
+.kp-cell-description {
+  font-size: 9pt;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.kp-cell-qty,
+.kp-cell-unit {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-cell-price,
+.kp-cell-sum {
+  text-align: right;
+}
+
+.kp-price,
+.kp-sum {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.kp-currency {
+  margin-left: 4px;
+  color: #64748b;
+}
+
+/* === Печать === */
+@media print {
+  .kp-table {
+    font-size: 9pt;
+  }
+  
+  .kp-table th,
+  .kp-table td {
+    border-color: rgba(16, 24, 40, 0.16) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

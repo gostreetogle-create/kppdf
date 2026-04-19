@@ -1,0 +1,46 @@
+<div class="kp-table-wrap">
+  <table class="kp-table">
+    <thead>
+      <tr>
+        <th class="kp-col-num">№</th>
+        @if (showPhotoColumn()) {
+          <th class="kp-col-photo">Фото</th>
+        }
+        <th class="kp-col-name">Наименование</th>
+        @if (showDescriptionColumn()) {
+          <th class="kp-col-description">Описание</th>
+        }
+        <th class="kp-col-qty">Кол-во</th>
+        <th class="kp-col-unit">Ед.</th>
+        <th class="kp-col-price">Цена</th>
+        <th class="kp-col-sum">Сумма</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item.id; let i = $index) {
+        <tr class="kp-row">
+          <td class="kp-cell-num">{{ displayOffset() + i + 1 }}</td>
+          @if (showPhotoColumn()) {
+            <td class="kp-cell-photo">
+              <img [src]="item.imageUrl" [alt]="item.name" class="kp-thumb" />
+            </td>
+          }
+          <td class="kp-cell-name">{{ item.name }}</td>
+          @if (showDescriptionColumn()) {
+            <td class="kp-cell-description">{{ item.description }}</td>
+          }
+          <td class="kp-cell-qty">{{ item.qty }}</td>
+          <td class="kp-cell-unit">{{ item.unit }}</td>
+          <td class="kp-cell-price">
+            <span class="kp-price">{{ item.price | number:'1.0-0' }}</span>
+            <span class="kp-currency">₽</span>
+          </td>
+          <td class="kp-cell-sum">
+            <span class="kp-sum">{{ (item.price * item.qty) | number:'1.0-0' }}</span>
+            <span class="kp-currency">₽</span>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

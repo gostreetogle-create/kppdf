@@ -1,0 +1,49 @@
+<header class="kp-header">
+  <div class="kp-header__recipient">
+    <div class="kp-recipient__intro">Коммерческое предложение для:</div>
+    <div class="kp-recipient__name">{{ recipient().name }}</div>
+    <div class="kp-recipient__details">
+      @if (recipient().inn) {
+        <div class="kp-recipient__line">
+          <span class="kp-recipient__label">ИНН:</span> 
+          {{ recipient().inn }}
+        </div>
+      }
+      @if (recipient().email) {
+        <div class="kp-recipient__line">
+          <span class="kp-recipient__label">Email:</span> 
+          {{ recipient().email }}
+        </div>
+      }
+      @if (recipient().phone) {
+        <div class="kp-recipient__line">
+          <span class="kp-recipient__label">Тел:</span> 
+          {{ recipient().phone }}
+        </div>
+      }
+    </div>
+  </div>
+  
+  <div class="kp-meta">
+    <div class="kp-meta__line">
+      <span class="kp-meta__label">№:</span>
+      <span class="kp-meta__value">{{ metadata().number }}</span>
+    </div>
+    <div class="kp-meta__line">
+      <span class="kp-meta__label">Дата создания:</span>
+      <span class="kp-meta__value">{{ metadata().createdAt | date:'dd.MM.yyyy' }} г.</span>
+    </div>
+    <div class="kp-meta__line">
+      <span class="kp-meta__label">Действует до:</span>
+      <span class="kp-meta__value">{{ metadata().validityDays }} рабочих дней</span>
+    </div>
+    <div class="kp-meta__line">
+      <span class="kp-meta__label">Предоплата:</span>
+      <span class="kp-meta__value">{{ metadata().prepaymentPercent }}%</span>
+    </div>
+    <div class="kp-meta__line">
+      <span class="kp-meta__label">Срок производства:</span>
+      <span class="kp-meta__value">{{ metadata().productionDays }} рабочих дней</span>
+    </div>
+  </div>
+</header>

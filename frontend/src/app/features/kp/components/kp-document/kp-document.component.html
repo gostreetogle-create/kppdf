@@ -1,0 +1,49 @@
+<div class="kp-stack">
+  @for (chunk of pageChunks(); track $index; let pageIndex = $index) {
+    <app-kp-background 
+      [imageUrl]="chunk.useFirstBackground ? backgroundUrl1 : backgroundUrl2"
+      [class.kp-page--continuation]="!chunk.useFirstBackground">
+      
+      <!-- Номер страницы (если больше одной) -->
+      @if (totalPages() > 1) {
+        <div class="kp-page-mark">
+          Стр. {{ pageIndex + 1 }} из {{ totalPages() }}
+        </div>
+      }
+
+      <!-- Шапка только на первой странице -->
+      @if (chunk.showHeader) {
+        <app-kp-header 
+          [recipient]="recipient" 
+          [metadata]="metadata">
+        </app-kp-header>
+      }
+
+      <!-- Основной контент -->
+      <main class="kp-content" [class.kp-content--continuation]="!chunk.showHeader">
+        <!-- Таблица товаров для текущей страницы -->
+        <app-kp-catalog 
+          [items]="chunk.items"
+          [showPhotoColumn]="true"
+          [showDescriptionColumn]="true"
+          [displayOffset]="chunk.displayOffset">
+        </app-kp-catalog>
+
+        <!-- Подсказка о продолжении на следующей странице -->
+        @if (pageIndex < totalPages() - 1) {
+          <p class="kp-table-continues">
+            Продолжение таблицы — на стр. {{ pageIndex + 2 }}.
+          </p>
+        }
+
+        <!-- Итоги и условия только на последней странице -->
+        @if (chunk.showTotals) {
+          <app-kp-table 
+            [totals]="totals"
+            [conditions]="conditions">
+          </app-kp-table>
+        }
+      </main>
+    </app-kp-background>
+  }
+</div>
