@@ -1,0 +1,23 @@
+<div class="kp-builder">
+  <div class="kp-builder__split">
+    <!-- Каталог товаров -->
+    <aside class="kp-builder__catalog kp-no-print">
+      <app-product-catalog/>
+    </aside>
+
+    <!-- Правая часть -->
+    <div class="kp-builder__column-right">
+      <div class="kp-builder__toolbar kp-no-print">
+        <button (click)="saveOffer()" class="btn">Сохранить</button>
+        <button (click)="print()" class="btn btn-primary">
+          Печать / PDF
+        </button>
+      </div>
+
+      <div class="kp-builder__preview">
+        <h2>Коммерческое предложение</h2>
+        <p>Превью документа будет здесь</p>
+      </div>
+    </div>
+  </div>
+</div>

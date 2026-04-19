@@ -1,0 +1,11 @@
+<div class="catalog">
+  <h3>Каталог товаров</h3>
+
+  <div class="catalog__grid">
+    <div *ngFor="let product of products" class="catalog__card">
+      <div class="catalog__name">{{ product.name }}</div>
+      <div class="catalog__price">{{ product.price | number }} ₽ / {{ product.unit }}</div>
+      <button class="catalog__add-btn">Добавить в КП</button>
+    </div>
+  </div>
+</div>
