@@ -1,0 +1,57 @@
+@use '../../../../styles/tokens' as *;
+
+.shell-header {
+  display: flex;
+  align-items: center;
+  gap: $space-6;
+  padding: 0 $space-6;
+  height: 52px;
+  background: $color-bg;
+  border-bottom: 1px solid $color-border;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: $shadow-sm;
+
+  &__brand {
+    font-weight: 700;
+    font-size: $font-lg;
+    color: $color-primary;
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+
+  &__nav {
+    display: flex;
+    gap: $space-1;
+    flex: 1;
+
+    a {
+      padding: $space-1 $space-3;
+      border-radius: $radius-md;
+      font-size: $font-sm;
+      font-weight: 500;
+      color: $color-text-muted;
+      text-decoration: none;
+      transition: background $transition-fast, color $transition-fast;
+
+      &:hover  { background: $color-bg-muted; color: $color-text; }
+      &.active { background: $color-primary-light; color: $color-primary; }
+    }
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+}
+
+.shell-content {
+  min-height: calc(100vh - 52px);
+}

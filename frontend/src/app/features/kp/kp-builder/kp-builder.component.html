@@ -1,24 +1,123 @@
-<div class="kp-builder">
-  <div class="kp-builder__split">
-    <!-- Каталог товаров слева -->
-    <aside class="kp-builder__catalog kp-no-print">
-      <app-product-catalog/>
-    </aside>
+@if (loading()) {
+  <div class="builder-loading">Загрузка...</div>
+} @else if (kp()) {
+  <div class="builder">
 
-    <!-- Правая колонка -->
-    <div class="kp-builder__column-right">
-      <!-- Тулбар -->
-      <div class="kp-builder__toolbar kp-no-print">
-        <button (click)="saveOffer()" class="btn">Сохранить</button>
-        <button (click)="print()" class="btn btn-primary">
-          Печать / PDF
-        </button>
+    <div class="builder__toolbar no-print">
+      <button ui-btn (click)="back()">← Назад</button>
+      <input class="builder__title" [(ngModel)]="kp()!.title" placeholder="Название КП" />
+      <select [(ngModel)]="kp()!.status" class="builder__status">
+        <option value="draft">Черновик</option>
+        <option value="sent">Отправлен</option>
+        <option value="accepted">Принят</option>
+        <option value="rejected">Отклонён</option>
+      </select>
+      <span class="save-status save-status--{{ autosave.status() }}">
+        @switch (autosave.status()) {
+          @case ('saving')  { ⏳ Сохранение... }
+          @case ('saved')   { ✓ Сохранено }
+          @case ('unsaved') { ● Не сохранено }
+          @case ('error')   { ✕ Ошибка сохранения }
+        }
+      </span>
+      <button ui-btn (click)="save()" [disabled]="autosave.status() === 'saving'">
+        Сохранить
+      </button>
+      <button ui-btn variant="primary" (click)="print()">Печать / PDF</button>
+    </div>
+
+    <div class="builder__body">
+
+      <aside class="builder__sidebar no-print">
+
+        <div class="sidebar-section">
+          <p class="sidebar-section__title">Получатель</p>
+          @if (counterparties().length > 0) {
+            <select class="sidebar-section__select" (change)="fillFromCounterparty($any($event.target).value)">
+              <option value="">— Выбрать из справочника —</option>
+              @for (cp of counterparties(); track cp._id) {
+                <option [value]="cp._id">{{ cp.shortName }} ({{ cp.inn }})</option>
+              }
+            </select>
+          }
+          <div class="inn-lookup">
+            <input
+              [(ngModel)]="innQuery"
+              placeholder="ИНН для поиска..."
+              class="inn-lookup__input"
+              (keydown.enter)="lookupByInn()"
+            />
+            <button ui-btn size="sm" (click)="lookupByInn()" [disabled]="lookingUp()">
+              {{ lookingUp() ? '...' : '🔍' }}
+            </button>
+          </div>
+          @if (lookupError()) {
+            <p class="sidebar-error">{{ lookupError() }}</p>
+          }
+          <input [(ngModel)]="kp()!.recipient.name"         placeholder="Полное название" />
+          <input [(ngModel)]="kp()!.recipient.shortName"    placeholder="Краткое название" />
+          <input [(ngModel)]="kp()!.recipient.inn"          placeholder="ИНН" />
+          <input [(ngModel)]="kp()!.recipient.kpp"          placeholder="КПП" />
+          <input [(ngModel)]="kp()!.recipient.legalAddress" placeholder="Юридический адрес" />
+          <input [(ngModel)]="kp()!.recipient.phone"        placeholder="Телефон" />
+          <input [(ngModel)]="kp()!.recipient.email"        placeholder="Email" />
+        </div>
+
+        <div class="sidebar-section">
+          <p class="sidebar-section__title">Каталог товаров</p>
+          @for (product of products(); track product._id) {
+            <div class="product-row">
+              <div class="product-row__info">
+                <span class="product-row__name">{{ product.name }}</span>
+                <span class="product-row__price">{{ product.price | number:'1.0-0' }} ₽ / {{ product.unit }}</span>
+              </div>
+              <button ui-btn size="sm" (click)="addItem(product)">+</button>
+            </div>
+          }
+          @if (products().length === 0) {
+            <p class="sidebar-empty">Нет товаров в каталоге</p>
+          }
+        </div>
+
+        <div class="sidebar-section">
+          <p class="sidebar-section__title">Состав КП</p>
+          @for (item of kp()!.items; track item.productId) {
+            <div class="item-row">
+              <span class="item-row__name">{{ item.name }}</span>
+              <input
+                type="number"
+                [value]="item.qty"
+                (change)="updateQty(item, +$any($event.target).value)"
+                class="item-row__qty"
+                min="1"
+              />
+              <span class="item-row__unit">{{ item.unit }}</span>
+              <button ui-btn icon (click)="removeItem(item.productId)">✕</button>
+            </div>
+          }
+          @if (kp()!.items.length === 0) {
+            <p class="sidebar-empty">Добавьте товары из каталога</p>
+          }
+          @if (kp()!.items.length > 0) {
+            <div class="sidebar-total">
+              <span>Итого с НДС {{ kp()!.vatPercent }}%:</span>
+              <strong>{{ total() | number:'1.0-0' }} ₽</strong>
+            </div>
+          }
+        </div>
+
+      </aside>
+
+      <div class="builder__preview">
+        <app-kp-document
+          [recipient]="kp()!.recipient"
+          [metadata]="kp()!.metadata"
+          [items]="catalogItems()"
+          [vatPercent]="kp()!.vatPercent"
+          [conditions]="kp()!.conditions">
+        </app-kp-document>
       </div>
 
-      <!-- Превью документа A4 -->
-      <div class="kp-builder__preview">
-        <app-kp-document/>
-      </div>
     </div>
   </div>
-</div>
+}

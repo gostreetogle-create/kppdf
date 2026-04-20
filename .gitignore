@@ -1,6 +1,13 @@
 # Игнорировать папку с примерами
 Примеры/
 
+# Deploy secrets
+deploy/.env
+backend/.env
+
+# Node modules
+backend/node_modules/
+
 # IDE
 .idea/
 .vscode/

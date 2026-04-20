@@ -1,0 +1,14 @@
+@if (label()) {
+  <label class="field__label">
+    {{ label() }}
+    @if (required()) { <span class="field__required">*</span> }
+  </label>
+}
+<div class="field__control">
+  <ng-content />
+</div>
+@if (error()) {
+  <p class="field__error">{{ error() }}</p>
+} @else if (hint()) {
+  <p class="field__hint">{{ hint() }}</p>
+}

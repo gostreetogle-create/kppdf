@@ -1,0 +1,19 @@
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { ButtonComponent } from '../../../shared/ui/index';
+
+@Component({
+  selector: 'app-shell',
+  standalone: true,
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ButtonComponent],
+  templateUrl: './app-shell.component.html',
+  styleUrl: './app-shell.component.scss'
+})
+export class AppShellComponent {
+  private readonly auth = inject(AuthService);
+  readonly user         = this.auth.currentUser;
+
+  logout() { this.auth.logout(); }
+}

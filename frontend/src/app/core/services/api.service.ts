@@ -1,0 +1,228 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, shareReplay, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+const BASE = environment.apiUrl;
+
+export type ProductKind = 'ITEM' | 'SERVICE' | 'WORK';
+
+export interface ProductImage {
+  url:       string;
+  isMain:    boolean;
+  sortOrder: number;
+}
+
+export interface Product {
+  _id:          string;
+  code:         string;
+  name:         string;
+  description:  string;
+  category:     string;
+  subcategory?: string;
+  unit:         string;
+  price:        number;
+  costRub?:     number;
+  images:       ProductImage[];
+  isActive:     boolean;
+  kind:         ProductKind;
+  notes?:       string;
+}
+
+export type DictionaryType = 'category' | 'subcategory' | 'unit' | 'kind';
+
+export interface Dictionary {
+  _id:       string;
+  type:      DictionaryType;
+  value:     string;
+  sortOrder: number;
+  isActive:  boolean;
+}
+
+export type LegalForm = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'Физлицо' | 'Другое';
+export type CpRole    = 'client' | 'supplier';
+
+export interface CpContact {
+  name:      string;
+  position?: string;
+  phone?:    string;
+  email?:    string;
+}
+
+export interface Counterparty {
+  _id:                   string;
+  legalForm:             LegalForm;
+  role:                  CpRole[];
+  name:                  string;
+  shortName:             string;
+  inn:                   string;
+  kpp?:                  string;
+  ogrn?:                 string;
+  legalAddress?:         string;
+  actualAddress?:        string;
+  sameAddress:           boolean;
+  phone?:                string;
+  email?:                string;
+  website?:              string;
+  contacts:              CpContact[];
+  bankName?:             string;
+  bik?:                  string;
+  checkingAccount?:      string;
+  correspondentAccount?: string;
+  founderName?:          string;
+  founderNameShort?:     string;
+  status:                'active' | 'inactive';
+  notes?:                string;
+  tags:                  string[];
+  createdAt:             string;
+  updatedAt:             string;
+}
+
+export interface KpItem {
+  productId:   string;
+  code?:       string;
+  name:        string;
+  description: string;
+  unit:        string;
+  price:       number;
+  qty:         number;
+  imageUrl?:   string;
+}
+
+export interface Kp {
+  _id: string;
+  title: string;
+  status: 'draft' | 'sent' | 'accepted' | 'rejected';
+  counterpartyId?: string;
+  recipient: {
+    name:                  string;
+    shortName?:            string;
+    legalForm?:            string;
+    inn?:                  string;
+    kpp?:                  string;
+    ogrn?:                 string;
+    legalAddress?:         string;
+    phone?:                string;
+    email?:                string;
+    bankName?:             string;
+    bik?:                  string;
+    checkingAccount?:      string;
+    correspondentAccount?: string;
+    founderName?:          string;
+    founderNameShort?:     string;
+  };
+  metadata: { number: string; createdAt?: Date; validityDays: number; prepaymentPercent: number; productionDays: number };
+  items: KpItem[];
+  conditions: string[];
+  vatPercent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  // shareReplay(1) — кэшируем список, не дёргаем сервер повторно
+  private products$!: Observable<Product[]>;
+
+  constructor(private http: HttpClient) {
+    this.products$ = this.http.get<Product[]>(`${BASE}/products`).pipe(shareReplay(1));
+  }
+
+  getProducts(params?: { category?: string; kind?: string; isActive?: boolean; q?: string }): Observable<Product[]> {
+    return this.products$;
+  }
+
+  getProductCategories(): Observable<string[]> {
+    return this.http.get<string[]>(`${BASE}/products/categories`);
+  }
+
+  createProduct(data: Omit<Product, '_id'>): Observable<Product> {
+    return this.http.post<Product>(`${BASE}/products`, data).pipe(
+      tap(() => this.invalidateProducts())
+    );
+  }
+
+  updateProduct(id: string, data: Partial<Product>): Observable<Product> {
+    return this.http.put<Product>(`${BASE}/products/${id}`, data).pipe(
+      tap(() => this.invalidateProducts())
+    );
+  }
+
+  deleteProduct(id: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/products/${id}`).pipe(
+      tap(() => this.invalidateProducts())
+    );
+  }
+
+  // Сбрасываем кэш — следующий getProducts() сделает новый запрос
+  private invalidateProducts() {
+    this.products$ = this.http.get<Product[]>(`${BASE}/products`).pipe(shareReplay(1));
+  }
+
+  // ─── KP ───────────────────────────────────────────────
+  getKpList(): Observable<Kp[]> {
+    return this.http.get<Kp[]>(`${BASE}/kp`);
+  }
+
+  getKp(id: string): Observable<Kp> {
+    return this.http.get<Kp>(`${BASE}/kp/${id}`);
+  }
+
+  createKp(data: Partial<Kp>): Observable<Kp> {
+    return this.http.post<Kp>(`${BASE}/kp`, data);
+  }
+
+  updateKp(id: string, data: Partial<Kp>): Observable<Kp> {
+    return this.http.put<Kp>(`${BASE}/kp/${id}`, data);
+  }
+
+  deleteKp(id: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/kp/${id}`);
+  }
+
+  duplicateKp(id: string): Observable<Kp> {
+    return this.http.post<Kp>(`${BASE}/kp/${id}/duplicate`, {});
+  }
+
+  // ─── Dictionaries ─────────────────────────────────────
+  getDictionaries(type?: DictionaryType): Observable<Dictionary[]> {
+    const params: Record<string, string> = {};
+    if (type) params['type'] = type;
+    return this.http.get<Dictionary[]>(`${BASE}/dictionaries`, { params });
+  }
+
+  createDictionaryItem(data: Omit<Dictionary, '_id'>): Observable<Dictionary> {
+    return this.http.post<Dictionary>(`${BASE}/dictionaries`, data);
+  }
+
+  updateDictionaryItem(id: string, data: Partial<Dictionary>): Observable<Dictionary> {
+    return this.http.put<Dictionary>(`${BASE}/dictionaries/${id}`, data);
+  }
+
+  deleteDictionaryItem(id: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/dictionaries/${id}`);
+  }
+  getCounterparties(params?: { role?: CpRole; status?: string; q?: string }): Observable<Counterparty[]> {
+    return this.http.get<Counterparty[]>(`${BASE}/counterparties`, { params: params as any });
+  }
+
+  lookupCounterpartyByInn(inn: string): Observable<Partial<Counterparty>> {
+    return this.http.get<Partial<Counterparty>>(`${BASE}/counterparties/lookup`, { params: { inn } });
+  }
+
+  getCounterparty(id: string): Observable<Counterparty> {
+    return this.http.get<Counterparty>(`${BASE}/counterparties/${id}`);
+  }
+
+  createCounterparty(data: Omit<Counterparty, '_id' | 'createdAt' | 'updatedAt'>): Observable<Counterparty> {
+    return this.http.post<Counterparty>(`${BASE}/counterparties`, data);
+  }
+
+  updateCounterparty(id: string, data: Partial<Counterparty>): Observable<Counterparty> {
+    return this.http.put<Counterparty>(`${BASE}/counterparties/${id}`, data);
+  }
+
+  deleteCounterparty(id: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/counterparties/${id}`);
+  }
+}

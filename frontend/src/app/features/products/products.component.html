@@ -1,0 +1,117 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Каталог товаров</h1>
+    <div class="page-header__actions">
+      <a routerLink="/" ui-btn>← Назад</a>
+      <button ui-btn variant="primary" (click)="openCreate()">+ Добавить товар</button>
+    </div>
+  </div>
+
+  <div class="page-toolbar">
+    <input
+      class="search-input"
+      type="text"
+      placeholder="Поиск по названию, артикулу, описанию..."
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+    <select class="filter-select" [value]="filterCategory()" (change)="filterCategory.set($any($event.target).value)">
+      <option value="">Все категории</option>
+      @for (cat of categories(); track cat) {
+        <option [value]="cat">{{ cat }}</option>
+      }
+    </select>
+    <div class="view-toggle">
+      <button
+        class="view-toggle__btn"
+        [class.view-toggle__btn--active]="view() === 'grid'"
+        (click)="view.set('grid')"
+        title="Сетка">
+        ⊞
+      </button>
+      <button
+        class="view-toggle__btn"
+        [class.view-toggle__btn--active]="view() === 'table'"
+        (click)="view.set('table')"
+        title="Таблица">
+        ☰
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">Загрузка...</div>
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      @if (search()) {
+        <p>Ничего не найдено по запросу "{{ search() }}"</p>
+      } @else {
+        <p>Каталог пуст</p>
+        <button ui-btn variant="primary" (click)="openCreate()">Добавить первый товар</button>
+      }
+    </div>
+  } @else if (view() === 'grid') {
+    <div class="products-grid">
+      @for (product of filtered(); track product._id) {
+        <app-product-card
+          [product]="product"
+          (edit)="openEdit(product)"
+          (delete)="confirmDelete(product)">
+        </app-product-card>
+      }
+    </div>
+  } @else {
+    <table class="products-table">
+      <thead>
+        <tr>
+          <th>Фото</th>
+          <th>Артикул</th>
+          <th>Название</th>
+          <th>Категория</th>
+          <th>Тип</th>
+          <th class="col-right">Цена</th>
+          <th>Ед.</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (product of filtered(); track product._id) {
+          <tr [class.row--inactive]="!product.isActive">
+            <td class="col-img">
+              <img
+                [src]="product.images[0]?.url || '/kp/kp-1str.png'"
+                [alt]="product.name" />
+            </td>
+            <td class="col-code">{{ product.code }}</td>
+            <td class="col-name">{{ product.name }}</td>
+            <td class="col-cat">{{ product.category || '—' }}</td>
+            <td class="col-kind">{{ kindLabel(product.kind) }}</td>
+            <td class="col-right col-price">{{ product.price | number:'1.0-0' }} ₽</td>
+            <td class="col-unit">{{ product.unit }}</td>
+            <td class="col-actions">
+              <button ui-btn size="sm" (click)="openEdit(product)">Изменить</button>
+              <button ui-btn size="sm" variant="danger" (click)="confirmDelete(product)">Удалить</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+@if (formOpen()) {
+  <app-product-form
+    [product]="editTarget()"
+    (saved)="onSaved($event)"
+    (cancelled)="closeForm()">
+  </app-product-form>
+}
+
+@if (deleteTarget()) {
+  <app-confirm-dialog
+    title="Удалить товар?"
+    [message]="'Товар «' + deleteTarget()!.name + '» будет удалён без возможности восстановления.'"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="deleteTarget.set(null)">
+  </app-confirm-dialog>
+}

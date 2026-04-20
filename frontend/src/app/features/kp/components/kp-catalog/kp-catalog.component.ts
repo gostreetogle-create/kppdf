@@ -2,13 +2,14 @@ import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface KpCatalogItem {
-  id: number;
-  name: string;
+  id:          string;
+  code?:       string;
+  name:        string;
   description: string;
-  qty: number;
-  unit: string;
-  price: number;
-  imageUrl: string;
+  qty:         number;
+  unit:        string;
+  price:       number;
+  imageUrl:    string;
 }
 
 @Component({

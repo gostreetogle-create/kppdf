@@ -6,6 +6,7 @@
         @if (showPhotoColumn()) {
           <th class="kp-col-photo">Фото</th>
         }
+        <th class="kp-col-code">Арт.</th>
         <th class="kp-col-name">Наименование</th>
         @if (showDescriptionColumn()) {
           <th class="kp-col-description">Описание</th>
@@ -25,6 +26,7 @@
               <img [src]="item.imageUrl" [alt]="item.name" class="kp-thumb" />
             </td>
           }
+          <td class="kp-cell-code">{{ item.code || '—' }}</td>
           <td class="kp-cell-name">{{ item.name }}</td>
           @if (showDescriptionColumn()) {
             <td class="kp-cell-description">{{ item.description }}</td>

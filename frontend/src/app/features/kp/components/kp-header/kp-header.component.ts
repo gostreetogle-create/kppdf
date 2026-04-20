@@ -2,15 +2,26 @@ import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface KpRecipient {
-  name: string;
-  inn?: string;
-  email?: string;
-  phone?: string;
+  name:                  string;
+  shortName?:            string;
+  legalForm?:            string;
+  inn?:                  string;
+  kpp?:                  string;
+  ogrn?:                 string;
+  legalAddress?:         string;
+  phone?:                string;
+  email?:                string;
+  bankName?:             string;
+  bik?:                  string;
+  checkingAccount?:      string;
+  correspondentAccount?: string;
+  founderName?:          string;
+  founderNameShort?:     string;
 }
 
 export interface KpMetadata {
   number: string;
-  createdAt: Date;
+  createdAt?: Date;
   validityDays: number;
   prepaymentPercent: number;
   productionDays: number;

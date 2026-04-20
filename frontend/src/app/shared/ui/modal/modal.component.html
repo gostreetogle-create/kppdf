@@ -1,0 +1,14 @@
+<div class="modal-backdrop" (click)="onBackdrop($event)">
+  <div class="modal" [style.max-width]="maxWidth()">
+    <div class="modal__header">
+      <h2 class="modal__title">{{ title() }}</h2>
+      <button ui-btn variant="ghost" icon (click)="closed.emit()" class="modal__close">✕</button>
+    </div>
+    <div class="modal__body">
+      <ng-content select="[modal-body]" />
+    </div>
+    <div class="modal__footer">
+      <ng-content select="[modal-footer]" />
+    </div>
+  </div>
+</div>

@@ -1,0 +1,25 @@
+<div class="card" [class.card--inactive]="!product().isActive">
+  <div class="card__image">
+    <img [src]="mainImage" [alt]="product().name" />
+    @if (!product().isActive) {
+      <span class="card__badge card__badge--archive">Архив</span>
+    }
+    <span class="card__badge card__badge--kind">{{ kindLabel }}</span>
+  </div>
+  <div class="card__body">
+    <p class="card__code">{{ product().code }}</p>
+    <h3 class="card__name">{{ product().name }}</h3>
+    @if (product().category) {
+      <p class="card__category">{{ product().category }}</p>
+    }
+    <p class="card__desc">{{ product().description || '—' }}</p>
+    <div class="card__meta">
+      <span class="card__price">{{ product().price | number:'1.0-0' }} ₽</span>
+      <span class="card__unit">/ {{ product().unit }}</span>
+    </div>
+  </div>
+  <div class="card__actions">
+    <button class="btn-action btn-action--edit" (click)="edit.emit()">Редактировать</button>
+    <button class="btn-action btn-action--delete" (click)="delete.emit()">Удалить</button>
+  </div>
+</div>

@@ -1,0 +1,13 @@
+<ui-modal [title]="title()" maxWidth="400px" (closed)="cancelled.emit()">
+
+  <div modal-body class="confirm-body">
+    <div class="confirm-body__icon">🗑️</div>
+    <p class="confirm-body__message">{{ message() }}</p>
+  </div>
+
+  <ng-container modal-footer>
+    <button ui-btn (click)="cancelled.emit()">Отмена</button>
+    <button ui-btn variant="danger" (click)="confirmed.emit()">Удалить</button>
+  </ng-container>
+
+</ui-modal>

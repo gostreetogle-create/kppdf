@@ -1,0 +1,132 @@
+@use '../../../styles/tokens' as *;
+
+.page-header__actions {
+  display: flex;
+  gap: $space-3;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  max-width: 400px;
+  padding: 0.45rem $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-family: inherit;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.12);
+  }
+}
+
+.filter-select {
+  padding: 0.45rem $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-family: inherit;
+  background: $color-bg;
+  min-width: 160px;
+
+  &:focus { outline: none; border-color: $color-primary; }
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: $space-6;
+}
+
+// ─── View toggle ──────────────────────────────────────────
+.view-toggle {
+  display: flex;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  &__btn {
+    padding: 0.4rem $space-3;
+    border: none;
+    background: $color-bg;
+    cursor: pointer;
+    font-size: $font-md;
+    color: $color-text-muted;
+    transition: background $transition-fast, color $transition-fast;
+    line-height: 1;
+
+    &:hover { background: $color-bg-muted; }
+
+    &--active {
+      background: $color-primary;
+      color: #fff;
+    }
+
+    & + & { border-left: 1px solid $color-border; }
+  }
+}
+
+// ─── Table view ───────────────────────────────────────────
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $color-bg;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+
+  th {
+    padding: $space-3 $space-4;
+    text-align: left;
+    font-size: $font-xs;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $color-text-muted;
+    background: $color-bg-soft;
+    border-bottom: 1px solid $color-border;
+  }
+
+  td {
+    padding: $space-3 $space-4;
+    border-bottom: 1px solid $color-border-light;
+    font-size: $font-sm;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: $color-bg-soft; }
+
+  .col-img {
+    width: 56px;
+    padding: $space-2 $space-4;
+
+    img {
+      width: 44px;
+      height: 44px;
+      object-fit: cover;
+      border-radius: $radius-md;
+      border: 1px solid $color-border-light;
+    }
+  }
+
+  .col-code  { font-family: monospace; font-size: $font-xs; color: $color-text-muted; }
+  .col-cat   { font-size: $font-sm; color: $color-primary; }
+  .col-kind  { font-size: $font-xs; color: $color-text-muted; }
+  .col-price { font-weight: 700; color: $color-primary; white-space: nowrap; }
+  .col-unit  { color: $color-text-muted; white-space: nowrap; }
+  .col-right { text-align: right; }
+
+  .row--inactive td { opacity: 0.55; }
+
+  .col-actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+
+    button + button { margin-left: $space-2; }
+  }
+}

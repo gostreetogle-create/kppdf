@@ -27,141 +27,50 @@ interface KpPageChunk {
   styleUrl: './kp-document.component.scss'
 })
 export class KpDocumentComponent {
-  title = input('Коммерческое предложение');
-  itemsPerPage = input(10); // Количество товаров на странице
+  itemsPerPage = input(10);
 
-  protected readonly backgroundUrl1 = '/kp/kp-1str.png';
-  protected readonly backgroundUrl2 = '/kp/kp-2str.png';
-
-  // Данные получателя
-  protected readonly recipient: KpRecipient = {
+  recipient = input<KpRecipient>({
     name: 'ООО "Пример Компания"',
     inn: '1234567890',
     email: 'info@example.com',
     phone: '+7 (999) 123-45-67'
-  };
+  });
 
-  // Метаданные КП
-  protected readonly metadata: KpMetadata = {
+  metadata = input<KpMetadata>({
     number: 'КП-2024-001',
-    createdAt: new Date(),
     validityDays: 10,
     prepaymentPercent: 50,
     productionDays: 15
-  };
+  });
 
-  // Товары (добавим больше для демонстрации многостраничности)
-  protected readonly items: KpCatalogItem[] = [
-    {
-      id: 1,
-      name: 'Металлоконструкция стальная',
-      description: 'Изготовление по чертежам заказчика, сталь 09Г2С',
-      qty: 2,
-      unit: 'шт.',
-      price: 25000,
-      imageUrl: '/kp/kp-1str.png'
-    },
-    {
-      id: 2,
-      name: 'Покраска порошковая',
-      description: 'RAL 7024, полимерное покрытие',
-      qty: 2,
-      unit: 'шт.',
-      price: 5000,
-      imageUrl: '/kp/kp-2str.png'
-    },
-    {
-      id: 3,
-      name: 'Сварочные работы',
-      description: 'Сварка полуавтоматом в среде защитных газов',
-      qty: 50,
-      unit: 'м.п.',
-      price: 800,
-      imageUrl: '/kp/kp-1str.png'
-    },
-    {
-      id: 4,
-      name: 'Монтажные работы',
-      description: 'Монтаж металлоконструкций на объекте',
-      qty: 1,
-      unit: 'комплект',
-      price: 15000,
-      imageUrl: '/kp/kp-2str.png'
-    },
-    {
-      id: 5,
-      name: 'Доставка',
-      description: 'Доставка готовых изделий до объекта',
-      qty: 1,
-      unit: 'рейс',
-      price: 8000,
-      imageUrl: '/kp/kp-1str.png'
-    },
-    {
-      id: 6,
-      name: 'Проектирование',
-      description: 'Разработка рабочих чертежей',
-      qty: 1,
-      unit: 'комплект',
-      price: 12000,
-      imageUrl: '/kp/kp-2str.png'
-    },
-    {
-      id: 7,
-      name: 'Антикоррозийная обработка',
-      description: 'Грунтовка и покраска металла',
-      qty: 100,
-      unit: 'м²',
-      price: 300,
-      imageUrl: '/kp/kp-1str.png'
-    },
-    {
-      id: 8,
-      name: 'Крепежные элементы',
-      description: 'Болты, гайки, шайбы высокопрочные',
-      qty: 1,
-      unit: 'комплект',
-      price: 5500,
-      imageUrl: '/kp/kp-2str.png'
-    }
-  ];
+  items = input<KpCatalogItem[]>([]);
+  conditions = input<string[]>([]);
+  vatPercent = input<number>(20);
 
-  // Итоги (пересчитаем для всех товаров)
-  protected readonly totals: KpTotals = {
-    subtotal: this.items.reduce((sum, item) => sum + (item.price * item.qty), 0),
-    vatPercent: 20,
-    get vatAmount() { return Math.round(this.subtotal * this.vatPercent / 100); },
-    get total() { return this.subtotal + this.vatAmount; }
-  };
+  protected readonly backgroundUrl1 = '/kp/kp-1str.png';
+  protected readonly backgroundUrl2 = '/kp/kp-2str.png';
 
-  // Дополнительные условия
-  protected readonly conditions: string[] = [
-    'Цены действительны при заказе полного комплекта.',
-    'Доставка по Москве и области рассчитывается отдельно.',
-    'Гарантия на изделия - 12 месяцев.',
-    'Оплата: 50% предоплата, 50% по готовности.',
-    'Срок изготовления: 15 рабочих дней с момента получения предоплаты.'
-  ];
+  protected readonly totals = computed((): KpTotals => {
+    const subtotal = this.items().reduce((s, i) => s + i.price * i.qty, 0);
+    const vatAmount = Math.round(subtotal * this.vatPercent() / 100);
+    return { subtotal, vatPercent: this.vatPercent(), vatAmount, total: subtotal + vatAmount };
+  });
 
-  // Вычисляемое свойство для разбивки на страницы
   protected readonly pageChunks = computed((): KpPageChunk[] => {
     const chunks: KpPageChunk[] = [];
-    const itemsPerPageValue = this.itemsPerPage();
-    
-    for (let i = 0; i < this.items.length; i += itemsPerPageValue) {
-      const pageItems = this.items.slice(i, i + itemsPerPageValue);
-      const isFirstPage = i === 0;
-      const isLastPage = i + itemsPerPageValue >= this.items.length;
-      
-      chunks.push({
-        items: pageItems,
-        displayOffset: i,
-        useFirstBackground: isFirstPage,
-        showHeader: isFirstPage,
-        showTotals: isLastPage
-      });
+    const perPage = this.itemsPerPage();
+    const allItems = this.items();
+
+    if (allItems.length === 0) {
+      return [{ items: [], displayOffset: 0, useFirstBackground: true, showHeader: true, showTotals: true }];
     }
-    
+
+    for (let i = 0; i < allItems.length; i += perPage) {
+      const pageItems = allItems.slice(i, i + perPage);
+      const isFirst = i === 0;
+      const isLast = i + perPage >= allItems.length;
+      chunks.push({ items: pageItems, displayOffset: i, useFirstBackground: isFirst, showHeader: isFirst, showTotals: isLast });
+    }
     return chunks;
   });
 

@@ -1,0 +1,68 @@
+@use '../../../styles/tokens' as *;
+
+.home-actions {
+  display: flex;
+  gap: $space-3;
+}
+
+.kp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $space-6;
+}
+
+.kp-card {
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-5;
+  cursor: pointer;
+  transition: box-shadow $transition-normal, transform $transition-normal;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-1px);
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $space-2;
+  }
+
+  &__number { font-size: $font-xs; color: $color-text-light; }
+
+  &__title {
+    font-size: $font-md;
+    font-weight: 600;
+    margin-bottom: $space-1;
+  }
+
+  &__client {
+    font-size: $font-sm;
+    color: $color-text-muted;
+    margin-bottom: $space-4;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    font-size: $font-sm;
+  }
+
+  &__total { font-weight: 700; flex: 1; color: $color-primary; }
+  &__date  { color: $color-text-light; }
+
+  &__delete {
+    color: $color-text-light !important;
+    &:hover { color: $color-danger !important; background: $color-danger-light !important; }
+  }
+
+  &__action {
+    color: $color-text-light !important;
+    &:hover { color: $color-primary !important; background: $color-primary-light !important; }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+}

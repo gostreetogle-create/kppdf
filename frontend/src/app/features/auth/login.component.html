@@ -1,0 +1,39 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-card__logo">КП</div>
+    <h1 class="login-card__title">Вход в систему</h1>
+
+    @if (error()) {
+      <ui-alert type="error">{{ error() }}</ui-alert>
+    }
+
+    <ui-form-field label="Email" [required]="true">
+      <input
+        type="email"
+        [(ngModel)]="email"
+        placeholder="admin@example.com"
+        (keydown.enter)="submit()"
+        autocomplete="email"
+      />
+    </ui-form-field>
+
+    <ui-form-field label="Пароль" [required]="true">
+      <input
+        type="password"
+        [(ngModel)]="password"
+        placeholder="••••••••"
+        (keydown.enter)="submit()"
+        autocomplete="current-password"
+      />
+    </ui-form-field>
+
+    <button
+      ui-btn
+      variant="primary"
+      class="login-card__submit"
+      (click)="submit()"
+      [disabled]="loading()">
+      {{ loading() ? 'Вход...' : 'Войти' }}
+    </button>
+  </div>
+</div>

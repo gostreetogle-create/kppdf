@@ -1,0 +1,66 @@
+// ─── Colors ───────────────────────────────────────────────
+$color-primary:        #1976d2;
+$color-primary-dark:   #1565c0;
+$color-primary-light:  #e3f2fd;
+
+$color-danger:         #e53935;
+$color-danger-dark:    #c62828;
+$color-danger-light:   #ffebee;
+
+$color-success:        #2e7d32;
+$color-success-light:  #e8f5e9;
+
+$color-warning:        #f57c00;
+$color-warning-light:  #fff3e0;
+
+$color-text:           #1e2937;
+$color-text-muted:     #64748b;
+$color-text-light:     #999;
+
+$color-border:         #e0e0e0;
+$color-border-light:   #f0f0f0;
+
+$color-bg:             #ffffff;
+$color-bg-soft:        #fafafa;
+$color-bg-muted:       #f5f5f5;
+
+// ─── Spacing ──────────────────────────────────────────────
+$space-1: 0.25rem;
+$space-2: 0.5rem;
+$space-3: 0.75rem;
+$space-4: 1rem;
+$space-5: 1.25rem;
+$space-6: 1.5rem;
+$space-8: 2rem;
+
+// ─── Typography ───────────────────────────────────────────
+$font-xs:   0.75rem;
+$font-sm:   0.875rem;
+$font-base: 0.9rem;
+$font-md:   1rem;
+$font-lg:   1.1rem;
+$font-xl:   1.25rem;
+$font-2xl:  1.5rem;
+$font-3xl:  1.75rem;
+
+// ─── Border radius ────────────────────────────────────────
+$radius-sm: 4px;
+$radius-md: 6px;
+$radius-lg: 8px;
+$radius-xl: 10px;
+$radius-2xl: 12px;
+
+// ─── Shadows ──────────────────────────────────────────────
+$shadow-sm:  0 2px 6px rgba(0,0,0,0.07);
+$shadow-md:  0 4px 12px rgba(0,0,0,0.1);
+$shadow-lg:  0 6px 20px rgba(0,0,0,0.1);
+$shadow-xl:  0 20px 60px rgba(0,0,0,0.2);
+
+// ─── Transitions ──────────────────────────────────────────
+$transition-fast:   0.15s ease;
+$transition-normal: 0.2s ease;
+
+// ─── Z-index ──────────────────────────────────────────────
+$z-modal:   1000;
+$z-dialog:  1100;
+$z-tooltip: 1200;

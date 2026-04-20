@@ -1,0 +1,48 @@
+@use '../../../styles/tokens' as *;
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-bg-muted;
+  padding: $space-4;
+}
+
+.login-card {
+  background: $color-bg;
+  border-radius: $radius-2xl;
+  padding: $space-8;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: $shadow-xl;
+
+  &__logo {
+    width: 52px;
+    height: 52px;
+    background: $color-primary;
+    color: white;
+    border-radius: $radius-lg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-lg;
+    font-weight: 700;
+    margin: 0 auto $space-4;
+  }
+
+  &__title {
+    text-align: center;
+    font-size: $font-xl;
+    margin-bottom: $space-6;
+    color: $color-text;
+  }
+
+  &__submit {
+    width: 100%;
+    margin-top: $space-2;
+    padding: 0.6rem;
+    font-size: $font-md;
+    justify-content: center;
+  }
+}

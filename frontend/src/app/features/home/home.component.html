@@ -1,0 +1,48 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Коммерческие предложения</h1>
+    <div class="home-actions">
+      <a routerLink="/products" ui-btn>Каталог товаров</a>
+      <button ui-btn variant="primary" (click)="createNew()">+ Создать КП</button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <ui-alert type="error">{{ error() }}</ui-alert>
+  }
+
+  @if (loading()) {
+    <div class="loading-state">Загрузка...</div>
+  } @else if (kpList().length === 0) {
+    <div class="empty-state">
+      <p>Нет ни одного КП</p>
+      <button ui-btn variant="primary" (click)="createNew()">Создать первое КП</button>
+    </div>
+  } @else {
+    <div class="kp-grid">
+      @for (kp of kpList(); track kp._id) {
+        <div class="kp-card" (click)="open(kp._id)">
+          <div class="kp-card__header">
+            <span class="kp-card__number">{{ kp.metadata.number }}</span>
+            <ui-badge [color]="statusColor(kp.status)">{{ statusLabel(kp.status) }}</ui-badge>
+          </div>
+          <h3 class="kp-card__title">{{ kp.title }}</h3>
+          <p class="kp-card__client">{{ kp.recipient.name || 'Клиент не указан' }}</p>
+          <div class="kp-card__footer">
+            <span class="kp-card__total">{{ getTotal(kp) | number:'1.0-0' }} ₽</span>
+            <span class="kp-card__date">{{ kp.createdAt | date:'dd.MM.yyyy' }}</span>
+            <button
+              ui-btn icon
+              title="Дублировать"
+              [disabled]="duplicating() === kp._id"
+              (click)="duplicate(kp._id, $event)"
+              class="kp-card__action">
+              {{ duplicating() === kp._id ? '⏳' : '⎘' }}
+            </button>
+            <button ui-btn icon (click)="delete(kp._id, $event)" class="kp-card__delete">✕</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

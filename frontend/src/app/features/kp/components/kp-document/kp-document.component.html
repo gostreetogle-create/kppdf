@@ -14,8 +14,8 @@
       <!-- Шапка только на первой странице -->
       @if (chunk.showHeader) {
         <app-kp-header 
-          [recipient]="recipient" 
-          [metadata]="metadata">
+          [recipient]="recipient()" 
+          [metadata]="metadata()">
         </app-kp-header>
       }
 
@@ -39,8 +39,8 @@
         <!-- Итоги и условия только на последней странице -->
         @if (chunk.showTotals) {
           <app-kp-table 
-            [totals]="totals"
-            [conditions]="conditions">
+            [totals]="totals()"
+            [conditions]="conditions()">
           </app-kp-table>
         }
       </main>

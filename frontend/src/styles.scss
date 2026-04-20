@@ -1,5 +1,5 @@
-/* You can add global styles to this file, and also import other style files */
-/* Global styles */
+@use 'styles/tokens' as *;
+@use 'styles/global';/* Global styles */
 * {
   box-sizing: border-box;
 }

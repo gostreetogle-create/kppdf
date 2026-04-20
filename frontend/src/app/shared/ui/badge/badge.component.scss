@@ -1,0 +1,16 @@
+@use '../../../../styles/tokens' as *;
+
+:host {
+  display: inline-block;
+  font-size: $font-xs;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  line-height: 1.6;
+
+  &.badge--default { background: $color-bg-muted;      color: $color-text-muted; }
+  &.badge--blue    { background: $color-primary-light;  color: $color-primary-dark; }
+  &.badge--green   { background: $color-success-light;  color: $color-success; }
+  &.badge--red     { background: $color-danger-light;   color: $color-danger-dark; }
+  &.badge--orange  { background: $color-warning-light;  color: $color-warning; }
+}
