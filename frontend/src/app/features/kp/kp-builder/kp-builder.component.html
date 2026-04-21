@@ -5,13 +5,19 @@
 
     <div class="builder__toolbar no-print">
       <button ui-btn (click)="back()">← Назад</button>
-      <input class="builder__title" [(ngModel)]="kp()!.title" placeholder="Название КП" />
-      <select [(ngModel)]="kp()!.status" class="builder__status">
-        <option value="draft">Черновик</option>
-        <option value="sent">Отправлен</option>
-        <option value="accepted">Принят</option>
-        <option value="rejected">Отклонён</option>
+      <input class="builder__title" [(ngModel)]="kp()!.title" [disabled]="isReadOnly()" placeholder="Название КП" />
+      <select [(ngModel)]="kp()!.status" [disabled]="isReadOnly()" class="builder__status">
+        <option value="draft" [disabled]="!canSelectStatus('draft')">Черновик</option>
+        <option value="sent" [disabled]="!canSelectStatus('sent')">Отправлен</option>
+        <option value="accepted" [disabled]="!canSelectStatus('accepted')">Принят</option>
+        <option value="rejected" [disabled]="!canSelectStatus('rejected')">Отклонён</option>
       </select>
+      @if (isManager()) {
+        <span class="role-hint">Менеджер: доступен переход только draft → sent</span>
+      }
+      @if (isReadOnly()) {
+        <span class="readonly-badge">Режим только чтение</span>
+      }
       <span class="save-status save-status--{{ autosave.status() }}">
         @switch (autosave.status()) {
           @case ('saving')  { ⏳ Сохранение... }
@@ -20,80 +26,257 @@
           @case ('error')   { ✕ Ошибка сохранения }
         }
       </span>
-      <button ui-btn (click)="save()" [disabled]="autosave.status() === 'saving'">
+      <button ui-btn (click)="save()" [disabled]="isReadOnly() || autosave.status() === 'saving'">
         Сохранить
+      </button>
+      <button ui-btn variant="ghost" (click)="focusCatalog.set(!focusCatalog())">
+        {{ focusCatalog() ? 'Обычный режим' : 'Фокус: каталог' }}
       </button>
       <button ui-btn variant="primary" (click)="print()">Печать / PDF</button>
     </div>
 
-    <div class="builder__body">
+    <div class="builder__body" [class.builder__body--with-right]="!focusCatalog()">
 
       <aside class="builder__sidebar no-print">
 
+        @if (!focusCatalog()) {
         <div class="sidebar-section">
-          <p class="sidebar-section__title">Получатель</p>
-          @if (counterparties().length > 0) {
-            <select class="sidebar-section__select" (change)="fillFromCounterparty($any($event.target).value)">
+          <button class="sidebar-section__title-btn" (click)="toggleSection('recipient')">
+            <span class="sidebar-section__title">Получатель</span>
+            <span class="sidebar-section__chevron">{{ recipientCollapsed() ? '▸' : '▾' }}</span>
+          </button>
+          @if (!recipientCollapsed()) {
+
+          <div class="recipient-select-row">
+            <select
+              class="sidebar-section__select"
+              [disabled]="isReadOnly()"
+              (change)="fillFromCounterparty($any($event.target).value)">
               <option value="">— Выбрать из справочника —</option>
               @for (cp of counterparties(); track cp._id) {
-                <option [value]="cp._id">{{ cp.shortName }} ({{ cp.inn }})</option>
+                <option [value]="cp._id"
+                  [selected]="kp()!.counterpartyId === cp._id">
+                  {{ cp.shortName || cp.name }} ({{ cp.inn }})
+                </option>
               }
             </select>
-          }
-          <div class="inn-lookup">
-            <input
-              [(ngModel)]="innQuery"
-              placeholder="ИНН для поиска..."
-              class="inn-lookup__input"
-              (keydown.enter)="lookupByInn()"
-            />
-            <button ui-btn size="sm" (click)="lookupByInn()" [disabled]="lookingUp()">
-              {{ lookingUp() ? '...' : '🔍' }}
-            </button>
           </div>
-          @if (lookupError()) {
-            <p class="sidebar-error">{{ lookupError() }}</p>
           }
-          <input [(ngModel)]="kp()!.recipient.name"         placeholder="Полное название" />
-          <input [(ngModel)]="kp()!.recipient.shortName"    placeholder="Краткое название" />
-          <input [(ngModel)]="kp()!.recipient.inn"          placeholder="ИНН" />
-          <input [(ngModel)]="kp()!.recipient.kpp"          placeholder="КПП" />
-          <input [(ngModel)]="kp()!.recipient.legalAddress" placeholder="Юридический адрес" />
-          <input [(ngModel)]="kp()!.recipient.phone"        placeholder="Телефон" />
-          <input [(ngModel)]="kp()!.recipient.email"        placeholder="Email" />
         </div>
+        }
 
-        <div class="sidebar-section">
-          <p class="sidebar-section__title">Каталог товаров</p>
-          @for (product of products(); track product._id) {
-            <div class="product-row">
-              <div class="product-row__info">
-                <span class="product-row__name">{{ product.name }}</span>
-                <span class="product-row__price">{{ product.price | number:'1.0-0' }} ₽ / {{ product.unit }}</span>
+        <div class="sidebar-section" [class.sidebar-section--expanded]="focusCatalog()">
+          <button class="sidebar-section__title-btn" (click)="toggleSection('catalog')">
+            <span class="sidebar-section__title">Каталог товаров</span>
+            <span class="sidebar-section__chevron">{{ catalogCollapsed() ? '▸' : '▾' }}</span>
+          </button>
+          @if (!catalogCollapsed()) {
+          <div class="catalog-tools">
+            <input
+              class="catalog-tools__search"
+              [value]="catalogSearch()"
+              (input)="catalogSearch.set($any($event.target).value)"
+              placeholder="Поиск по названию/артикулу..."
+            />
+            <select
+              class="catalog-tools__select"
+              [value]="catalogCategory()"
+              (change)="catalogCategory.set($any($event.target).value)">
+              <option value="">Все категории</option>
+              @for (cat of categories(); track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+          <div class="product-grid">
+            @for (product of filteredProducts(); track trackByProductId($index, product)) {
+              <div class="product-row">
+                <div class="product-row__thumb">
+                  @if (productPreviewImage(product)) {
+                    <img [src]="productPreviewImage(product)" [alt]="product.name" loading="lazy" />
+                  } @else {
+                    <span>Нет фото</span>
+                  }
+                </div>
+                <div class="product-row__info">
+                  <span class="product-row__name">{{ product.name }}</span>
+                  <span class="product-row__code">{{ product.code }}</span>
+                  <span class="product-row__price">{{ product.price | number:'1.0-0' }} ₽ / {{ product.unit }}</span>
+                </div>
+                <button ui-btn size="sm" [disabled]="isReadOnly()" (click)="addItem(product)">+</button>
               </div>
-              <button ui-btn size="sm" (click)="addItem(product)">+</button>
-            </div>
-          }
-          @if (products().length === 0) {
+            }
+          </div>
+          @if (filteredProducts().length === 0) {
             <p class="sidebar-empty">Нет товаров в каталоге</p>
           }
+          }
+        </div>
+
+      </aside>
+
+      <div class="builder__preview">
+        <div class="builder__preview-scale">
+          <app-kp-document
+            [recipient]="kp()!.recipient"
+            [metadata]="kp()!.metadata"
+            [itemsPerPage]="kp()!.metadata.tablePageBreakAfter || 10"
+            [items]="catalogItems()"
+            [vatPercent]="kp()!.vatPercent"
+            [conditions]="kp()!.conditions">
+          </app-kp-document>
+        </div>
+      </div>
+
+      @if (!focusCatalog()) {
+      <aside class="builder__right no-print">
+        <div class="sidebar-section">
+          <button class="sidebar-section__title-btn" (click)="toggleSection('params')">
+            <span class="sidebar-section__title">Параметры КП</span>
+            <span class="sidebar-section__chevron">{{ paramsCollapsed() ? '▸' : '▾' }}</span>
+          </button>
+          @if (!paramsCollapsed()) {
+          <div class="kp-params-grid">
+            <label class="kp-params-grid__field">
+              <span>Номер</span>
+              <input
+                type="text"
+                [value]="kp()!.metadata.number"
+                [disabled]="isReadOnly()"
+                (input)="kp()!.metadata.number = $any($event.target).value"
+              />
+            </label>
+            <label class="kp-params-grid__field">
+              <span>Срок действия (дни)</span>
+              <input
+                type="number"
+                min="1"
+                [value]="kp()!.metadata.validityDays"
+                [disabled]="isReadOnly()"
+                (change)="kp()!.metadata.validityDays = +$any($event.target).value"
+              />
+            </label>
+            <label class="kp-params-grid__field">
+              <span>Предоплата (%)</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                [value]="kp()!.metadata.prepaymentPercent"
+                [disabled]="isReadOnly()"
+                (change)="kp()!.metadata.prepaymentPercent = +$any($event.target).value"
+              />
+            </label>
+            <label class="kp-params-grid__field">
+              <span>Срок изготовления (дни)</span>
+              <input
+                type="number"
+                min="1"
+                [value]="kp()!.metadata.productionDays"
+                [disabled]="isReadOnly()"
+                (change)="kp()!.metadata.productionDays = +$any($event.target).value"
+              />
+            </label>
+            <label class="kp-params-grid__field">
+              <span>НДС (%)</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                [value]="kp()!.vatPercent"
+                [disabled]="isReadOnly()"
+                (change)="kp()!.vatPercent = +$any($event.target).value"
+              />
+            </label>
+            <label class="kp-params-grid__field">
+              <span>Перенос таблицы после строки №</span>
+              <input
+                type="number"
+                min="1"
+                [value]="kp()!.metadata.tablePageBreakAfter || 10"
+                [disabled]="isReadOnly()"
+                (change)="updateTablePageBreakAfter(+$any($event.target).value)"
+              />
+            </label>
+          </div>
+          }
         </div>
 
         <div class="sidebar-section">
-          <p class="sidebar-section__title">Состав КП</p>
+          <button class="sidebar-section__title-btn" (click)="toggleSection('items')">
+            <span class="sidebar-section__title">Состав КП</span>
+            <span class="sidebar-section__chevron">{{ itemsCollapsed() ? '▸' : '▾' }}</span>
+          </button>
+          @if (!itemsCollapsed()) {
+          <div class="manual-item-form">
+            <p class="manual-item-form__title">Добавить позицию вручную</p>
+            <input
+              placeholder="Название товара *"
+              [disabled]="isReadOnly()"
+              [(ngModel)]="manualItemDraft.name"
+            />
+            <input
+              placeholder="Артикул"
+              [disabled]="isReadOnly()"
+              [(ngModel)]="manualItemDraft.code"
+            />
+            <input
+              type="number"
+              min="0"
+              placeholder="Цена, ₽"
+              [disabled]="isReadOnly()"
+              [(ngModel)]="manualItemDraft.price"
+            />
+            <input
+              type="number"
+              min="1"
+              placeholder="Кол-во"
+              [disabled]="isReadOnly()"
+              [(ngModel)]="manualItemDraft.qty"
+            />
+            <input
+              placeholder="Ед. изм. (шт, м2, компл.)"
+              [disabled]="isReadOnly()"
+              [(ngModel)]="manualItemDraft.unit"
+            />
+            <button
+              ui-btn
+              size="sm"
+              variant="primary"
+              class="manual-item-form__submit"
+              [disabled]="isReadOnly() || !canAddManualItem()"
+              (click)="addManualItem()">
+              Добавить позицию
+            </button>
+          </div>
           @for (item of kp()!.items; track item.productId) {
             <div class="item-row">
-              <span class="item-row__name">{{ item.name }}</span>
-              <input
-                type="number"
-                [value]="item.qty"
-                (change)="updateQty(item, +$any($event.target).value)"
-                class="item-row__qty"
-                min="1"
-              />
-              <span class="item-row__unit">{{ item.unit }}</span>
-              <button ui-btn icon (click)="removeItem(item.productId)">✕</button>
+              <div class="item-row__meta">
+                <span class="item-row__name">{{ item.name }}</span>
+                <span class="item-row__code">@if (item.code) { {{ item.code }} } @else { без артикула }</span>
+              </div>
+              <div class="item-row__controls">
+                <button ui-btn icon [disabled]="isReadOnly()" (click)="decrementQty(item)">−</button>
+                <input
+                  type="number"
+                  [value]="item.qty"
+                  [disabled]="isReadOnly()"
+                  (change)="updateQty(item, +$any($event.target).value)"
+                  class="item-row__qty"
+                  min="1"
+                />
+                <button ui-btn icon [disabled]="isReadOnly()" (click)="incrementQty(item)">+</button>
+                <span class="item-row__unit">{{ item.unit }}</span>
+                <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly()" (click)="removeItem(item)">
+                  Удалить
+                </button>
+              </div>
             </div>
+          }
+          @if (lastRemovedItem()) {
+            <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly()" (click)="undoRemoveItem()">
+              Вернуть удалённый товар
+            </button>
           }
           @if (kp()!.items.length === 0) {
             <p class="sidebar-empty">Добавьте товары из каталога</p>
@@ -104,19 +287,49 @@
               <strong>{{ total() | number:'1.0-0' }} ₽</strong>
             </div>
           }
+          }
         </div>
 
+        <div class="sidebar-section">
+          <button class="sidebar-section__title-btn" (click)="toggleSection('conditions')">
+            <span class="sidebar-section__title">Условия</span>
+            <span class="sidebar-section__chevron">{{ conditionsCollapsed() ? '▸' : '▾' }}</span>
+          </button>
+          @if (!conditionsCollapsed()) {
+          <div class="condition-templates">
+            @for (template of conditionTemplates; track template) {
+              <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly()" (click)="addConditionTemplate(template)">
+                + {{ template }}
+              </button>
+            }
+          </div>
+          @for (condition of kp()!.conditions; track $index) {
+            <div class="condition-row">
+              <input
+                [value]="condition"
+                [disabled]="isReadOnly()"
+                placeholder="Условие"
+                (change)="updateCondition($index, $any($event.target).value)"
+              />
+              <button ui-btn icon [disabled]="isReadOnly() || $index === 0" (click)="moveConditionUp($index)">↑</button>
+              <button ui-btn icon [disabled]="isReadOnly() || $index === kp()!.conditions.length - 1" (click)="moveConditionDown($index)">↓</button>
+              <button ui-btn icon [disabled]="isReadOnly()" (click)="removeCondition($index)">✕</button>
+            </div>
+          }
+          <div class="condition-row">
+            <input
+              [value]="conditionDraft"
+              [disabled]="isReadOnly()"
+              placeholder="Добавить условие..."
+              (input)="conditionDraft = $any($event.target).value"
+              (keydown.enter)="addCondition()"
+            />
+            <button ui-btn icon [disabled]="isReadOnly()" (click)="addCondition()">+</button>
+          </div>
+          }
+        </div>
       </aside>
-
-      <div class="builder__preview">
-        <app-kp-document
-          [recipient]="kp()!.recipient"
-          [metadata]="kp()!.metadata"
-          [items]="catalogItems()"
-          [vatPercent]="kp()!.vatPercent"
-          [conditions]="kp()!.conditions">
-        </app-kp-document>
-      </div>
+      }
 
     </div>
   </div>

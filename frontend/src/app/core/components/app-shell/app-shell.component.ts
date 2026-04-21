@@ -15,6 +15,7 @@ import { ToastComponent } from '../toast/toast.component';
 export class AppShellComponent {
   private readonly auth = inject(AuthService);
   readonly user         = this.auth.currentUser;
+  readonly isAdmin      = this.auth.isAdmin;
   readonly sidebarOpen  = signal(false);
 
   logout()         { this.auth.logout(); }

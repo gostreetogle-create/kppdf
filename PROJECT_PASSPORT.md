@@ -27,6 +27,10 @@
 
 **Финальное правило:** "Не оптимизируй то, что ещё не доказано проблемой"
 
+**Документационная дисциплина (обязательно):**
+- после каждого значимого изменения кода синхронизировать `PROJECT_PASSPORT.md` и профильные `docs/*` в этом же pass;
+- не оставлять рассинхрон "код обновлён, docs потом".
+
 ---
 
 ## SOURCE OF TRUTH MAP
@@ -86,6 +90,7 @@ createImage(url, { context: 'product' })
 ### Settings System
 Коллекция `Settings`: `{ key, value, label }`
 Ключи: `kp_validity_days`, `kp_prepayment_percent`, `kp_production_days`, `kp_vat_percent`
+JSON-операции (импорт/экспорт товаров и контрагентов) выполняются централизованно через страницу `Settings`.
 **Settings = DEFAULT SOURCE OF CONFIGURATION.** Переопределяется на уровне Company.
 
 ### KP Snapshot Rule
@@ -106,7 +111,9 @@ createImage(url, { context: 'product' })
 | `Kp` schema | `kp.model.ts` → `shared/types/Kp.ts` → `api.service.ts` → `kp-builder` → все `kp-*` |
 | `KpItem` поля | `kp.model.ts` → `kp-catalog.component.ts` (KpCatalogItem) → `kp-builder` (catalogItems) |
 | `Counterparty` schema | `counterparty.model.ts` → `shared/types/Counterparty.ts` → `api.service.ts` → `kp-header` (KpRecipient) |
+| Bulk import контрагентов | `counterparty.routes.ts` (POST /bulk) → `api.service.ts` → `counterparties.component.ts` |
 | `Settings` keys | `settings.model.ts` → `kp.routes.ts` (defaults) → `settings.component.ts` → `api.service.ts` |
+| Bulk import товаров | `product.routes.ts` (POST /bulk) → `api.service.ts` → `products.component.ts` |
 | Auth flow | `auth.routes.ts` → `auth.middleware.ts` → `auth.service.ts` → `auth.interceptor.ts` → `app.config.ts` |
 | UI Kit компонент | `shared/ui/<component>` → `index.ts` → все использующие |
 | Design tokens | `_tokens.scss` → все `.scss` с `@use 'tokens'` |
@@ -135,7 +142,7 @@ kppdf/
 │   ├── middleware/          ← auth.middleware.ts
 │   ├── models/              ← user, product, kp, counterparty, dictionary, settings
 │   ├── routes/              ← auth, product, kp, counterparty, dictionary, settings
-│   └── scripts/             ← seed-admin.ts, seed-demo.ts
+│   └── scripts/             ← seed-admin.ts, seed-demo.ts, seed-products.ts
 ├── frontend/src/
 │   ├── environments/        ← environment.ts, environment.prod.ts
 │   ├── styles/              ← _tokens.scss, _global.scss
@@ -210,14 +217,15 @@ KpBuilderComponent: GET kp + products + counterparties
 
 | # | Проблема | Приоритет |
 |---|----------|-----------|
-| ~~1~~ | ~~Нет страницы контрагентов — CRUD UI (модель + API готовы)~~ | ✅ Готово || 2 | Нет проверки ролей admin/manager на бэке и фронте | 🟠 Medium |
-| 3 | Нет ограничений редактирования КП по статусу (sent/accepted = readonly) | 🟠 Medium |
-| 4 | Нет страницы справочников (Dictionary CRUD UI) | 🟠 Medium |
-| 5 | Условия КП — `conditions[]` есть в модели, UI нет | 🟠 Medium |
+| ~~1~~ | ~~Нет страницы контрагентов — CRUD UI (модель + API готовы)~~ | ✅ Готово |
+| ~~2~~ | ~~Нет проверки ролей admin/manager на бэке и фронте~~ | ✅ Готово |
+| ~~3~~ | ~~Нет ограничений редактирования КП по статусу (sent/accepted = readonly)~~ | ✅ Готово |
+| ~~4~~ | ~~Нет страницы справочников (Dictionary CRUD UI)~~ | ✅ Готово |
+| ~~5~~ | ~~Условия КП — `conditions[]` отображаются в документе, но нет UI для редактирования в builder~~ | ✅ Готово |
 | 6 | Нет upload изображений (только URL) | 🟠 Medium |
 | 7 | `shared/types/` не импортируются бэком (только фронт) | 🟡 Low |
 | 8 | Rate limiting in-memory (сбрасывается при рестарте) | 🟡 Low |
-| 9 | Нумерация КП через `Date.now()` | 🟡 Low |
+| ~~9~~ | ~~Нумерация КП через `Date.now()`~~ | ✅ Готово |
 | 10 | Нет refresh токенов | 🟡 Low |
 
 ---
@@ -242,3 +250,25 @@ KpBuilderComponent: GET kp + products + counterparties
 | 2026-04-21 | Паспорт: AI Thinking Mode, приоритеты, KNOWN ISSUES по приоритету |
 | 2026-04-21 | Sprint 1: Counterparties CRUD (list, create/edit, delete, DaData lookup, search/filter), Admin sidebar layout migration |
 | 2026-04-21 | CpRole расширен: добавлена роль `company` (наша компания, создаёт КП). Обновлены: Mongoose enum, shared/types, api.service.ts, форма и таблица контрагентов |
+| 2026-04-21 | Sprint 1 завершён: CounterpartyFormComponent (dumb) — все поля, валидация, DaData lookup, create/edit режимы |
+| 2026-04-21 | Bulk import товаров: POST /api/products/bulk (skip/update режимы), seed-products.ts, UI кнопка "Импорт JSON" в ProductsComponent |
+| 2026-04-21 | Документация синхронизирована с кодом: API bulk import/company route, архитектурные маршруты и бизнес-правила роли `company` |
+| 2026-04-21 | KP Builder: readonly режим для статусов `sent/accepted`, UI редактирования `conditions[]` (добавить/изменить/удалить) |
+| 2026-04-21 | Dictionaries: добавлена страница `/dictionaries` (CRUD справочников), маршрут и пункт в сайдбаре |
+| 2026-04-21 | Auth roles: backend `requireRole`, admin-only routes (`/settings`, `/dictionaries`), ограничение перехода статуса KPI для manager (`draft→sent`) + frontend adminGuard/скрытие пунктов |
+| 2026-04-21 | KP Builder UX pass: collapsible-секции, focus-mode каталога, поиск/фильтр товаров, stepper qty, undo удаления, шаблоны условий |
+| 2026-04-21 | KP Builder final polish: inline-валидация реквизитов, reorder условий, lazy image в таблице, отчёт missing photos, manual regression protocol |
+| 2026-04-21 | Counterparties bulk import: добавлен `POST /api/counterparties/bulk` (safe mode skip/update), в UI добавлены шаблон JSON + импорт файла с batch/fallback и отчётом ошибок |
+| 2026-04-21 | JSON-функционал полностью перенесён в `/settings`: шаблоны, импорт (products/counterparties), экспорт, отчёт missing photos; кнопки на страницах товаров/контрагентов убраны |
+| 2026-04-21 | KP Builder: в правой панели добавлен компактный блок «Параметры КП» с редактированием номера, срока действия, предоплаты, срока изготовления и НДС |
+| 2026-04-21 | Нумерация КП унифицирована на бэкенде: новый формат `КП-YYYYMMDD-XXX` для создания и дублирования, без timestamp в номере |
+| 2026-04-21 | Создание нового КП на фронте переведено на дефолты из `Settings` (убран локальный хардкод `metadata`/`vatPercent` в `HomeComponent`) |
+| 2026-04-21 | KP Builder UI polish: блок «Параметры КП» приведён к единому collapsible-стилю, улучшены CTA/hover/focus у заголовков секций, повышена видимость стрелок |
+| 2026-04-21 | KP Builder layout polish: превью центрировано, отключён внутренний скролл у области документа, сбалансированы ширины колонок |
+| 2026-04-21 | Каталог в KP Builder доработан: карточки товаров с миниатюрой фото, артикулом и улучшенной компоновкой; расширена левая панель каталога |
+| 2026-04-21 | Финальный формат нумерации КП: `КП-001`, `КП-002`... (глобальная последовательность, +1 от максимального существующего номера нового формата) |
+| 2026-04-21 | Усилено правило синхронизации документации: вместе с `PROJECT_PASSPORT.md` обязательно обновляются профильные `docs/*` без отложенных правок |
+| 2026-04-21 | В `Параметры КП` добавлено поле переноса таблицы: `metadata.tablePageBreakAfter` (после какой строки делать новую страницу в документе) |
+| 2026-04-21 | `Состав КП` UX доработан: явная кнопка удаления у каждой позиции + ручное добавление позиции (если товар не найден в каталоге) |
+| 2026-04-21 | Визуал предпросмотра KP в builder уменьшен (scale) для компактного отображения листа без центрального скролла |
+| 2026-04-21 | Медиа (фото/фоны) вынесены в корневую папку `media/` (в `.gitignore`), настроен static/proxy доступ `/media` и legacy-алиасы `/products`, `/kp` для старых ссылок |

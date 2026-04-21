@@ -13,9 +13,9 @@
     @for (cp of counterparties(); track cp._id) {
       <tr>
         <td class="col-name">
-          <span class="cp-name">{{ cp.name }}</span>
+          <span class="cp-name">{{ cp.shortName || cp.name }}</span>
           @if (cp.shortName && cp.shortName !== cp.name) {
-            <span class="cp-short">{{ cp.shortName }}</span>
+            <span class="cp-short">{{ cp.name }}</span>
           }
         </td>
         <td class="col-inn">{{ cp.inn }}</td>

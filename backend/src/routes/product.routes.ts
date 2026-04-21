@@ -59,6 +59,57 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/products/bulk — массовый импорт
+// Body: { items: Array<product fields>, mode: 'skip' | 'update' }
+// mode='skip'   — пропустить товар если артикул уже существует (default)
+// mode='update' — обновить существующий товар по артикулу
+router.post('/bulk', async (req: Request, res: Response) => {
+  const { items, mode = 'skip' } = req.body;
+  if (!Array.isArray(items) || items.length === 0) {
+    res.status(400).json({ message: 'items должен быть непустым массивом' });
+    return;
+  }
+  if (!['skip', 'update'].includes(mode)) {
+    res.status(400).json({ message: 'mode должен быть "skip" или "update"' });
+    return;
+  }
+
+  const results = { created: 0, updated: 0, skipped: 0, errors: [] as string[] };
+
+  for (const item of items) {
+    // Нормализуем поля: поддерживаем как unitCode/priceRub (формат bulk-json), так и unit/price
+    const payload = buildPayload({
+      ...item,
+      unit:  item.unit  ?? item.unitCode,
+      price: item.price ?? item.priceRub,
+    });
+
+    if (!payload.code || !payload.name || !payload.unit || payload.price == null) {
+      results.errors.push(`Пропущен товар без обязательных полей: ${JSON.stringify({ code: item.code, name: item.name })}`);
+      continue;
+    }
+
+    try {
+      const existing = await Product.findOne({ code: payload.code });
+      if (existing) {
+        if (mode === 'update') {
+          await Product.findByIdAndUpdate(existing._id, payload, { runValidators: true });
+          results.updated++;
+        } else {
+          results.skipped++;
+        }
+      } else {
+        await Product.create(payload);
+        results.created++;
+      }
+    } catch (e: any) {
+      results.errors.push(`Ошибка для артикула "${payload.code}": ${e.message}`);
+    }
+  }
+
+  res.status(200).json(results);
+});
+
 // POST /api/products
 router.post('/', validateProduct, async (req: Request, res: Response) => {
   try {

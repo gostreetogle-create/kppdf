@@ -36,8 +36,7 @@ export class HomeComponent implements OnInit {
     const draft: Partial<Kp> = {
       title: 'Новое КП', status: 'draft',
       recipient: { name: '' },
-      metadata: { number: `КП-${Date.now()}`, validityDays: 10, prepaymentPercent: 50, productionDays: 15 },
-      items: [], conditions: [], vatPercent: 20
+      items: [], conditions: []
     };
     this.api.createKp(draft)
       .pipe(takeUntilDestroyed(this.destroyRef))

@@ -20,7 +20,10 @@ import { AlertComponent } from '../../shared/ui/alert/alert.component';
     ButtonComponent, AlertComponent
   ],
   templateUrl: './counterparties.component.html',
-  styleUrl: './counterparties.component.scss'
+  styleUrls: [
+    './counterparties.component.scss',
+    './counterparties.filters.scss'
+  ]
 })
 export class CounterpartiesComponent {
   private readonly api        = inject(ApiService);

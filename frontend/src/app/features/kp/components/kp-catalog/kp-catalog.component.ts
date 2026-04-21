@@ -22,6 +22,7 @@ export interface KpCatalogItem {
 export class KpCatalogComponent {
   items = input.required<KpCatalogItem[]>();
   showPhotoColumn = input(true);
+  showCodeColumn = input(true);
   showDescriptionColumn = input(true);
   displayOffset = input(0); // Смещение для нумерации строк
 }

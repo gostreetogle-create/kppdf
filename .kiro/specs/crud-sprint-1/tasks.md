@@ -21,7 +21,7 @@
   - [x] 3.3 Реализовать таблицу с колонками: Название, ИНН, Роль (BadgeComponent), Статус (BadgeComponent), Орг. форма, Действия (кнопки "Изменить" / "Удалить")
   - [x] 3.4 Импортировать `BadgeComponent`, `ButtonComponent` из `shared/ui`
 
-- [ ] 4. CounterpartyFormComponent (dumb)
+- [x] 4. CounterpartyFormComponent (dumb)
   - [x] 4.1 Создать файлы `frontend/src/app/features/counterparties/components/counterparty-form/counterparty-form.component.{ts,html,scss}`
   - [x] 4.2 Объявить `counterparty = input<Counterparty | null>(null)`, `saved = output<Counterparty>()`, `cancelled = output<void>()`
   - [x] 4.3 Объявить внутренние signals: `saving`, `lookingUp`, `formError`
@@ -56,4 +56,4 @@
   - [ ] 6.5 Проверить поиск и фильтрацию с debounce
   - [ ] 6.6 Проверить что `@media print` скрывает сайдбар
 
-- [ ] Обновить PROJECT_PASSPORT.md
+- [x] Обновить PROJECT_PASSPORT.md

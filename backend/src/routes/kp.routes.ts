@@ -5,6 +5,20 @@ import { Counterparty } from '../models/counterparty.model';
 
 const router = Router();
 
+async function generateKpNumber() {
+  const all = await Kp.find(
+    { 'metadata.number': { $regex: /^КП-\d+$/ } },
+    { 'metadata.number': 1 }
+  ).lean();
+  const maxSerial = all.reduce((max, doc) => {
+    const value = typeof doc?.metadata?.number === 'string' ? doc.metadata.number : '';
+    const match = /^КП-(\d+)$/.exec(value);
+    if (!match) return max;
+    return Math.max(max, Number(match[1]));
+  }, 0);
+  return `КП-${String(maxSerial + 1).padStart(3, '0')}`;
+}
+
 // Получить настройки КП (с фолбэком на дефолты)
 async function getKpSettings() {
   const settings = await Setting.find({ key: { $in: DEFAULT_SETTINGS.map(s => s.key) } });
@@ -30,14 +44,19 @@ router.post('/', async (req: Request, res: Response) => {
     // Если дефолты не переданы — берём из Settings
     let body = { ...req.body };
     if (!body.metadata?.validityDays) {
+      const generatedNumber = await generateKpNumber();
       const s = await getKpSettings();
       body.metadata = {
-        number:            body.metadata?.number ?? `КП-${Date.now()}`,
+        number:            body.metadata?.number ?? generatedNumber,
         validityDays:      s['kp_validity_days'],
         prepaymentPercent: s['kp_prepayment_percent'],
         productionDays:    s['kp_production_days'],
+        tablePageBreakAfter: body.metadata?.tablePageBreakAfter ?? 10,
       };
       body.vatPercent = body.vatPercent ?? s['kp_vat_percent'];
+    }
+    if (!body.metadata?.number) {
+      body.metadata = { ...body.metadata, number: await generateKpNumber() };
     }
 
     // Автоматически привязываем нашу компанию
@@ -59,13 +78,14 @@ router.post('/:id/duplicate', async (req: Request, res: Response) => {
   try {
     const original = await Kp.findById(req.params.id);
     if (!original) { res.status(404).json({ message: 'Not found' }); return; }
+    const generatedNumber = await generateKpNumber();
 
     const duplicate = await Kp.create({
       title:      `Копия — ${original.title}`,
       status:     'draft',
       companyId:  original.companyId,
       recipient:  original.recipient,
-      metadata:   { ...original.metadata, number: `КП-${Date.now()}` },
+      metadata:   { ...original.metadata, number: generatedNumber },
       items:      original.items,
       conditions: original.conditions,
       vatPercent: original.vatPercent,
@@ -92,6 +112,21 @@ router.get('/:id', async (req: Request, res: Response) => {
 // PUT /api/kp/:id
 router.put('/:id', async (req: Request, res: Response) => {
   try {
+    const existing = await Kp.findById(req.params.id);
+    if (!existing) { res.status(404).json({ message: 'Not found' }); return; }
+
+    const nextStatus = req.body?.status as string | undefined;
+    if (nextStatus && nextStatus !== existing.status) {
+      const role = req.user?.role;
+      if (role === 'manager') {
+        const isAllowedForManager = existing.status === 'draft' && nextStatus === 'sent';
+        if (!isAllowedForManager) {
+          res.status(403).json({ message: 'Менеджер может менять статус только draft → sent' });
+          return;
+        }
+      }
+    }
+
     const kp = await Kp.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!kp) { res.status(404).json({ message: 'Not found' }); return; }
     res.json(kp);

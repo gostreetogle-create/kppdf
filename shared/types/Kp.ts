@@ -35,6 +35,7 @@ export interface KpMetadata {
   validityDays:      number;
   prepaymentPercent: number;
   productionDays:    number;
+  tablePageBreakAfter: number;
 }
 
 export interface IKp {

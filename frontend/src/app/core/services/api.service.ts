@@ -146,7 +146,14 @@ export interface Kp {
     founderName?:          string;
     founderNameShort?:     string;
   };
-  metadata: { number: string; createdAt?: Date; validityDays: number; prepaymentPercent: number; productionDays: number };
+  metadata: {
+    number: string;
+    createdAt?: Date;
+    validityDays: number;
+    prepaymentPercent: number;
+    productionDays: number;
+    tablePageBreakAfter: number;
+  };
   items: KpItem[];
   conditions: string[];
   vatPercent: number;
@@ -187,6 +194,18 @@ export class ApiService {
     return this.http.delete<void>(`${BASE}/products/${id}`).pipe(
       tap(() => this.invalidateProducts())
     );
+  }
+
+  bulkImportProducts(
+    items: any[],
+    mode: 'skip' | 'update' = 'skip'
+  ): Observable<{ created: number; updated: number; skipped: number; errors: string[] }> {
+    return this.http
+      .post<{ created: number; updated: number; skipped: number; errors: string[] }>(
+        `${BASE}/products/bulk`,
+        { items, mode }
+      )
+      .pipe(tap(() => this.invalidateProducts()));
   }
 
   // Сбрасываем кэш — следующий getProducts() сделает новый запрос
@@ -275,5 +294,16 @@ export class ApiService {
 
   deleteCounterparty(id: string): Observable<void> {
     return this.http.delete<void>(`${BASE}/counterparties/${id}`);
+  }
+
+  bulkImportCounterparties(
+    items: any[],
+    mode: 'skip' | 'update' = 'skip'
+  ): Observable<{ created: number; updated: number; skipped: number; errors: string[] }> {
+    return this.http
+      .post<{ created: number; updated: number; skipped: number; errors: string[] }>(
+        `${BASE}/counterparties/bulk`,
+        { items, mode }
+      );
   }
 }

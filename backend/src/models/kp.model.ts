@@ -40,6 +40,7 @@ export interface IKp extends Document {
     validityDays: number;
     prepaymentPercent: number;
     productionDays: number;
+    tablePageBreakAfter: number;
   };
   items: IKpItem[];
   conditions: string[];
@@ -84,6 +85,7 @@ const KpSchema = new Schema<IKp>({
     validityDays:      { type: Number, default: 10 },
     prepaymentPercent: { type: Number, default: 50 },
     productionDays:    { type: Number, default: 15 },
+    tablePageBreakAfter: { type: Number, default: 10, min: [1, 'tablePageBreakAfter должен быть >= 1'] },
   },
   items:      { type: [KpItemSchema], default: [] },
   conditions: { type: [String], default: [] },

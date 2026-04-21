@@ -1,0 +1,18 @@
+---
+description: Архитектурные границы и обязательная проверка типов после правок
+alwaysApply: true
+---
+
+# Architecture Guard
+
+После изменений в TypeScript-коде выполняй валидацию:
+- `npx tsc --noEmit` в `frontend`
+- `npx tsc --noEmit` в `backend`
+
+Если есть ошибки типов или импортов, исправляй их до завершения задачи.
+
+Соблюдай архитектурные границы:
+- `frontend` не импортирует из `backend/src/`
+- `backend` не импортирует из `frontend/src/`
+- общие типы разрешены из `shared/types/`
+- внутри `frontend`: `features/` не импортирует другие `features/` напрямую; используй `core/` или `shared/`

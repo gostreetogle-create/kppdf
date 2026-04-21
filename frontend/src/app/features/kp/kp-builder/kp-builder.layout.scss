@@ -1,0 +1,115 @@
+@use '../../../../styles/tokens' as *;
+
+.builder {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: $color-bg-muted;
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-3 $space-4;
+    background: $color-bg;
+    border-bottom: 1px solid $color-border;
+    flex-shrink: 0;
+    box-shadow: $shadow-sm;
+  }
+
+  &__title {
+    flex: 1;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: 0.4rem $space-3;
+    font-size: $font-base;
+    font-family: inherit;
+    transition: border-color $transition-fast;
+    &:focus { outline: none; border-color: $color-primary; }
+  }
+
+  &__status {
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: 0.4rem $space-2;
+    font-size: $font-sm;
+    font-family: inherit;
+    background: $color-bg;
+    &:focus { outline: none; border-color: $color-primary; }
+  }
+
+  &__body {
+    display: grid;
+    grid-template-columns: minmax(420px, 520px) 1fr;
+    flex: 1;
+    overflow: hidden;
+
+    &--with-right {
+      grid-template-columns: minmax(380px, 460px) 1fr minmax(300px, 360px);
+    }
+  }
+
+  &__sidebar {
+    overflow-y: auto;
+    border-right: 1px solid $color-border;
+    background: $color-bg;
+  }
+
+  &__preview {
+    overflow: hidden;
+    background: #eceff3;
+    padding: $space-3;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  &__preview-scale {
+    transform: scale(0.86);
+    transform-origin: top center;
+  }
+
+  &__right {
+    overflow-y: auto;
+    border-left: 1px solid $color-border;
+    background: $color-bg;
+  }
+}
+
+.builder-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: $color-text-muted;
+}
+
+.save-status {
+  font-size: $font-sm;
+  padding: 0.25rem $space-3;
+  border-radius: $radius-md;
+  white-space: nowrap;
+  transition: all $transition-fast;
+
+  &--saved { color: $color-success; }
+  &--saving { color: $color-text-muted; }
+  &--unsaved { color: $color-warning; }
+  &--error { color: $color-danger; }
+}
+
+.readonly-badge {
+  color: $color-warning;
+  background: rgba($color-warning, 0.12);
+  border: 1px solid rgba($color-warning, 0.3);
+  border-radius: $radius-md;
+  padding: 0.25rem $space-2;
+  font-size: $font-xs;
+  white-space: nowrap;
+}
+
+.role-hint {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  white-space: nowrap;
+}

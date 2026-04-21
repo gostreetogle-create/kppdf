@@ -6,7 +6,9 @@
         @if (showPhotoColumn()) {
           <th class="kp-col-photo">Фото</th>
         }
-        <th class="kp-col-code">Арт.</th>
+        @if (showCodeColumn()) {
+          <th class="kp-col-code">Арт.</th>
+        }
         <th class="kp-col-name">Наименование</th>
         @if (showDescriptionColumn()) {
           <th class="kp-col-description">Описание</th>
@@ -23,10 +25,12 @@
           <td class="kp-cell-num">{{ displayOffset() + i + 1 }}</td>
           @if (showPhotoColumn()) {
             <td class="kp-cell-photo">
-              <img [src]="item.imageUrl" [alt]="item.name" class="kp-thumb" />
+              <img [src]="item.imageUrl" [alt]="item.name" class="kp-thumb" loading="lazy" decoding="async" />
             </td>
           }
-          <td class="kp-cell-code">{{ item.code || '—' }}</td>
+          @if (showCodeColumn()) {
+            <td class="kp-cell-code">{{ item.code || '—' }}</td>
+          }
           <td class="kp-cell-name">{{ item.name }}</td>
           @if (showDescriptionColumn()) {
             <td class="kp-cell-description">{{ item.description }}</td>

@@ -84,6 +84,49 @@ router.get('/lookup', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/counterparties/bulk — массовый импорт
+// Body: { items: Array<counterparty fields>, mode: 'skip' | 'update' }
+router.post('/bulk', async (req: Request, res: Response) => {
+  const { items, mode = 'skip' } = req.body;
+  if (!Array.isArray(items) || items.length === 0) {
+    res.status(400).json({ message: 'items должен быть непустым массивом' });
+    return;
+  }
+  if (!['skip', 'update'].includes(mode)) {
+    res.status(400).json({ message: 'mode должен быть "skip" или "update"' });
+    return;
+  }
+
+  const results = { created: 0, updated: 0, skipped: 0, errors: [] as string[] };
+
+  for (const item of items) {
+    const payload = buildPayload(item);
+    if (!payload.name || !payload.inn || !payload.legalForm || !payload.status || payload.role.length === 0) {
+      results.errors.push(`Пропущен контрагент без обязательных полей: ${JSON.stringify({ name: item.name, inn: item.inn })}`);
+      continue;
+    }
+
+    try {
+      const existing = await Counterparty.findOne({ inn: payload.inn });
+      if (existing) {
+        if (mode === 'update') {
+          await Counterparty.findByIdAndUpdate(existing._id, payload, { runValidators: true });
+          results.updated++;
+        } else {
+          results.skipped++;
+        }
+      } else {
+        await Counterparty.create(payload);
+        results.created++;
+      }
+    } catch (e: any) {
+      results.errors.push(`Ошибка для ИНН "${payload.inn}": ${e.message}`);
+    }
+  }
+
+  res.status(200).json(results);
+});
+
 // GET /api/counterparties/:id
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -141,3 +184,35 @@ function buildShortName(fullName?: string): string | undefined {
 }
 
 export default router;
+
+function buildPayload(body: any) {
+  const normalizedRoles = Array.isArray(body.role) ? body.role : [];
+  return {
+    legalForm:             body.legalForm,
+    role:                  normalizedRoles,
+    name:                  body.name?.trim(),
+    shortName:             body.shortName?.trim() ?? body.name?.trim(),
+    inn:                   body.inn?.trim(),
+    kpp:                   body.kpp?.trim(),
+    ogrn:                  body.ogrn?.trim(),
+    legalAddress:          body.legalAddress?.trim(),
+    actualAddress:         body.actualAddress?.trim(),
+    sameAddress:           Boolean(body.sameAddress),
+    phone:                 body.phone?.trim(),
+    email:                 body.email?.trim(),
+    website:               body.website?.trim(),
+    contacts:              Array.isArray(body.contacts) ? body.contacts : [],
+    bankName:              body.bankName?.trim(),
+    bik:                   body.bik?.trim(),
+    checkingAccount:       body.checkingAccount?.trim(),
+    correspondentAccount:  body.correspondentAccount?.trim(),
+    founderName:           body.founderName?.trim(),
+    founderNameShort:      body.founderNameShort?.trim(),
+    status:                body.status,
+    notes:                 body.notes?.trim(),
+    tags:                  Array.isArray(body.tags) ? body.tags.map((v: string) => v.trim()).filter(Boolean) : [],
+    isOurCompany:          Boolean(body.isOurCompany),
+    images:                Array.isArray(body.images) ? body.images : [],
+    footerText:            body.footerText ?? ''
+  };
+}

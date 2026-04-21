@@ -26,6 +26,7 @@ Usage:
   WEB_PORT       — порт nginx (default: 8080)
   MONGO_DB       — имя базы MongoDB (default: kp-app)
   CORS_ORIGIN    — origin фронтенда (обязательно в production)
+  JWT_SECRET     — секрет подписи JWT (обязательно, минимум 32 символа)
 EOF
   exit 0
 fi
@@ -51,12 +52,15 @@ source "${ENV_FILE}"
 
 [[ -n "${CORS_ORIGIN:-}" ]] || err "CORS_ORIGIN не задан в deploy/.env"
 [[ "${CORS_ORIGIN}" != "*" ]] || err "CORS_ORIGIN='*' запрещён в production. Укажите точный origin."
+[[ -n "${JWT_SECRET:-}" ]] || err "JWT_SECRET не задан в deploy/.env"
+[[ "${#JWT_SECRET}" -ge 32 ]] || err "JWT_SECRET слишком короткий (минимум 32 символа)."
 
 log "Конфигурация:"
 log "  WEB_PORT     = ${WEB_PORT:-8080}"
 log "  BACKEND_PORT = ${BACKEND_PORT:-3000}"
 log "  MONGO_DB     = ${MONGO_DB:-kp-app}"
 log "  CORS_ORIGIN  = ${CORS_ORIGIN}"
+log "  JWT_SECRET   = [set]"
 
 # ─── 2. git pull ──────────────────────────────────────────────────────────────
 if git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then

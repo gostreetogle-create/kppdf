@@ -40,15 +40,16 @@ export class KpDocumentComponent {
     number: 'КП-2024-001',
     validityDays: 10,
     prepaymentPercent: 50,
-    productionDays: 15
+    productionDays: 15,
+    tablePageBreakAfter: 10
   });
 
   items = input<KpCatalogItem[]>([]);
   conditions = input<string[]>([]);
   vatPercent = input<number>(20);
 
-  protected readonly backgroundUrl1 = '/kp/kp-1str.png';
-  protected readonly backgroundUrl2 = '/kp/kp-2str.png';
+  protected readonly backgroundUrl1 = '/media/kp/kp-1str.png';
+  protected readonly backgroundUrl2 = '/media/kp/kp-2str.png';
 
   protected readonly totals = computed((): KpTotals => {
     const subtotal = this.items().reduce((s, i) => s + i.price * i.qty, 0);
@@ -56,9 +57,25 @@ export class KpDocumentComponent {
     return { subtotal, vatPercent: this.vatPercent(), vatAmount, total: subtotal + vatAmount };
   });
 
+  protected readonly hasDescriptionColumn = computed(() =>
+    this.items().some(item => (item.description ?? '').trim().length > 0)
+  );
+
+  protected readonly hasPhotoColumn = computed(() =>
+    this.items().some(item => (item.imageUrl ?? '').trim().length > 0)
+  );
+
+  protected readonly hasCodeColumn = computed(() =>
+    this.items().some(item => (item.code ?? '').trim().length > 0)
+  );
+
+  protected readonly resolvedItemsPerPage = computed(() =>
+    Math.max(1, Number(this.itemsPerPage()) || 10)
+  );
+
   protected readonly pageChunks = computed((): KpPageChunk[] => {
     const chunks: KpPageChunk[] = [];
-    const perPage = this.itemsPerPage();
+    const perPage = this.resolvedItemsPerPage();
     const allItems = this.items();
 
     if (allItems.length === 0) {

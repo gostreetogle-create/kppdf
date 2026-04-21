@@ -1,10 +1,84 @@
 @use '../../../styles/tokens' as *;
 
+.settings-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding-bottom: $space-3;
+  margin-bottom: $space-2;
+  background: linear-gradient(to bottom, $color-bg-muted 85%, rgba(255, 255, 255, 0));
+
+  &__actions {
+    display: flex;
+    gap: $space-3;
+    align-items: center;
+  }
+}
+
+.settings-layout {
+  max-width: 860px;
+  display: grid;
+  gap: $space-5;
+}
+
+.settings-card {
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  padding: $space-4;
+  transition: box-shadow $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: rgba($color-primary, 0.2);
+  }
+
+  &__head {
+    margin-bottom: $space-4;
+
+    h2 {
+      margin: 0 0 $space-1;
+      font-size: $font-lg;
+      color: $color-text;
+    }
+
+    p {
+      margin: 0;
+      font-size: $font-sm;
+      color: $color-text-muted;
+    }
+  }
+}
+
+.json-tools {
+  display: grid;
+  gap: $space-4;
+
+  &__group {
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: $space-3;
+    background: $color-bg-soft;
+
+    h3 {
+      margin: 0 0 $space-2;
+      font-size: $font-md;
+      color: $color-text;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
+}
+
 .settings-grid {
-  max-width: 480px;
   display: flex;
   flex-direction: column;
-  gap: $space-4;
+  gap: $space-3;
 }
 
 .setting-row {
@@ -34,4 +108,5 @@
 
     &:focus { outline: none; border-color: $color-primary; }
   }
+
 }

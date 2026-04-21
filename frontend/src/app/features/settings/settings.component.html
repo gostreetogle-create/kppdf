@@ -1,7 +1,7 @@
 <div class="page">
-  <div class="page-header">
+  <div class="page-header settings-header">
     <h1>Настройки</h1>
-    <div style="display:flex;gap:.75rem">
+    <div class="settings-header__actions">
       <a routerLink="/" ui-btn>← Назад</a>
       <button ui-btn variant="primary" (click)="save()" [disabled]="saving()">
         {{ saving() ? 'Сохранение...' : 'Сохранить' }}
@@ -12,18 +12,69 @@
   @if (loading()) {
     <div class="loading-state">Загрузка...</div>
   } @else {
-    <div class="settings-grid">
-      @for (setting of settings(); track setting.key) {
-        <div class="setting-row">
-          <label class="setting-row__label">{{ setting.label }}</label>
-          <input
-            class="setting-row__input"
-            type="number"
-            [(ngModel)]="values[setting.key]"
-            min="0"
-          />
+    <div class="settings-layout">
+      <section class="settings-card">
+        <div class="settings-card__head">
+          <h2>Параметры КП</h2>
+          <p>Глобальные значения по умолчанию для новых коммерческих предложений.</p>
         </div>
-      }
+        <div class="settings-grid">
+          @for (setting of kpSettings(); track setting.key) {
+            <div class="setting-row">
+              <label class="setting-row__label">{{ setting.label }}</label>
+              @if (isNumberValue(values[setting.key])) {
+                <input
+                  class="setting-row__input"
+                  type="number"
+                  [(ngModel)]="values[setting.key]"
+                  min="0"
+                />
+              } @else {
+                <input
+                  class="setting-row__input"
+                  type="text"
+                  [(ngModel)]="values[setting.key]"
+                />
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <div class="settings-card__head">
+          <h2>JSON Инструменты</h2>
+          <p>Все операции импорта/экспорта выполняются отсюда.</p>
+        </div>
+
+        <div class="json-tools">
+          <div class="json-tools__group">
+            <h3>Товары</h3>
+            <div class="json-tools__actions">
+              <button ui-btn size="sm" variant="ghost" (click)="downloadProductsImportTemplate()">↓ Шаблон JSON</button>
+              <button ui-btn size="sm" variant="ghost" (click)="exportProductsJson()" [disabled]="jsonBusy()">↓ Экспорт товаров</button>
+              <button ui-btn size="sm" variant="ghost" (click)="exportMissingPhotosReport()" [disabled]="jsonBusy()">↓ Отчёт: фото отсутствуют</button>
+              <button ui-btn size="sm" (click)="triggerProductsImport()" [disabled]="jsonBusy()">
+                {{ jsonBusy() ? 'Выполняется...' : '↑ Импорт товаров' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="json-tools__group">
+            <h3>Контрагенты</h3>
+            <div class="json-tools__actions">
+              <button ui-btn size="sm" variant="ghost" (click)="downloadCounterpartiesImportTemplate()">↓ Шаблон JSON</button>
+              <button ui-btn size="sm" variant="ghost" (click)="exportCounterpartiesJson()" [disabled]="jsonBusy()">↓ Экспорт контрагентов</button>
+              <button ui-btn size="sm" (click)="triggerCounterpartiesImport()" [disabled]="jsonBusy()">
+                {{ jsonBusy() ? 'Выполняется...' : '↑ Импорт контрагентов' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <input #productsFileInput type="file" accept=".json,application/json" hidden (change)="onProductsImportSelected($event)" />
+        <input #counterpartiesFileInput type="file" accept=".json,application/json" hidden (change)="onCounterpartiesImportSelected($event)" />
+      </section>
     </div>
   }
 </div>

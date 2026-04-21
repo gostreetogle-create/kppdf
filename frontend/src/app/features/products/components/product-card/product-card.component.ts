@@ -16,7 +16,7 @@ export class ProductCardComponent {
 
   get mainImage(): string {
     const images = this.product().images;
-    if (!images?.length) return '/kp/kp-1str.png';
+    if (!images?.length) return '/media/kp/kp-1str.png';
     return images.find(i => i.isMain)?.url ?? images[0].url;
   }
 

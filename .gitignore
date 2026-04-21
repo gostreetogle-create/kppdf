@@ -1,5 +1,6 @@
 # Игнорировать папку с примерами
 Примеры/
+media/
 
 # Deploy secrets
 deploy/.env

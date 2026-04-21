@@ -1,0 +1,70 @@
+@use '../../../styles/tokens' as *;
+
+.page-header__actions {
+  display: flex;
+  gap: $space-3;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  max-width: 400px;
+  padding: 0.45rem $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-family: inherit;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.12);
+  }
+}
+
+.filter-select {
+  padding: 0.45rem $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-family: inherit;
+  background: $color-bg;
+  min-width: 160px;
+
+  &:focus { outline: none; border-color: $color-primary; }
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: $space-6;
+}
+
+.view-toggle {
+  display: flex;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  &__btn {
+    padding: 0.4rem $space-3;
+    border: none;
+    background: $color-bg;
+    cursor: pointer;
+    font-size: $font-md;
+    color: $color-text-muted;
+    transition: background $transition-fast, color $transition-fast;
+    line-height: 1;
+
+    &:hover { background: $color-bg-muted; }
+
+    &--active {
+      background: $color-primary;
+      color: #fff;
+    }
+
+    & + & { border-left: 1px solid $color-border; }
+  }
+}

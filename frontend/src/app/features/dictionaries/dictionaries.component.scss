@@ -1,0 +1,71 @@
+@use '../../../styles/tokens' as *;
+
+.page {
+  padding: $space-6;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $space-4;
+}
+
+.toolbar {
+  margin-bottom: $space-4;
+
+  &__select {
+    min-width: 240px;
+  }
+}
+
+.card {
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-4;
+  margin-bottom: $space-4;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr 120px auto auto;
+  gap: $space-2;
+  align-items: center;
+}
+
+.dict-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+
+  th, td {
+    padding: $space-2 $space-3;
+    border-bottom: 1px solid $color-border-light;
+    text-align: left;
+    vertical-align: middle;
+  }
+}
+
+.col-actions {
+  display: flex;
+  gap: $space-2;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+}
+
+input, select {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.4rem $space-2;
+  font: inherit;
+  box-sizing: border-box;
+}

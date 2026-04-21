@@ -32,11 +32,18 @@
          (click)="closeSidebar()">
         <span class="sidebar__icon">🏢</span> Контрагенты
       </a>
-      <a routerLink="/settings"
-         routerLinkActive="active"
-         (click)="closeSidebar()">
-        <span class="sidebar__icon">⚙️</span> Настройки
-      </a>
+      @if (isAdmin()) {
+        <a routerLink="/settings"
+           routerLinkActive="active"
+           (click)="closeSidebar()">
+          <span class="sidebar__icon">⚙️</span> Настройки
+        </a>
+        <a routerLink="/dictionaries"
+           routerLinkActive="active"
+           (click)="closeSidebar()">
+          <span class="sidebar__icon">📚</span> Справочники
+        </a>
+      }
     </nav>
 
     <div class="sidebar__footer">

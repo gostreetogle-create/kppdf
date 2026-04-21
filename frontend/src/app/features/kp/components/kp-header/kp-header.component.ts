@@ -25,6 +25,7 @@ export interface KpMetadata {
   validityDays:      number;
   prepaymentPercent: number;
   productionDays:    number;
+  tablePageBreakAfter: number;
 }
 
 @Component({
@@ -37,4 +38,10 @@ export interface KpMetadata {
 export class KpHeaderComponent {
   recipient = input.required<KpRecipient>();
   metadata  = input.required<KpMetadata>();
+
+  protected displayDate(): Date {
+    const value = this.metadata().createdAt;
+    if (!value) return new Date();
+    return value instanceof Date ? value : new Date(value);
+  }
 }

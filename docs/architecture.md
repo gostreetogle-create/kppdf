@@ -32,7 +32,11 @@ kppdf/
 |-------------|----------------------|-----------------------------|
 | `/`         | `HomeComponent`      | Список всех КП              |
 | `/products` | `ProductsComponent`  | Каталог товаров (CRUD)      |
+| `/counterparties` | `CounterpartiesComponent` | Контрагенты (CRUD + фильтры + DaData lookup) |
+| `/settings` | `SettingsComponent`  | Глобальные настройки КП     |
+| `/dictionaries` | `DictionariesComponent` | Справочники (CRUD)          |
 | `/kp/:id`   | `KpBuilderComponent` | Редактор КП                 |
+| `/login`    | `LoginComponent`     | Авторизация                 |
 
 Все роуты — lazy-loaded (`loadComponent`).
 
@@ -47,7 +51,10 @@ kppdf/
 | Компонент            | Ответственность                                       |
 |----------------------|-------------------------------------------------------|
 | `HomeComponent`      | Загрузка списка КП, создание нового, удаление         |
-| `ProductsComponent`  | CRUD товаров, поиск, переключение вида (grid/table)   |
+| `ProductsComponent`  | CRUD товаров, поиск, переключение вида, bulk import JSON |
+| `CounterpartiesComponent` | CRUD контрагентов, поиск/фильтры, модальные формы |
+| `SettingsComponent`  | Редактирование настроек КП (`Settings`)               |
+| `DictionariesComponent` | CRUD элементов справочников (`category/subcategory/unit/kind`) |
 | `KpBuilderComponent` | Загрузка КП и каталога, добавление/удаление позиций, сохранение |
 
 ### Dumb (презентационные)
@@ -114,7 +121,7 @@ this.kp.set(kp);
 Единственный сервис для HTTP. Все компоненты работают только через него.
 
 - Список товаров кэшируется через `shareReplay(1)`
-- После `create/update/delete` товара кэш инвалидируется — следующий `getProducts()` делает новый запрос
+- После `create/update/delete/bulk import` товара кэш инвалидируется — следующий `getProducts()` делает новый запрос
 - Базовый URL: `http://localhost:3000/api` (локально) / через nginx `/api/` (продакшн)
 
 ---
@@ -140,7 +147,7 @@ npx ng test --no-watch --browsers=ChromeHeadless
 
 | Файл                          | Что покрыто                                    |
 |-------------------------------|------------------------------------------------|
-| `api.service.spec.ts`         | Все 9 HTTP-методов (products + kp)             |
+| `api.service.spec.ts`         | Базовые HTTP-методы для products/kp (см. актуальные тесты в файле) |
 | `home.component.spec.ts`      | Загрузка, расчёт итогов, статусы, удаление     |
 | `products.component.spec.ts`  | CRUD, поиск, фильтрация, переключение вида     |
 | `button.component.spec.ts`    | Варианты, размеры, icon-режим                  |

@@ -24,8 +24,9 @@
         <!-- Таблица товаров для текущей страницы -->
         <app-kp-catalog 
           [items]="chunk.items"
-          [showPhotoColumn]="true"
-          [showDescriptionColumn]="true"
+          [showPhotoColumn]="hasPhotoColumn()"
+          [showCodeColumn]="hasCodeColumn()"
+          [showDescriptionColumn]="hasDescriptionColumn()"
           [displayOffset]="chunk.displayOffset">
         </app-kp-catalog>
 

@@ -29,6 +29,8 @@ export class AuthService {
   readonly isAuthenticated = computed(() => !!this._token());
   readonly currentUser     = computed(() => this._user());
   readonly token           = computed(() => this._token());
+  readonly isAdmin         = computed(() => this._user()?.role === 'admin');
+  readonly isManager       = computed(() => this._user()?.role === 'manager');
 
   /**
    * APP_INITIALIZER вызывает этот метод и ждёт Promise.

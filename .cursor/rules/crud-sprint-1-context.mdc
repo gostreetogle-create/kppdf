@@ -1,0 +1,17 @@
+---
+description: Контекст и ограничения реализации crud-sprint-1 для контрагентов и сайдбара
+globs: frontend/src/app/core/components/app-shell/**/*,frontend/src/app/features/counterparties/**/*
+alwaysApply: false
+---
+
+# CRUD Sprint 1 Context
+
+Для работ в `app-shell` и `counterparties` придерживайся исходных ограничений sprint-а:
+
+- Следуй паттерну smart/dumb компонентов.
+- HTTP-вызовы только через `ApiService`.
+- Подписки через `takeUntilDestroyed`.
+- Уведомления об ошибках удаления через `NotificationService`.
+- В `Counterparties` поддерживай поиск/фильтрацию с debounce 300ms.
+- Сохраняй существующие маршруты (`/`, `/products`, `/settings`, `/kp/:id`) без изменений.
+- Для печати сохраняй `no-print` поведение сайдбара.

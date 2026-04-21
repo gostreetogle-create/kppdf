@@ -1,0 +1,210 @@
+@use '../../../../styles/tokens' as *;
+
+.product-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+
+  &:last-child { border-bottom: 1px solid $color-border; }
+
+  &__thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: $radius-sm;
+    overflow: hidden;
+    border: 1px solid $color-border-light;
+    background: $color-bg-soft;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    span {
+      font-size: 10px;
+      color: $color-text-muted;
+      text-align: center;
+      padding: 0 $space-1;
+      line-height: 1.2;
+    }
+  }
+
+  &__info { flex: 1; min-width: 0; }
+  &__name { display: block; font-size: $font-sm; font-weight: 600; line-height: 1.3; }
+  &__code { display: block; margin-top: 2px; font-size: $font-xs; color: $color-text-muted; }
+  &__price { display: block; margin-top: $space-1; font-size: $font-sm; color: $color-text-light; }
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-2;
+}
+
+.catalog-tools {
+  display: grid;
+  grid-template-columns: 1fr 170px;
+  gap: $space-2;
+  margin-bottom: $space-3;
+
+  &__search,
+  &__select {
+    width: 100%;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: 0.45rem $space-2;
+    font-size: $font-sm;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+}
+
+.item-row {
+  display: grid;
+  gap: $space-2;
+  padding: $space-2 0;
+  border-bottom: 1px solid $color-border-light;
+  font-size: $font-sm;
+
+  &__meta {
+    min-width: 0;
+  }
+
+  &__name {
+    display: block;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__code {
+    display: block;
+    margin-top: 2px;
+    color: $color-text-muted;
+    font-size: $font-xs;
+  }
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__qty {
+    width: 64px;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    padding: 2px $space-1;
+    text-align: center;
+    font-size: $font-sm;
+    font-family: inherit;
+  }
+  &__unit { color: $color-text-light; font-size: $font-xs; }
+}
+
+.manual-item-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-2;
+  margin: $space-2 0 $space-3;
+  padding: $space-3;
+  border: 1px solid $color-border-light;
+  border-radius: $radius-md;
+  background: $color-bg-soft;
+
+  &__title {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: $font-sm;
+    font-weight: 600;
+    color: $color-text;
+  }
+
+  input {
+    width: 100%;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: 0.4rem $space-2;
+    font-size: $font-sm;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  &__submit {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+.condition-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-bottom: $space-2;
+  min-width: 0;
+
+  input {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 0;
+  }
+
+  button {
+    flex-shrink: 0;
+  }
+}
+
+.condition-templates {
+  display: grid;
+  gap: $space-2;
+  margin-bottom: $space-2;
+
+  button {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    white-space: normal;
+    line-height: 1.35;
+  }
+}
+
+.kp-params-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-2;
+
+  &__field {
+    display: grid;
+    gap: $space-1;
+
+    span {
+      font-size: $font-xs;
+      color: $color-text-muted;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input {
+      margin-bottom: 0;
+      width: 100%;
+      border: 1px solid $color-border;
+      border-radius: $radius-md;
+      padding: 0.4rem $space-2;
+      font-size: $font-sm;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+  }
+}

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 export interface AuthPayload {
   userId: string;
   email:  string;
-  role:   string;
+  role:   'admin' | 'manager';
 }
 
 // Расширяем Request чтобы хранить payload
@@ -31,4 +31,19 @@ export function authGuard(req: Request, res: Response, next: NextFunction): void
   } catch {
     res.status(401).json({ message: 'Токен недействителен или истёк' });
   }
+}
+
+export function requireRole(...allowed: AuthPayload['role'][]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const role = req.user?.role;
+    if (!role) {
+      res.status(401).json({ message: 'Не авторизован' });
+      return;
+    }
+    if (!allowed.includes(role)) {
+      res.status(403).json({ message: 'Недостаточно прав' });
+      return;
+    }
+    next();
+  };
 }

@@ -8,17 +8,23 @@ import { ProductFormComponent } from './components/product-form/product-form.com
 import { ProductCardComponent } from './components/product-card/product-card.component';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../shared/ui/index';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-products',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, ProductFormComponent, ProductCardComponent, ConfirmDialogComponent, ButtonComponent],
   templateUrl: './products.component.html',
-  styleUrl: './products.component.scss'
+  styleUrls: [
+    './products.component.scss',
+    './products.controls.scss',
+    './products.table.scss'
+  ]
 })
 export class ProductsComponent implements OnInit {
-  private readonly api        = inject(ApiService);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly api          = inject(ApiService);
+  private readonly destroyRef   = inject(DestroyRef);
+  private readonly notification = inject(NotificationService);
 
   products        = signal<Product[]>([]);
   loading         = signal(true);
@@ -81,7 +87,10 @@ export class ProductsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => { this.products.update(list => list.filter(x => x._id !== p._id)); this.deleteTarget.set(null); },
-        error: () => { this.deleteTarget.set(null); /* TODO: toast notification */ }
+        error: () => {
+          this.deleteTarget.set(null);
+          this.notification.error('Не удалось удалить товар');
+        }
       });
   }
 

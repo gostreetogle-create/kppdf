@@ -35,6 +35,7 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 | GET | `/api/products` | Список. Фильтры: `?category=&kind=ITEM\|SERVICE\|WORK&isActive=true&q=` |
 | GET | `/api/products/categories` | Уникальные категории (справочник + из товаров) |
 | GET | `/api/products/:id` | Один товар |
+| POST | `/api/products/bulk` | Массовый импорт JSON: `{ items: Product[], mode: "skip" \| "update" }` |
 | POST | `/api/products` | Создать |
 | PUT | `/api/products/:id` | Обновить |
 | DELETE | `/api/products/:id` | Удалить |
@@ -107,7 +108,9 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/api/counterparties/lookup?inn=` | DaData поиск → данные для автозаполнения. Требует `DADATA_TOKEN`. |
-| GET | `/api/counterparties` | Список. Фильтры: `?role=client\|supplier&status=active&q=` |
+| GET | `/api/counterparties/company` | Наша компания (`isOurCompany=true`) для подстановки в КП |
+| GET | `/api/counterparties` | Список. Фильтры: `?role=client\|supplier\|company&status=active\|inactive&q=` |
+| POST | `/api/counterparties/bulk` | Массовый импорт JSON: `{ items: Counterparty[], mode: "skip" \| "update" }` |
 | GET | `/api/counterparties/:id` | Один контрагент |
 | POST | `/api/counterparties` | Создать |
 | PUT | `/api/counterparties/:id` | Обновить |
