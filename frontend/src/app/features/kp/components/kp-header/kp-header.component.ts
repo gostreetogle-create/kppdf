@@ -20,11 +20,11 @@ export interface KpRecipient {
 }
 
 export interface KpMetadata {
-  number: string;
-  createdAt?: Date;
-  validityDays: number;
+  number:            string;
+  createdAt?:        Date;
+  validityDays:      number;
   prepaymentPercent: number;
-  productionDays: number;
+  productionDays:    number;
 }
 
 @Component({
@@ -36,5 +36,5 @@ export interface KpMetadata {
 })
 export class KpHeaderComponent {
   recipient = input.required<KpRecipient>();
-  metadata = input.required<KpMetadata>();
+  metadata  = input.required<KpMetadata>();
 }

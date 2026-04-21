@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ButtonComponent } from '../../../shared/ui/index';
+import { ToastComponent } from '../toast/toast.component';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ButtonComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ButtonComponent, ToastComponent],
   templateUrl: './app-shell.component.html',
   styleUrl: './app-shell.component.scss'
 })

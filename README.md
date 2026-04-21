@@ -1,84 +1,68 @@
 # KP PDF — Сервис создания коммерческих предложений
 
-Веб-приложение для создания, редактирования и печати коммерческих предложений в формате A4.
+Веб-приложение для создания, редактирования и печати КП в формате A4.
 
 ## Стек
 
-| Слой      | Технология                        |
-|-----------|-----------------------------------|
-| Frontend  | Angular 19, Signals, TypeScript   |
-| Backend   | Node.js, Express, TypeScript      |
-| База данных | MongoDB (Mongoose)              |
-| Веб-сервер | Nginx (продакшн)                 |
-| Контейнеры | Docker, Docker Compose           |
+| Слой | Технология |
+|------|-----------|
+| Frontend | Angular 21, Signals, TypeScript |
+| Backend | Node.js 20, Express, TypeScript |
+| БД | MongoDB 7 (Mongoose) |
+| Auth | JWT 7d + bcryptjs |
+| Прод | Nginx + Docker Compose |
 
-## Быстрый старт (локально)
-
-### 1. MongoDB через Docker
+## Быстрый старт
 
 ```bash
+# 1. MongoDB
 docker-compose up -d
+
+# 2. Бэкенд
+cd backend && npm install && npm run dev   # :3000
+
+# 3. Фронтенд
+cd frontend && npm install && npm start    # :4200
+
+# 4. Создать admin + демо-данные
+cd backend && npm run seed:admin           # admin@example.com / admin123
+cd backend && npm run seed:demo            # 20 товаров, 5 контрагентов, 7 КП
 ```
 
-### 2. Бэкенд
-
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-Сервер: `http://localhost:3000`
-
-### 3. Фронтенд
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-Приложение: `http://localhost:4200`
-
-## Структура репозитория
-
-```
-kppdf/
-├── backend/          # Express API + MongoDB
-├── frontend/         # Angular SPA
-├── deploy/           # Docker-файлы, nginx, скрипт деплоя
-├── docs/             # Документация
-├── docker-compose.yml        # MongoDB для локальной разработки
-└── Примеры/          # Примеры деплоя (в .gitignore)
-```
-
-## Переменные окружения
-
-### backend/.env
+## Переменные окружения (`backend/.env`)
 
 ```env
 PORT=3000
 MONGO_URI=mongodb://localhost:27017/kp-app
 CORS_ORIGIN=http://localhost:4200
+JWT_SECRET=your-secret-here
+DADATA_TOKEN=your-dadata-token   # для поиска по ИНН
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=admin123
+ADMIN_NAME=Администратор
 ```
 
 ## Тесты
 
 ```bash
-cd frontend
-npx ng test --no-watch --browsers=ChromeHeadless
+cd frontend && npx ng test --no-watch --browsers=ChromeHeadless
 ```
 
-## Деплой на сервер
+## Деплой
 
 ```bash
-cp deploy/.env.example deploy/.env
-# отредактировать CORS_ORIGIN
+cp deploy/.env.example deploy/.env  # заполнить CORS_ORIGIN
 bash deploy/deploy.sh
 ```
 
-Подробнее: [docs/deploy.md](./docs/deploy.md)
-
 ## Документация
 
-Полная документация в папке [docs/](./docs/README.md).
+| Файл | Содержание |
+|------|-----------|
+| `PROJECT_PASSPORT.md` | Архитектура, карта системы для AI |
+| `docs/api.md` | Все REST эндпоинты |
+| `docs/business-rules.md` | Бизнес-правила, статусы, расчёты |
+| `docs/ui-kit.md` | UI компоненты, токены, Toast |
+| `docs/deploy.md` | Деплой, Docker, nginx |
+| `docs/architecture.md` | Структура, паттерны, тесты |
+| `shared/types/` | Общие TypeScript типы (бэк + фронт) |

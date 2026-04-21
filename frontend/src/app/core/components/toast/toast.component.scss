@@ -1,0 +1,40 @@
+@use '../../../../styles/tokens' as *;
+
+.toast-container {
+  position: fixed;
+  bottom: $space-6;
+  right: $space-6;
+  z-index: $z-tooltip;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  font-size: $font-sm;
+  font-weight: 500;
+  cursor: pointer;
+  pointer-events: all;
+  animation: slideIn 0.2s ease;
+  max-width: 360px;
+
+  &--success { background: $color-success;       color: white; }
+  &--error   { background: $color-danger;         color: white; }
+  &--warning { background: $color-warning;        color: white; }
+  &--info    { background: $color-primary;        color: white; }
+
+  &__icon    { font-size: $font-md; flex-shrink: 0; }
+  &__message { line-height: 1.4; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}

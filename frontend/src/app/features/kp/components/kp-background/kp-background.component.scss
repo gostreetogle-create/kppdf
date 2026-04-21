@@ -42,7 +42,7 @@
   }
 
   .kp-sheet::before {
-    background-size: contain;
+    background-size: cover;
     background-position: center top;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;

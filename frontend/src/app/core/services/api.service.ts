@@ -5,12 +5,27 @@ import { environment } from '../../../environments/environment';
 
 const BASE = environment.apiUrl;
 
-export type ProductKind = 'ITEM' | 'SERVICE' | 'WORK';
+export type ProductKind   = 'ITEM' | 'SERVICE' | 'WORK';
+export type ImageContext  = 'product' | 'kp-page1' | 'kp-page2' | 'passport';
 
 export interface ProductImage {
   url:       string;
   isMain:    boolean;
   sortOrder: number;
+  context?:  ImageContext;  // optional — backward compatible, defaults to 'product'
+}
+
+/** Factory — единственный правильный способ создавать ProductImage */
+export function createImage(
+  url: string,
+  options: { isMain?: boolean; sortOrder?: number; context?: ImageContext } = {}
+): ProductImage {
+  return {
+    url,
+    isMain:    options.isMain    ?? false,
+    sortOrder: options.sortOrder ?? 0,
+    context:   options.context   ?? 'product',
+  };
 }
 
 export interface Product {
@@ -27,6 +42,21 @@ export interface Product {
   isActive:     boolean;
   kind:         ProductKind;
   notes?:       string;
+}
+
+export interface Setting {
+  _id:   string;
+  key:   string;
+  value: unknown;
+  label: string;
+}
+
+export interface SettingsMap {
+  kp_validity_days?:      number;
+  kp_prepayment_percent?: number;
+  kp_production_days?:    number;
+  kp_vat_percent?:        number;
+  [key: string]:          unknown;
 }
 
 export type DictionaryType = 'category' | 'subcategory' | 'unit' | 'kind';
@@ -74,6 +104,10 @@ export interface Counterparty {
   status:                'active' | 'inactive';
   notes?:                string;
   tags:                  string[];
+  // Company profile (isOurCompany=true)
+  isOurCompany?:         boolean;
+  images?:               ProductImage[];
+  footerText?:           string;
   createdAt:             string;
   updatedAt:             string;
 }
@@ -94,6 +128,7 @@ export interface Kp {
   title: string;
   status: 'draft' | 'sent' | 'accepted' | 'rejected';
   counterpartyId?: string;
+  companyId?:      string;
   recipient: {
     name:                  string;
     shortName?:            string;
@@ -202,6 +237,22 @@ export class ApiService {
   deleteDictionaryItem(id: string): Observable<void> {
     return this.http.delete<void>(`${BASE}/dictionaries/${id}`);
   }
+  // ─── Settings ─────────────────────────────────────────
+  getSettings(): Observable<{ list: Setting[]; map: SettingsMap }> {
+    return this.http.get<{ list: Setting[]; map: SettingsMap }>(`${BASE}/settings`);
+  }
+  updateSetting(key: string, value: unknown): Observable<Setting> {
+    return this.http.put<Setting>(`${BASE}/settings/${key}`, { value });
+  }
+  updateSettings(updates: SettingsMap): Observable<{ list: Setting[]; map: SettingsMap }> {
+    return this.http.put<{ list: Setting[]; map: SettingsMap }>(`${BASE}/settings`, updates);
+  }
+
+  // ─── Counterparties ───────────────────────────────────
+  getOurCompany(): Observable<Counterparty> {
+    return this.http.get<Counterparty>(`${BASE}/counterparties/company`);
+  }
+
   getCounterparties(params?: { role?: CpRole; status?: string; q?: string }): Observable<Counterparty[]> {
     return this.http.get<Counterparty[]>(`${BASE}/counterparties`, { params: params as any });
   }

@@ -6,6 +6,7 @@ export interface IProductImage {
   url:       string;
   isMain:    boolean;
   sortOrder: number;
+  context?:  'product' | 'kp-page1' | 'kp-page2' | 'passport'; // optional, default: 'product'
 }
 
 export interface IProduct extends Document {
@@ -27,8 +28,8 @@ const ProductImageSchema = new Schema<IProductImage>({
   url:       { type: String, required: true },
   isMain:    { type: Boolean, default: false },
   sortOrder: { type: Number, default: 0 },
+  context:   { type: String, enum: ['product', 'kp-page1', 'kp-page2', 'passport'], default: 'product' },
 }, { _id: false });
-
 const ProductSchema = new Schema<IProduct>({
   code:        { type: String, required: true, unique: true, trim: true },
   name:        { type: String, required: true, trim: true },

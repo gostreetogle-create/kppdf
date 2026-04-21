@@ -6,8 +6,13 @@ export const authGuard: CanActivateFn = () => {
   const auth   = inject(AuthService);
   const router = inject(Router);
 
+  // APP_INITIALIZER гарантирует что authReady=true к моменту вызова guard.
+  // Эта проверка — страховка на случай прямого вызова guard без APP_INITIALIZER.
+  if (!auth.authReady()) {
+    return router.parseUrl('/login');
+  }
+
   if (auth.isAuthenticated()) return true;
 
-  router.navigate(['/login']);
-  return false;
+  return router.parseUrl('/login');
 };

@@ -5,7 +5,8 @@
     "dev": "ts-node-dev --respawn src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
-    "seed:admin": "ts-node-dev --respawn src/scripts/seed-admin.ts"
+    "seed:admin": "ts-node-dev --respawn src/scripts/seed-admin.ts",
+    "seed:demo": "ts-node-dev --respawn src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

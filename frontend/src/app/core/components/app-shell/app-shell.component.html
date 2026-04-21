@@ -1,8 +1,9 @@
-<header class="shell-header">
+<header class="shell-header no-print">
   <a routerLink="/" class="shell-header__brand">КП PDF</a>
   <nav class="shell-header__nav">
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">КП</a>
     <a routerLink="/products" routerLinkActive="active">Товары</a>
+    <a routerLink="/settings" routerLinkActive="active">Настройки</a>
   </nav>
   <div class="shell-header__user">
     @if (user()) {
@@ -15,3 +16,5 @@
 <main class="shell-content">
   <router-outlet />
 </main>
+
+<app-toast />

@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, input, output, signal, inject } from '@an
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, forkJoin, takeUntil } from 'rxjs';
-import { ApiService, Product, ProductImage, ProductKind } from '../../../../core/services/api.service';
+import { ApiService, Product, ProductImage, ProductKind, createImage } from '../../../../core/services/api.service';
 import { ModalComponent } from '../../../../shared/ui/modal/modal.component';
 import { FormFieldComponent } from '../../../../shared/ui/form-field/form-field.component';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
@@ -100,7 +100,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     const isFirst = this.form.images.length === 0;
     this.form.images = [
       ...this.form.images,
-      { url, isMain: isFirst, sortOrder: this.form.images.length }
+      createImage(url, { isMain: isFirst, sortOrder: this.form.images.length, context: 'product' }),
     ];
     this.form.newImageUrl = '';
   }
@@ -109,7 +109,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     this.form.images = this.form.images
       .filter((_, i) => i !== index)
       .map((img, i) => ({ ...img, sortOrder: i }));
-    // Если удалили главное — делаем главным первое
     if (this.form.images.length && !this.form.images.some(i => i.isMain)) {
       this.form.images[0] = { ...this.form.images[0], isMain: true };
     }

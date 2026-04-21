@@ -1,0 +1,37 @@
+@use '../../../styles/tokens' as *;
+
+.settings-grid {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-4;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  &__label {
+    font-size: $font-sm;
+    color: $color-text;
+  }
+
+  &__input {
+    padding: 0.45rem $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    font-size: $font-base;
+    font-family: inherit;
+    text-align: right;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:focus { outline: none; border-color: $color-primary; }
+  }
+}

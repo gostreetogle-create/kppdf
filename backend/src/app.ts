@@ -7,6 +7,7 @@ import kpRoutes from './routes/kp.routes';
 import authRoutes from './routes/auth.routes';
 import counterpartyRoutes from './routes/counterparty.routes';
 import dictionaryRoutes from './routes/dictionary.routes';
+import settingsRoutes from './routes/settings.routes';
 import { authGuard } from './middleware/auth.middleware';
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 
 // Защищённые роуты
+app.use('/api/settings',        authGuard, settingsRoutes);
 app.use('/api/dictionaries',    authGuard, dictionaryRoutes);
 app.use('/api/counterparties',  authGuard, counterpartyRoutes);
 app.use('/api/products',        authGuard, productRoutes);

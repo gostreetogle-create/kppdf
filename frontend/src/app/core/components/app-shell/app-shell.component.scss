@@ -55,3 +55,8 @@
 .shell-content {
   min-height: calc(100vh - 52px);
 }
+
+@media print {
+  .shell-header { display: none !important; }
+  .shell-content { min-height: unset; }
+}

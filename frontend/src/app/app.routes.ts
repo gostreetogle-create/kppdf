@@ -24,6 +24,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/products/products.component').then(m => m.ProductsComponent)
       },
       {
+        path: 'settings',
+        loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent)
+      },
+      {
         path: 'kp/:id',
         loadComponent: () => import('./features/kp/kp-builder/kp-builder.component').then(m => m.KpBuilderComponent),
         canDeactivate: [canDeactivateBuilder]

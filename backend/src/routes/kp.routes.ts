@@ -1,7 +1,18 @@
 import { Router, Request, Response } from 'express';
 import { Kp } from '../models/kp.model';
+import { Setting, DEFAULT_SETTINGS } from '../models/settings.model';
+import { Counterparty } from '../models/counterparty.model';
 
 const router = Router();
+
+// Получить настройки КП (с фолбэком на дефолты)
+async function getKpSettings() {
+  const settings = await Setting.find({ key: { $in: DEFAULT_SETTINGS.map(s => s.key) } });
+  const map: Record<string, unknown> = {};
+  DEFAULT_SETTINGS.forEach(s => { map[s.key] = s.value; }); // дефолты
+  settings.forEach(s => { map[s.key] = s.value; });          // из БД
+  return map;
+}
 
 // GET /api/kp
 router.get('/', async (_req: Request, res: Response) => {
@@ -13,10 +24,29 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
-// POST /api/kp
+// POST /api/kp — создать черновик с дефолтами из Settings
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const kp = await Kp.create(req.body);
+    // Если дефолты не переданы — берём из Settings
+    let body = { ...req.body };
+    if (!body.metadata?.validityDays) {
+      const s = await getKpSettings();
+      body.metadata = {
+        number:            body.metadata?.number ?? `КП-${Date.now()}`,
+        validityDays:      s['kp_validity_days'],
+        prepaymentPercent: s['kp_prepayment_percent'],
+        productionDays:    s['kp_production_days'],
+      };
+      body.vatPercent = body.vatPercent ?? s['kp_vat_percent'];
+    }
+
+    // Автоматически привязываем нашу компанию
+    if (!body.companyId) {
+      const company = await Counterparty.findOne({ isOurCompany: true, status: 'active' });
+      if (company) body.companyId = company._id.toString();
+    }
+
+    const kp = await Kp.create(body);
     res.status(201).json(kp);
   } catch (e: any) {
     console.error('❌ POST /kp error:', e.message);
@@ -30,14 +60,12 @@ router.post('/:id/duplicate', async (req: Request, res: Response) => {
     const original = await Kp.findById(req.params.id);
     if (!original) { res.status(404).json({ message: 'Not found' }); return; }
 
-    // Используем timestamp вместо countDocuments — нет race condition
-    const number = `КП-${Date.now()}`;
-
     const duplicate = await Kp.create({
       title:      `Копия — ${original.title}`,
       status:     'draft',
+      companyId:  original.companyId,
       recipient:  original.recipient,
-      metadata:   { ...original.metadata, number },
+      metadata:   { ...original.metadata, number: `КП-${Date.now()}` },
       items:      original.items,
       conditions: original.conditions,
       vatPercent: original.vatPercent,

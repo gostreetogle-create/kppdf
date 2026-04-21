@@ -16,7 +16,8 @@ export interface IKpItem {
 export interface IKp extends Document {
   title: string;
   status: KpStatus;
-  counterpartyId?: string;   // ссылка на Counterparty (опционально — можно заполнить вручную)
+  counterpartyId?: string;
+  companyId?:      string;   // ссылка на Counterparty с isOurCompany=true
   recipient: {
     name:                  string;
     shortName?:            string;
@@ -60,6 +61,7 @@ const KpSchema = new Schema<IKp>({
   title:  { type: String, required: true },
   status: { type: String, enum: ['draft', 'sent', 'accepted', 'rejected'], default: 'draft' },
   counterpartyId: { type: String },
+  companyId:      { type: String },
   recipient: {
     name:                  { type: String, default: '' },
     shortName:             String,

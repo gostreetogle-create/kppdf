@@ -3,6 +3,7 @@ import { Schema, model, Document } from 'mongoose';
 export type LegalForm    = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'Физлицо' | 'Другое';
 export type CpRole       = 'client' | 'supplier';
 export type CpStatus     = 'active' | 'inactive';
+export type ImageContext  = 'product' | 'kp-page1' | 'kp-page2' | 'passport';
 
 export interface IContact {
   name:      string;
@@ -11,13 +12,20 @@ export interface IContact {
   email?:    string;
 }
 
+export interface IImage {
+  url:       string;
+  isMain:    boolean;
+  sortOrder: number;
+  context?:  ImageContext;  // optional, default: 'product'
+}
+
 export interface ICounterparty extends Document {
   legalForm:            LegalForm;
   role:                 CpRole[];
-  name:                 string;       // Полное: ООО "СпортИН-ЮГ"
-  shortName:            string;       // Краткое: СпортИН-ЮГ
+  name:                 string;
+  shortName:            string;
   inn:                  string;
-  kpp?:                 string;       // Только для юрлиц
+  kpp?:                 string;
   ogrn?:                string;
   legalAddress?:        string;
   actualAddress?:       string;
@@ -30,11 +38,15 @@ export interface ICounterparty extends Document {
   bik?:                 string;
   checkingAccount?:     string;
   correspondentAccount?:string;
-  founderName?:         string;       // ФИО для ИП: Иванов Иван Иванович
-  founderNameShort?:    string;       // И.И. Иванов
+  founderName?:         string;
+  founderNameShort?:    string;
   status:               CpStatus;
   notes?:               string;
   tags:                 string[];
+  // Company profile fields
+  isOurCompany:         boolean;
+  images:               IImage[];   // context: kp-page1, kp-page2, passport
+  footerText?:          string;     // HTML — текст внизу КП
 }
 
 const ContactSchema = new Schema<IContact>({
@@ -44,17 +56,20 @@ const ContactSchema = new Schema<IContact>({
   email:    String,
 }, { _id: false });
 
+const ImageSchema = new Schema<IImage>({
+  url:       { type: String, required: true },
+  isMain:    { type: Boolean, default: false },
+  sortOrder: { type: Number, default: 0 },
+  context:   { type: String, enum: ['product', 'kp-page1', 'kp-page2', 'passport'], required: true },
+}, { _id: false });
+
 const CounterpartySchema = new Schema<ICounterparty>({
-  legalForm:  {
+  legalForm: {
     type: String,
     enum: ['ООО', 'ИП', 'АО', 'ПАО', 'Физлицо', 'Другое'],
     required: true
   },
-  role: {
-    type: [String],
-    enum: ['client', 'supplier'],
-    default: ['client']
-  },
+  role: { type: [String], enum: ['client', 'supplier'], default: ['client'] },
   name:      { type: String, required: true, trim: true },
   shortName: { type: String, required: true, trim: true },
   inn:       { type: String, required: true, trim: true, match: [/^\d{10}(\d{2})?$/, 'ИНН должен содержать 10 или 12 цифр'] },
@@ -81,10 +96,15 @@ const CounterpartySchema = new Schema<ICounterparty>({
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   notes:  String,
   tags:   { type: [String], default: [] },
+
+  // Company profile
+  isOurCompany: { type: Boolean, default: false },
+  images:       { type: [ImageSchema], default: [] },
+  footerText:   { type: String, default: '' },
 }, { timestamps: true });
 
-// Индексы для быстрого поиска
 CounterpartySchema.index({ inn: 1 });
 CounterpartySchema.index({ name: 'text', shortName: 'text' });
+CounterpartySchema.index({ isOurCompany: 1 });
 
 export const Counterparty = model<ICounterparty>('Counterparty', CounterpartySchema);

@@ -1,186 +1,127 @@
 # REST API
 
-Base URL: `http://localhost:3000/api`
+Base URL: `http://localhost:3000/api` (dev) / `/api` (prod через nginx)  
+Auth: `Authorization: Bearer <token>` — все роуты кроме `/api/auth/*` и `GET /health`  
+Ошибки: `400` неверные данные, `401` не авторизован, `404` не найдено, `500` сервер
 
-В продакшне запросы проксируются через nginx: `/api/` → `http://backend:3000/api/`
+---
+
+## Health
+
+| Метод | Путь | Ответ |
+|-------|------|-------|
+| GET | `/health` | `{ status: 'ok', uptime: number }` — публичный |
+
+---
+
+## Auth
+
+| Метод | Путь | Тело | Ответ |
+|-------|------|------|-------|
+| POST | `/api/auth/login` | `{ email, password }` | `{ token, user: { _id, email, name, role } }` |
+| POST | `/api/auth/logout` | — | `{ message }` |
+| GET | `/api/auth/me` | — | `IUser` без passwordHash |
+
+Rate limit: 10 попыток / 15 мин с одного IP.
 
 ---
 
 ## Products
 
-### GET /api/products
-Список всех товаров, отсортированных по дате создания (новые первые).
+Валидация POST/PUT: `code` (непустой, уникальный), `name`, `unit`, `price` (>= 0).
 
-**Response 200**
-```json
-[
-  {
-    "_id": "664a1b2c3d4e5f6a7b8c9d0e",
-    "name": "Металлоконструкция стальная",
-    "description": "Изготовление по чертежам заказчика",
-    "unit": "шт.",
-    "price": 25000,
-    "imageUrl": "/kp/kp-1str.png",
-    "createdAt": "2024-01-15T10:00:00.000Z",
-    "updatedAt": "2024-01-15T10:00:00.000Z"
-  }
-]
-```
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/products` | Список. Фильтры: `?category=&kind=ITEM\|SERVICE\|WORK&isActive=true&q=` |
+| GET | `/api/products/categories` | Уникальные категории (справочник + из товаров) |
+| GET | `/api/products/:id` | Один товар |
+| POST | `/api/products` | Создать |
+| PUT | `/api/products/:id` | Обновить |
+| DELETE | `/api/products/:id` | Удалить |
 
----
-
-### GET /api/products/:id
-Один товар по ID.
-
-**Response 200** — объект товара  
-**Response 404** `{ "message": "Товар не найден" }`  
-**Response 400** `{ "message": "Неверный ID" }`
-
----
-
-### POST /api/products
-Создать товар.
-
-**Request body**
+**Product schema:**
 ```json
 {
-  "name": "Покраска порошковая",
-  "description": "RAL 7024, полимерное покрытие",
-  "unit": "м²",
-  "price": 500,
-  "imageUrl": "/kp/kp-2str.png"
+  "_id": "string",
+  "code": "string (unique)",
+  "name": "string",
+  "description": "string",
+  "category": "string",
+  "subcategory": "string?",
+  "unit": "string",
+  "price": "number",
+  "costRub": "number?",
+  "images": [{ "url": "string", "isMain": "boolean", "sortOrder": "number" }],
+  "isActive": "boolean",
+  "kind": "ITEM | SERVICE | WORK",
+  "notes": "string?"
 }
 ```
 
-**Валидация**
-- `name` — обязательно, непустая строка
-- `unit` — обязательно, непустая строка
-- `price` — обязательно, число >= 0
-
-**Response 201** — созданный объект  
-**Response 400** `{ "errors": ["name обязателен", "price должен быть числом >= 0"] }`
-
 ---
 
-### PUT /api/products/:id
-Обновить товар. Тело и валидация — как у POST.
+## KP
 
-**Response 200** — обновлённый объект  
-**Response 404** `{ "message": "Товар не найден" }`
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/kp` | Список (новые первые) |
+| GET | `/api/kp/:id` | Одно КП |
+| POST | `/api/kp` | Создать черновик |
+| PUT | `/api/kp/:id` | Сохранить целиком |
+| DELETE | `/api/kp/:id` | Удалить |
+| POST | `/api/kp/:id/duplicate` | Дублировать → новый `_id`, `status: draft`, `title: "Копия — ..."` |
 
----
-
-### DELETE /api/products/:id
-Удалить товар.
-
-**Response 204** — нет тела  
-**Response 404** `{ "message": "Товар не найден" }`
-
----
-
-## KP (Коммерческие предложения)
-
-### GET /api/kp
-Список всех КП, отсортированных по дате создания (новые первые).
-
-**Response 200**
-```json
-[
-  {
-    "_id": "664a1b2c3d4e5f6a7b8c9d0f",
-    "title": "КП для ООО Ромашка",
-    "status": "draft",
-    "recipient": {
-      "name": "ООО Ромашка",
-      "inn": "1234567890",
-      "email": "info@romashka.ru",
-      "phone": "+7 (999) 123-45-67"
-    },
-    "metadata": {
-      "number": "КП-2024-001",
-      "validityDays": 10,
-      "prepaymentPercent": 50,
-      "productionDays": 15
-    },
-    "items": [
-      {
-        "productId": "664a1b2c3d4e5f6a7b8c9d0e",
-        "name": "Металлоконструкция стальная",
-        "description": "Изготовление по чертежам",
-        "unit": "шт.",
-        "price": 25000,
-        "qty": 2,
-        "imageUrl": "/kp/kp-1str.png"
-      }
-    ],
-    "conditions": [
-      "Цены действительны 10 дней.",
-      "Оплата: 50% предоплата."
-    ],
-    "vatPercent": 20,
-    "createdAt": "2024-01-15T10:00:00.000Z",
-    "updatedAt": "2024-01-15T12:00:00.000Z"
-  }
-]
-```
-
----
-
-### GET /api/kp/:id
-Одно КП по ID.
-
-**Response 200** — объект КП  
-**Response 404** `{ "message": "Not found" }`
-
----
-
-### POST /api/kp
-Создать КП. Обычно вызывается с минимальным набором полей — черновик.
-
-**Request body (минимальный)**
+**KP schema (ключевые поля):**
 ```json
 {
-  "title": "Новое КП",
-  "status": "draft",
-  "recipient": { "name": "" },
-  "metadata": {
-    "number": "КП-1713612345678",
-    "validityDays": 10,
-    "prepaymentPercent": 50,
-    "productionDays": 15
+  "_id": "string",
+  "title": "string",
+  "status": "draft | sent | accepted | rejected",
+  "counterpartyId": "string?",
+  "recipient": {
+    "name": "string", "shortName": "string?", "legalForm": "string?",
+    "inn": "string?", "kpp": "string?", "ogrn": "string?",
+    "legalAddress": "string?", "phone": "string?", "email": "string?",
+    "bankName": "string?", "bik": "string?",
+    "checkingAccount": "string?", "correspondentAccount": "string?",
+    "founderName": "string?", "founderNameShort": "string?"
   },
-  "items": [],
-  "conditions": [],
+  "metadata": {
+    "number": "string", "validityDays": 10,
+    "prepaymentPercent": 50, "productionDays": 15
+  },
+  "items": [{
+    "productId": "string", "code": "string?", "name": "string",
+    "description": "string", "unit": "string",
+    "price": "number", "qty": "number (>=1)", "imageUrl": "string?"
+  }],
+  "conditions": ["string"],
   "vatPercent": 20
 }
 ```
 
-**Response 201** — созданный объект КП  
-**Response 400** `{ "message": "..." }` — ошибка валидации Mongoose
+---
+
+## Counterparties
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/counterparties/lookup?inn=` | DaData поиск → данные для автозаполнения. Требует `DADATA_TOKEN`. |
+| GET | `/api/counterparties` | Список. Фильтры: `?role=client\|supplier&status=active&q=` |
+| GET | `/api/counterparties/:id` | Один контрагент |
+| POST | `/api/counterparties` | Создать |
+| PUT | `/api/counterparties/:id` | Обновить |
+| DELETE | `/api/counterparties/:id` | Удалить |
 
 ---
 
-### PUT /api/kp/:id
-Сохранить КП целиком. Фронтенд отправляет весь объект.
+## Dictionaries
 
-**Request body** — полный объект КП (как в GET /api/kp/:id)
+Справочники: `category`, `subcategory`, `unit`, `kind`. Уникальный индекс `type + value`.
 
-**Response 200** — обновлённый объект  
-**Response 404** `{ "message": "Not found" }`
-
----
-
-### DELETE /api/kp/:id
-Удалить КП.
-
-**Response 204** — нет тела
-
----
-
-## Коды ошибок
-
-| Код | Значение                              |
-|-----|---------------------------------------|
-| 400 | Неверные данные / невалидный ID       |
-| 404 | Объект не найден                      |
-| 500 | Внутренняя ошибка сервера             |
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/dictionaries?type=category` | Список активных записей |
+| POST | `/api/dictionaries` | Создать запись |
+| PUT | `/api/dictionaries/:id` | Обновить |
+| DELETE | `/api/dictionaries/:id` | Удалить |

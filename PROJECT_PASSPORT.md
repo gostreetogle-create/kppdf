@@ -1,474 +1,281 @@
-# PROJECT PASSPORT — KP PDF
+# KP PDF — AI PROJECT PASSPORT
 
-> Единый документ-паспорт проекта. Читается за 10 минут — достаточно чтобы полностью понять систему.
-> Детали — в `docs/`. При каждом значимом изменении обновлять этот файл и соответствующий doc.
+> **Назначение этого файла:** навигация и правила для AI. Не источник данных.
+> Данные — в source of truth файлах (см. ниже).
 
 ---
 
-## 1. ПРОЕКТ
+## AI EXECUTION CONTRACT
 
-**Название:** KP PDF  
-**Назначение:** Веб-приложение для создания, редактирования и печати коммерческих предложений в формате A4.  
-**Целевая аудитория:** Менеджеры по продажам (2–5 человек), которые формируют КП для клиентов.
+### Source of Truth
 
-### Технологический стек
+| Домен | Файл-источник |
+|-------|--------------|
+| API эндпоинты | [`docs/api.md`](./docs/api.md) |
+| Бизнес-правила, статусы, расчёты | [`docs/business-rules.md`](./docs/business-rules.md) |
+| TypeScript типы | [`shared/types/`](./shared/types/) |
+| UI компоненты, токены | [`docs/ui-kit.md`](./docs/ui-kit.md) |
+| Деплой, окружение | [`docs/deploy.md`](./docs/deploy.md) |
+| Архитектура, паттерны | [`docs/architecture.md`](./docs/architecture.md) |
+| **Архитектурные решения (активный слой)** | **см. раздел ARCHITECTURAL DECISIONS ниже** |
+| Этот файл | навигация + правила AI (не данные) |
 
-| Слой           | Технология                                      | Версия   |
-|----------------|-------------------------------------------------|----------|
-| Frontend       | Angular (standalone components, Signals)        | 21.x     |
-| Backend        | Node.js + Express + TypeScript                  | 20 / 4.x |
-| База данных    | MongoDB (Mongoose ODM)                          | 7 / 8.x  |
-| Авторизация    | JWT (jsonwebtoken) + bcryptjs                   | —        |
-| Веб-сервер     | Nginx (продакшн, SPA + proxy)                   | 1.27     |
-| Контейнеры     | Docker + Docker Compose                         | v2       |
-| Тесты          | Karma + Jasmine (Angular)                       | —        |
+### Запрещено
 
-### Структура репозитория
+- Переопределять схемы моделей в паспорте
+- Дублировать API эндпоинты из `api.md`
+- Дублировать бизнес-правила из `business-rules.md`
+- Мутировать `shared/types/` на стороне фронтенда (только читать)
+
+### Обязательно перед любым изменением
+
+```
+1. Найти затронутый модуль → раздел FILE OWNERSHIP MAP
+2. Открыть source of truth файл для этого домена
+3. Изменить ТОЛЬКО нужный слой
+4. Синхронизировать зависимые слои → раздел CHANGE IMPACT
+5. Обновить паспорт ТОЛЬКО если изменилась структура/навигация
+```
+
+### Режим работы AI
+
+- Минимальный diff — не рефакторить без запроса
+- Не предполагать отсутствующие поля — проверять source of truth
+- Всегда трассировать цепочку зависимостей перед изменением
+- try-catch в каждом роуте бэкенда
+- takeUntilDestroyed() на каждой подписке фронтенда
+- Иммутабельные обновления сигналов
+
+---
+
+## FILE OWNERSHIP MAP
+
+| Домен | Файлы |
+|-------|-------|
+| Авторизация (бэк) | `backend/src/routes/auth.routes.ts`, `backend/src/middleware/auth.middleware.ts` |
+| Настройки системы | `backend/src/routes/settings.routes.ts`, `backend/src/models/settings.model.ts`, `features/settings/` |
+| Авторизация (фронт) | `auth.service.ts` (initAuth), `auth.interceptor.ts`, `auth.guard.ts`, `login.component.ts`, `app.config.ts` (APP_INITIALIZER) |
+| КП система | `backend/src/routes/kp.routes.ts`, `kp-builder.component.*`, `autosave.service.ts` |
+| Документ A4 | `kp-document/`, `kp-background/`, `kp-header/`, `kp-catalog/`, `kp-table/` |
+| Товары | `backend/src/routes/product.routes.ts`, `products.component.*`, `product-form/`, `product-card/` |
+| Контрагенты | `backend/src/routes/counterparty.routes.ts`, `kp-builder.component.ts` (lookup) |
+| Справочники | `backend/src/routes/dictionary.routes.ts`, `backend/src/models/dictionary.model.ts` |
+| HTTP клиент | `frontend/src/app/core/services/api.service.ts` — единственный HTTP-сервис |
+| Уведомления | `notification.service.ts`, `core/components/toast/` |
+| UI Kit | `frontend/src/app/shared/ui/` + `docs/ui-kit.md` |
+| Стили/токены | `frontend/src/styles/_tokens.scss`, `_global.scss` |
+| Env переменные | `frontend/src/environments/environment*.ts`, `backend/.env` |
+| Деплой | `deploy/deploy.sh`, `deploy/docker-compose.prod.yml`, `deploy/nginx.conf` |
+| Seed данные | `backend/src/scripts/seed-admin.ts`, `seed-demo.ts` |
+
+---
+
+## QUICK START
+
+```bash
+docker-compose up -d                 # MongoDB :27017
+cd backend && npm run dev            # API :3000
+cd frontend && npm start             # SPA :4200
+cd backend && npm run seed:demo      # тестовые данные
+```
+
+**Первый пользователь:** `admin@example.com` / `admin123`
+
+---
+
+## REPOSITORY MAP
 
 ```
 kppdf/
-├── backend/
-│   └── src/
-│       ├── middleware/         # auth.middleware.ts (JWT guard)
-│       ├── models/             # User, Product, Kp, Counterparty, Dictionary
-│       ├── routes/             # auth, product, kp, counterparty, dictionary
-│       ├── scripts/            # seed-admin.ts
-│       └── app.ts
-├── frontend/
-│   └── src/
-│       ├── styles/             # _tokens.scss, _global.scss
-│       └── app/
-│           ├── core/
-│           │   ├── components/ # AppShellComponent (шапка + навигация)
-│           │   ├── guards/     # auth.guard.ts
-│           │   ├── interceptors/ # auth.interceptor.ts
-│           │   └── services/   # ApiService, AuthService
-│           ├── features/
-│           │   ├── auth/       # LoginComponent
-│           │   ├── home/       # Список КП
-│           │   ├── kp/         # Редактор КП + компоненты документа A4
-│           │   └── products/   # Каталог товаров (CRUD)
-│           └── shared/ui/      # UI kit: Button, Badge, Modal, FormField, Alert
-├── deploy/                     # Dockerfile.backend, Dockerfile.web, nginx.conf,
-│                               # docker-compose.prod.yml, deploy.sh, .env.example
-├── docs/                       # Детальная документация
-├── docker-compose.yml          # MongoDB для локальной разработки
-└── PROJECT_PASSPORT.md
+├── backend/src/
+│   ├── app.ts              ← точка входа, middleware, роуты
+│   ├── middleware/          ← auth.middleware.ts
+│   ├── models/              ← user, product, kp, counterparty, dictionary, settings
+│   ├── routes/              ← auth, product, kp, counterparty, dictionary, settings
+│   └── scripts/             ← seed-admin.ts, seed-demo.ts
+├── frontend/src/
+│   ├── environments/        ← environment.ts, environment.prod.ts
+│   ├── styles/              ← _tokens.scss, _global.scss
+│   └── app/
+│       ├── app.routes.ts    ← маршруты + guards
+│       ├── app.config.ts    ← providers
+│       ├── core/            ← services/, guards/, interceptors/, components/
+│       ├── features/        ← auth/, home/, products/, kp/, settings/
+│       └── shared/ui/       ← button, badge, modal, form-field, alert
+├── shared/types/            ← User.ts, Product.ts, Kp.ts, Counterparty.ts, ApiResponses.ts
+├── deploy/                  ← docker-compose.prod.yml, Dockerfiles, nginx.conf, deploy.sh
+├── docs/                    ← api.md, business-rules.md, ui-kit.md, deploy.md, architecture.md
+└── docker-compose.yml       ← MongoDB локально
 ```
 
 ---
 
-## 2. АРХИТЕКТУРА
+## SYSTEM FLOWS
 
-### Схема взаимодействия
-
+### Авторизация (session restore)
 ```
-Браузер
-  │
-  ├── Angular SPA (порт 4200 локально / nginx:80 прод)
-  │     ├── LoginComponent         ─── POST /api/auth/login
-  │     ├── AppShellComponent      ─── GET /api/auth/me, POST /api/auth/logout
-  │     ├── HomeComponent          ─── GET/POST/DELETE /api/kp
-  │     │                              POST /api/kp/:id/duplicate
-  │     ├── ProductsComponent      ─── GET/POST/PUT/DELETE /api/products
-  │     │                              GET /api/products/categories
-  │     │                              GET /api/dictionaries
-  │     └── KpBuilderComponent     ─── GET /api/kp/:id, PUT /api/kp/:id
-  │                                    GET /api/products
-  │                                    GET /api/counterparties
-  │
-  └── Nginx (порт 8080 прод)
-        ├── /api/* → proxy → Express (порт 3000)
-        └── /* → Angular index.html (SPA fallback)
+APP_INITIALIZER → authService.initAuth() → блокирует роутинг до завершения
+  если token в localStorage:
+    GET /api/auth/me (с прямым Bearer заголовком, без interceptor)
+    OK  → _user.set(), _initialized.set(true) → роутинг разблокирован
+    401 → clearToken(), _initialized.set(true) → redirect /login
+  если токена нет:
+    _initialized.set(true) → redirect /login
 
-Express API (порт 3000)
-  ├── /api/auth          → auth.routes.ts        (публичный)
-  ├── /api/products      → product.routes.ts     (authGuard)
-  ├── /api/kp            → kp.routes.ts          (authGuard)
-  ├── /api/counterparties→ counterparty.routes.ts(authGuard)
-  └── /api/dictionaries  → dictionary.routes.ts  (authGuard)
-
-MongoDB (порт 27017)
-  ├── users
-  ├── products
-  ├── kps
-  ├── counterparties
-  └── dictionaries
+authGuard: проверяет initialized() перед isAuthenticated()
+  → нет мигания login→home→login
+  → нет двойного запроса /me
+login → POST /api/auth/login → token → localStorage['kp_token', 'kp_user']
+authInterceptor → Bearer token на каждый запрос
+401 → logout → /login
 ```
 
-### Поток данных — авторизация
-
+### Редактор КП
 ```
-1. LoginComponent → POST /api/auth/login → { token, user }
-2. AuthService сохраняет token в localStorage
-3. authInterceptor добавляет Authorization: Bearer <token> к каждому запросу
-4. При 401 — authInterceptor вызывает AuthService.logout() → редирект на /login
-5. authGuard проверяет AuthService.isAuthenticated() перед каждым защищённым маршрутом
+HomeComponent → POST /api/kp → /kp/:id
+KpBuilderComponent: GET kp + products + counterparties
+Изменение → kp.set({...}) → effect() → AutosaveService → debounce 2s → PUT /api/kp/:id
+Поиск по ИНН → GET /api/counterparties/lookup?inn= → DaData → recipient
 ```
 
-### Поток данных — добавить товар в КП
-
+### Добавление товара в КП
 ```
-1. Пользователь нажимает "+" у товара в сайдбаре
-2. KpBuilderComponent.addItem(product) — иммутабельное обновление signal
-3. computed(catalogItems/subtotal/vatAmount/total) пересчитываются автоматически
-4. KpDocumentComponent получает новые items через input() → ре-рендер превью
-5. AutosaveService.schedule(kp) — запускает debounce 2 сек
-6. По истечении → PUT /api/kp/:id → MongoDB
-```
-
-### Ключевые архитектурные решения
-
-| Решение | Почему |
-|---------|--------|
-| Angular Signals вместо RxJS для состояния | Нативная мемоизация через `computed()`, меньше бойлерплейта |
-| `takeUntilDestroyed()` на всех подписках | Автоматическая отписка без `ngOnDestroy` |
-| `shareReplay(1)` для списка товаров | Каталог запрашивается в двух местах, кэш экономит запросы |
-| Иммутабельные обновления сигналов | Мутация вложенных объектов не триггерит Angular change detection |
-| Smart/Dumb разделение | Smart — знают об API, Dumb — только `input()`/`output()` |
-| UI Kit через host-классы | `button[ui-btn]` — нативный элемент без лишней обёртки в DOM |
-| Данные товара копируются в КП (снимок) | Изменение каталога не ломает существующие КП |
-| JWT в localStorage | Простота для небольшой команды, без refresh-токенов |
-| Dictionary — гибридный справочник | Строки в товарах + коллекция для управления. Импорт работает без предварительной настройки |
-| Единая таблица Counterparty с role[] | Компания может быть одновременно клиентом и поставщиком |
-
----
-
-## 3. СУЩНОСТИ И ДАННЫЕ
-
-### User (коллекция `users`)
-
-| Поле           | Тип    | Обязательно | Описание                    |
-|----------------|--------|-------------|-----------------------------|
-| `email`        | String | ✅ unique    | Email (lowercase)           |
-| `passwordHash` | String | ✅           | bcrypt hash                 |
-| `name`         | String | ✅           | Имя пользователя            |
-| `role`         | String | —           | `admin` / `manager`         |
-
-Создание первого admin: `npm run seed:admin` (backend).
-
----
-
-### Product (коллекция `products`)
-
-| Поле          | Тип            | Обязательно | По умолчанию | Описание                        |
-|---------------|----------------|-------------|--------------|----------------------------------|
-| `code`        | String         | ✅ unique    | —            | Артикул                         |
-| `name`        | String         | ✅           | —            | Название                        |
-| `description` | String         | —           | `''`         | Описание                        |
-| `category`    | String         | —           | `''`         | Категория (строка, из Dictionary)|
-| `subcategory` | String         | —           | —            | Подкатегория                    |
-| `unit`        | String         | ✅           | —            | Единица измерения               |
-| `price`       | Number         | ✅           | —            | Цена продажи, ₽ (>= 0)         |
-| `costRub`     | Number         | —           | —            | Себестоимость, ₽                |
-| `images`      | ProductImage[] | —           | `[]`         | Фотографии (см. ниже)           |
-| `isActive`    | Boolean        | —           | `true`       | Активен / в архиве              |
-| `kind`        | String         | —           | `'ITEM'`     | `ITEM` / `SERVICE` / `WORK`     |
-| `notes`       | String         | —           | —            | Внутренние заметки              |
-
-**ProductImage:** `{ url: string, isMain: boolean, sortOrder: number }`  
-Главное фото: `images.find(i => i.isMain)` или первое по `sortOrder`.  
-В КП копируется только URL главного фото.
-
----
-
-### Kp (коллекция `kps`)
-
-| Поле             | Тип       | По умолчанию | Описание                        |
-|------------------|-----------|--------------|---------------------------------|
-| `title`          | String    | —            | Название КП (внутреннее)        |
-| `status`         | String    | `'draft'`    | `draft/sent/accepted/rejected`  |
-| `counterpartyId` | String    | —            | Мягкая ссылка на Counterparty   |
-| `recipient`      | Object    | —            | Снимок данных получателя        |
-| `metadata`       | Object    | —            | Параметры КП                    |
-| `items`          | KpItem[]  | `[]`         | Позиции (снимок из каталога)    |
-| `conditions`     | String[]  | `[]`         | Доп. условия                    |
-| `vatPercent`     | Number    | `20`         | Ставка НДС, %                   |
-
-**recipient:** `{ name, shortName?, legalForm?, inn?, kpp?, ogrn?, legalAddress?, phone?, email?, bankName?, bik?, checkingAccount?, correspondentAccount?, founderName?, founderNameShort? }`  
-**metadata:** `{ number, validityDays=10, prepaymentPercent=50, productionDays=15 }`  
-**KpItem:** `{ productId, code?, name, description, unit, price, qty=1, imageUrl? }`
-
----
-
-### Counterparty (коллекция `counterparties`)
-
-| Поле                  | Тип       | Описание                                    |
-|-----------------------|-----------|---------------------------------------------|
-| `legalForm`           | String    | `ООО/ИП/АО/ПАО/Физлицо/Другое`             |
-| `role`                | String[]  | `['client']` / `['supplier']` / оба         |
-| `name`                | String    | Полное название: ООО "СпортИН-ЮГ"           |
-| `shortName`           | String    | Краткое: СпортИН-ЮГ                         |
-| `inn`                 | String    | ИНН (10 — юрлицо, 12 — ИП)                 |
-| `kpp`                 | String    | КПП (только юрлица)                         |
-| `ogrn`                | String    | ОГРН / ОГРНИП                               |
-| `legalAddress`        | String    | Юридический адрес                           |
-| `actualAddress`       | String    | Фактический адрес                           |
-| `sameAddress`         | Boolean   | Совпадает с юридическим                     |
-| `phone/email/website` | String    | Контакты                                    |
-| `contacts`            | Object[]  | `{ name, position?, phone?, email? }`       |
-| `bankName/bik`        | String    | Банковские реквизиты                        |
-| `checkingAccount`     | String    | Расчётный счёт                              |
-| `correspondentAccount`| String    | Корреспондентский счёт                      |
-| `founderName`         | String    | ФИО для ИП: Иванов Иван Иванович            |
-| `founderNameShort`    | String    | И.И. Иванов (для документов)               |
-| `status`              | String    | `active` / `inactive`                       |
-| `notes/tags`          | String/[] | Заметки и метки                             |
-
----
-
-### Dictionary (коллекция `dictionaries`)
-
-Гибридный справочник для выпадающих списков. Уникальный индекс по `type + value`.
-
-| Поле        | Тип    | Описание                                          |
-|-------------|--------|---------------------------------------------------|
-| `type`      | String | `category` / `subcategory` / `unit` / `kind`      |
-| `value`     | String | Значение (напр. «Воркаут», «шт.»)                 |
-| `sortOrder` | Number | Порядок в списке                                  |
-| `isActive`  | Boolean| Показывать в списке                               |
-
----
-
-### Связи
-
-```
-User          — независимая коллекция, авторизация
-Product       — независимая коллекция, каталог
-Dictionary    — независимая коллекция, справочники
-Counterparty  — независимая коллекция, контрагенты
-
-Kp.counterpartyId → Counterparty._id  (мягкая ссылка, не FK)
-Kp.items[].productId → Product._id    (мягкая ссылка, данные скопированы)
+addItem() → kp.set({...items}) → effect() → autosave
+computed(catalogItems/subtotal/vatAmount/total) → KpDocumentComponent → A4 preview
+⚠️ effect() защищён флагом initialized — без него PUT при первой загрузке
 ```
 
 ---
 
-## 4. API
+## CHANGE IMPACT
 
-Base URL: `http://localhost:3000/api`  
-Авторизация: JWT Bearer token. Все роуты кроме `/api/auth/*` и `GET /health` требуют заголовок `Authorization: Bearer <token>`.
-
-### Health
-
-| Метод | Путь      | Описание                              |
-|-------|-----------|---------------------------------------|
-| GET   | `/health` | `{ status: 'ok', uptime }` — публичный |
-
-### Auth
-
-| Метод | Путь              | Описание                                    |
-|-------|-------------------|---------------------------------------------|
-| POST  | `/api/auth/login` | `{ email, password }` → `{ token, user }`   |
-| POST  | `/api/auth/logout`| Выход (клиент удаляет токен)                |
-| GET   | `/api/auth/me`    | Текущий пользователь по токену              |
-
-### Products
-
-| Метод  | Путь                        | Описание                                          |
-|--------|-----------------------------|---------------------------------------------------|
-| GET    | `/api/products`             | Список. Фильтры: `?category=&kind=&isActive=&q=`  |
-| GET    | `/api/products/categories`  | Уникальные категории (справочник + из товаров)    |
-| GET    | `/api/products/:id`         | Один товар                                        |
-| POST   | `/api/products`             | Создать (валидация: code, name, unit, price)      |
-| PUT    | `/api/products/:id`         | Обновить                                          |
-| DELETE | `/api/products/:id`         | Удалить                                           |
-
-### KP
-
-| Метод  | Путь                    | Описание                                                    |
-|--------|-------------------------|-------------------------------------------------------------|
-| GET    | `/api/kp`               | Список всех КП (новые первые)                               |
-| GET    | `/api/kp/:id`           | Одно КП                                                     |
-| POST   | `/api/kp`               | Создать КП (обычно пустой черновик)                         |
-| PUT    | `/api/kp/:id`           | Сохранить КП целиком                                        |
-| DELETE | `/api/kp/:id`           | Удалить КП                                                  |
-| POST   | `/api/kp/:id/duplicate` | Дублировать: новый `_id`, номер, статус `draft`, «Копия —» |
-
-### Counterparties
-
-| Метод  | Путь                       | Описание                                      |
-|--------|----------------------------|-----------------------------------------------|
-| GET    | `/api/counterparties/lookup`  | `?inn=` → поиск в DaData, возвращает данные для автозаполнения |
-| GET    | `/api/counterparties`      | Список. Фильтры: `?role=client&status=active&q=` |
-| GET    | `/api/counterparties/:id`  | Один контрагент                               |
-| POST   | `/api/counterparties`      | Создать                                       |
-| PUT    | `/api/counterparties/:id`  | Обновить                                      |
-| DELETE | `/api/counterparties/:id`  | Удалить                                       |
-
-### Dictionaries
-
-| Метод  | Путь                     | Описание                              |
-|--------|--------------------------|---------------------------------------|
-| GET    | `/api/dictionaries`      | Список. Фильтр: `?type=category`      |
-| POST   | `/api/dictionaries`      | Создать запись                        |
-| PUT    | `/api/dictionaries/:id`  | Обновить                              |
-| DELETE | `/api/dictionaries/:id`  | Удалить                               |
+| Изменение | Затронутые файлы |
+|-----------|-----------------|
+| Модель Product | `product.model.ts` → `shared/types/Product.ts` → `api.service.ts` → `product-form` → `product-card` |
+| Модель Kp | `kp.model.ts` → `shared/types/Kp.ts` → `api.service.ts` → `kp-builder` → все `kp-*` |
+| KpItem поля | `kp.model.ts` → `kp-catalog.component.ts` (KpCatalogItem) → `kp-builder` (catalogItems) |
+| Counterparty | `counterparty.model.ts` → `shared/types/Counterparty.ts` → `kp-header` (KpRecipient) |
+| Auth | `auth.routes.ts` → `auth.middleware.ts` → `auth.service.ts` → `auth.interceptor.ts` |
+| UI Kit | `shared/ui/<component>` → `index.ts` → все использующие |
+| Токены | `_tokens.scss` → все `.scss` с `@use 'tokens'` |
+| API URL | `environments/environment*.ts` |
 
 ---
 
-## 5. КЛЮЧЕВЫЕ ФУНКЦИИ
+## SAFE CHANGE RULES
 
-| Функция | Как работает |
-|---------|-------------|
-| **Health check** | `GET /health` → `{ status: 'ok', uptime }` — публичный эндпоинт для мониторинга и deploy.sh |
-| **Rate limiting** | Login endpoint: не более 10 попыток за 15 минут с одного IP (in-memory Map) |
-| **Авторизация** | JWT 7 дней, bcrypt пароли. Interceptor добавляет токен к каждому запросу. При 401 — автоматический logout |
-| **Создать КП** | POST /api/kp → черновик → редирект в редактор |
-| **Список КП** | Карточки с номером, клиентом, суммой с НДС, статусом (Badge), датой |
-| **Дублировать КП** | Кнопка ⎘ → POST /api/kp/:id/duplicate → новый черновик «Копия —» → редирект |
-| **Редактор КП** | Split-layout: сайдбар (получатель + каталог + состав) + превью A4 |
-| **Выбор контрагента** | Select из справочника → автозаполнение всех полей получателя (снимок) |
-| **Поиск по ИНН (DaData)** | Поле ИНН + кнопка 🔍 в сайдбаре builder → `GET /api/counterparties/lookup?inn=` → DaData API → автозаполнение всех полей получателя (название, КПП, ОГРН, адрес, ФИО для ИП) |
-| **Добавить товар в КП** | Клик "+" → иммутабельный update signal → computed пересчитывает превью и итоги |
-| **Автосохранение** | Debounce 2 сек после любого изменения → PUT /api/kp/:id. Статус: ✓/⏳/●/✕ |
-| **Ручное сохранение** | Немедленно, сбрасывает debounce |
-| **Предупреждение при уходе** | CanDeactivate guard — confirm() если есть несохранённые изменения |
-| **Статус КП** | Select: draft → sent → accepted/rejected |
-| **Печать / PDF** | `window.print()`, `.no-print` скрыты через `@media print` |
-| **Многостраничность** | KpDocumentComponent разбивает items по 10, стр.1 — шапка, последняя — итоги |
-| **Каталог товаров** | CRUD, поиск по name/code/description, фильтр по категории, вид сетка/таблица |
-| **Форма товара** | Артикул, тип (ITEM/SERVICE/WORK), категория с datalist, себестоимость, управление фото (добавить/удалить/сделать главным) |
-| **Справочники** | Dictionary — категории и единицы из БД + уникальные из товаров |
-| **Деплой** | `bash deploy/deploy.sh` — git pull + docker build + up + health check |
+**Нельзя трогать без понимания последствий:**
+- `KpItem` структура — данные в MongoDB, нет миграций
+- `localStorage` ключи `kp_token`, `kp_user` — смена разлогинит всех
+- `AutosaveService` trigger$ + switchMap — нарушение = дублирующие PUT
+- `KpDocumentComponent` inputs — используется для печати A4
 
 ---
 
-## 6. ФРОНТЕНД
+## ROUTES
 
-### Страницы и маршруты
+| URL | Компонент | Guard |
+|-----|-----------|-------|
+| `/login` | `LoginComponent` | — |
+| `/` | `HomeComponent` | `authGuard` |
+| `/products` | `ProductsComponent` | `authGuard` |
+| `/kp/:id` | `KpBuilderComponent` | `authGuard` + `canDeactivate` |
 
-| URL         | Компонент            | Тип   | Guard         | Описание              |
-|-------------|----------------------|-------|---------------|-----------------------|
-| `/login`    | `LoginComponent`     | Smart | —             | Форма входа           |
-| `/`         | `HomeComponent`      | Smart | `authGuard`   | Список КП             |
-| `/products` | `ProductsComponent`  | Smart | `authGuard`   | Каталог товаров       |
-| `/kp/:id`   | `KpBuilderComponent` | Smart | `authGuard` + `canDeactivate` | Редактор КП |
+Все защищённые маршруты — дочерние к `AppShellComponent`.
 
-Защищённые маршруты обёрнуты в `AppShellComponent` (шапка + навигация + кнопка выхода).
+---
 
-### Состояние (Signals)
+## ARCHITECTURAL DECISIONS (AI-ACTIVE LAYER)
 
+> Источник истины для генерации и рефакторинга кода. Все изменения выполняются строго по нему.
+
+### 1. COMPANY MODEL
+`Counterparty` — единая сущность для клиентов, поставщиков и нашей компании.  
+Новые поля: `isOurCompany: boolean`, `backgrounds: { page1: string, page2: string }`, `footerText: string`  
+Правило: `isOurCompany = true` → это Company. В системе только 1 активная Company.  
+`isOurCompany = false` по умолчанию — существующие данные не ломаются.
+
+### 2. IMAGE SYSTEM
 ```
-AuthService (singleton)
-  _token  = signal<string|null>(localStorage 'kp_token')
-  _user   = signal<AuthUser|null>(localStorage 'kp_user')  ← восстанавливается мгновенно
-  isAuthenticated = computed(...)
-  currentUser     = computed(...)
-  // При старте: фоновый GET /api/me для актуализации; если токен истёк — clearToken()
-
-HomeComponent
-  kpList      = signal<Kp[]>([])
-  loading     = signal(true)
-  error       = signal('')          ← новый: ошибки загрузки/создания/удаления
-  duplicating = signal<string|null>(null)
-
-ProductsComponent
-  products       = signal<Product[]>([])
-  search         = signal('')
-  filterCategory = signal('')
-  view           = signal<'grid'|'table'>('grid')
-  categories     = signal<string[]>([])
-  filtered       = computed(...)  ← products + search + filterCategory
-
-KpBuilderComponent
-  kp             = signal<Kp|null>(null)
-  products       = signal<Product[]>([])
-  counterparties = signal<Counterparty[]>([])
-  loading        = signal(true)
-  innQuery       = ''                        ← строка для поиска по ИНН
-  lookingUp      = signal(false)             ← флаг запроса к DaData
-  lookupError    = signal('')               ← ошибка поиска
-  catalogItems   = computed(...)
-  subtotal       = computed(...)
-  vatAmount      = computed(...)
-  total          = computed(...)
-  isDirty        = computed(() => autosave.status === 'unsaved')
-
-AutosaveService (scoped к KpBuilderComponent)
-  status: SaveStatus  ← 'saved'|'saving'|'unsaved'|'error'
+images: { url: string, isMain: boolean, sortOrder: number,
+          context: 'product' | 'kp-page1' | 'kp-page2' | 'passport' }
 ```
+Одна структура для всех сущностей. Фильтрация через `context`. `isMain` — только внутри `context`.
 
-### Компоненты документа A4 (все Dumb)
+### 3. SETTINGS SYSTEM
+Коллекция `Settings`: `{ key: string, value: any, label: string }`  
+Ключи: `kp_validity_days`, `kp_prepayment_percent`, `kp_vat_percent`, `kp_production_days`  
+**Settings = DEFAULT SOURCE OF CONFIGURATION.** Counterparty/Company может переопределять.
 
-```
-KpDocumentComponent       ← оркестратор, разбивка на страницы
-  ├── KpBackgroundComponent  ← фоновое изображение
-  ├── KpHeaderComponent      ← получатель (legalForm, inn, kpp, адрес...) + метаданные
-  ├── KpCatalogComponent     ← таблица позиций (с колонкой Арт.)
-  └── KpTableComponent       ← итоги + условия
-```
+### 4. KP FOOTER
+Источник: `Counterparty.footerText` (HTML).  
+Отображается только на последней странице КП, после `KpTableComponent`, не перекрывает таблицу.
+
+### 5. COMPANY SELECTION
+`isOurCompany = true` выбирается автоматически при создании КП. Можно сменить вручную в builder.
+
+### 6. QUICK PRODUCT CREATION
+Из KP Builder → мини-форма (name, price, unit) → `POST /api/products` → сразу в таблице КП.
+
+### 7. PRIORITY RULES
+`Settings` (глобально) → `Counterparty/Company` → `Product defaults` → `UI overrides`
+
+### 8. NON-BREAKING RULES
+- Не менять структуру `Counterparty` без миграции
+- Не удалять `images[]` систему
+- Не дублировать `Settings` в других таблицах
 
 ---
 
-## 7. ИЗВЕСТНЫЕ ПРОБЛЕМЫ И РЕШЕНИЯ
+## KNOWN ISSUES
 
-| Проблема | Решение | Почему так |
-|----------|---------|------------|
-| `this.http` до инициализации в `ApiService` | Перенесено в `constructor` | TypeScript strict mode |
-| `icon` атрибут давал TS2322 | `booleanAttribute` transform | HTML-атрибуты без значения = пустая строка |
-| `InputSignal` передавался в шаблон вместо значения | `metadata()`, `totals()`, `conditions()` | Signals в шаблонах нужно вызывать как функцию |
-| `KpCatalogItem.id` был `number` | Изменён на `string` | MongoDB ObjectId — строка |
-| `recipient.name: required` ломало создание черновика | `default: ''` | При создании КП получатель ещё не заполнен |
-| Мутация объекта внутри сигнала | Везде иммутабельные обновления | Signals сравнивают по ссылке |
-
----
-
-## 8. ЧТО В РАБОТЕ / TODO
-
-- [ ] **Страница контрагентов** `/counterparties` — CRUD UI (модель, API и lookup по ИНН готовы)
-- [ ] **Страница справочников** — управление категориями, единицами измерения
-- [ ] **Условия КП** — поле `conditions[]` в модели есть, UI для редактирования не реализован
-- [ ] **Загрузка изображений** — сейчас только URL, нужен upload на сервер
-- [ ] **Серверная нумерация КП** — сейчас `КП-${Date.now()}`, нужен инкремент
-- [x] ~~**Health endpoint**~~ — `GET /health` добавлен
-- [ ] **Управление пользователями** — нет UI для создания/редактирования пользователей
-- [ ] **Toast/уведомления** — нет глобального компонента уведомлений об ошибках
-- [ ] **Загрузка изображений** — upload файлов вместо URL (только seed:admin)
+| Проблема | Приоритет |
+|----------|-----------|
+| Нет страницы контрагентов (модель + API готовы) | High |
+| Нет проверки ролей admin/manager на бэке и фронте | Medium |
+| Нет ограничений редактирования по статусу КП | Medium |
+| Нет страницы справочников | Medium |
+| Условия КП — поле есть, UI нет | Medium |
+| Нет upload изображений (только URL) | Medium |
+| shared/types не импортируются бэком | Medium |
+| Rate limiting in-memory (сбрасывается при рестарте) | Medium |
+| Нет refresh токенов | Low |
+| Нумерация КП через Date.now() | Low |
+| KP builder: выбор компании, footer, быстрое добавление товара — не реализованы | High |
+| Страница /settings создана, но не подключена к builder (дефолты КП) | Medium |
 
 ---
 
-## 9. ДОКУМЕНТАЦИЯ
+## CHANGELOG
 
-| Файл | Содержание |
+| Дата | Изменение |
 |------|-----------|
-| [`README.md`](./README.md) | Быстрый старт, запуск локально |
-| [`docs/architecture.md`](./docs/architecture.md) | Структура, smart/dumb, реактивность, тесты |
-| [`docs/business-logic.md`](./docs/business-logic.md) | Сущности, статусы, расчёты, правила редактора |
-| [`docs/api.md`](./docs/api.md) | Все эндпоинты с примерами запросов/ответов |
-| [`docs/ui-kit.md`](./docs/ui-kit.md) | UI kit компоненты, design tokens, примеры |
-| [`docs/deploy.md`](./docs/deploy.md) | Деплой, переменные окружения, nginx, логи |
-
----
-
-## 10. ИСТОРИЯ ИЗМЕНЕНИЙ
-
-| Дата       | Изменение                                                                                   |
-|------------|---------------------------------------------------------------------------------------------|
-| 2026-04-20 | Инициализация: Angular + Express + MongoDB, базовый CRUD КП и товаров                      |
-| 2026-04-20 | UI Kit: Button, Badge, Modal, FormField, Alert + Design Tokens                              |
-| 2026-04-20 | Рефакторинг реактивности: Signals, computed, takeUntilDestroyed, иммутабельность            |
-| 2026-04-20 | Деплой: Docker Compose prod, Nginx, deploy.sh                                               |
-| 2026-04-20 | Тесты: ApiService, HomeComponent, ProductsComponent, Button, Badge                         |
-| 2026-04-20 | Автосохранение КП: AutosaveService (debounce 2s), статус в тулбаре, CanDeactivate guard    |
-| 2026-04-20 | Дублирование КП: POST /api/kp/:id/duplicate, кнопка ⎘, редирект в редактор                |
-| 2026-04-20 | Авторизация: JWT, User модель, authGuard middleware, AuthService, interceptor, LoginComponent, AppShellComponent |
-| 2026-04-20 | Контрагенты: модель Counterparty (российская специфика), CRUD API, интеграция в builder    |
-| 2026-04-20 | Аудит и исправление 30+ проблем: try-catch во всех роутах, rate limiting на login, health endpoint, environment файлы Angular, BASE URL из env, AutosaveService status→Signal, валидация ИНН/КПП/qty в моделях, backend/.env в .gitignore, дублирование middleware логирования, email валидация на логине, обработка ошибок в HomeComponent |
-| 2026-04-20 | Расширение Product: code, category, subcategory, costRub, images[], isActive, kind, notes  |
-| 2026-04-20 | Dictionary: гибридный справочник категорий/единиц. KpItem + code. Фильтр по категории      |
-
----
-
-## ПРАВИЛО ОБНОВЛЕНИЯ ПАСПОРТА
-
-При каждом значимом изменении обновить:
-
-1. Раздел **ИСТОРИЯ ИЗМЕНЕНИЙ** — добавить запись
-2. Раздел **3. СУЩНОСТИ** — если изменилась схема БД
-3. Раздел **4. API** — если добавлен/изменён эндпоинт
-4. Раздел **5. ФУНКЦИИ** — если добавлена/изменена фича
-5. Раздел **6. ФРОНТЕНД** — если новый маршрут, компонент, изменилось состояние
-6. Раздел **8. TODO** — закрыть выполненные, добавить новые
-
-**Значимые изменения:** новая фича, эндпоинт, схема БД, компонент UI kit, деплой.
+| 2026-04-20 | Инициализация: Angular + Express + MongoDB, CRUD КП и товаров |
+| 2026-04-20 | UI Kit: Button, Badge, Modal, FormField, Alert + Design Tokens |
+| 2026-04-20 | Реактивность: Signals, computed, takeUntilDestroyed, иммутабельность |
+| 2026-04-20 | Деплой: Docker Compose prod, Nginx, deploy.sh |
+| 2026-04-20 | Автосохранение КП: AutosaveService debounce 2s, CanDeactivate guard |
+| 2026-04-20 | Дублирование КП: POST /api/kp/:id/duplicate |
+| 2026-04-20 | Авторизация: JWT, User, authGuard, interceptor, LoginComponent, AppShell |
+| 2026-04-20 | Контрагенты: Counterparty модель, CRUD API |
+| 2026-04-20 | Product: code, category, images[], isActive, kind, costRub, notes |
+| 2026-04-20 | Dictionary: гибридный справочник, KpItem + code |
+| 2026-04-20 | DaData: lookup по ИНН → автозаполнение получателя |
+| 2026-04-20 | Аудит: try-catch, rate limiting, health endpoint, environment файлы |
+| 2026-04-20 | AuthService: персистентность через localStorage |
+| 2026-04-20 | APP_INITIALIZER: authService.initAuth() блокирует роутинг до проверки токена; authGuard ждёт initialized(); нет мигания login→home |
+| 2026-04-20 | Settings: модель + API (GET/PUT /api/settings), страница /settings, дефолты КП из БД |
+| 2026-04-20 | Counterparty расширен: isOurCompany, images[] с context, footerText |
+| 2026-04-20 | Kp расширен: companyId, дефолты из Settings при создании |
+| 2026-04-20 | ProductImage расширен: поле context (product/kp-page1/kp-page2/passport) |
+| 2026-04-20 | GET /api/counterparties/company — эндпоинт нашей компании |
+| 2026-04-21 | Settings: модель + API + страница /settings, дефолты КП из БД |
+| 2026-04-21 | Counterparty расширен: isOurCompany, images[] с context, footerText |
+| 2026-04-21 | Kp расширен: companyId, дефолты из Settings при создании |
+| 2026-04-21 | ProductImage: context optional, factory createImage(), синхронизирован shared/types |
+| 2026-04-21 | APP_INITIALIZER: authReady gate, нет мигания login→home |
+| 2026-04-21 | Bootstrap loading screen пока authReady=false |
+| 2026-04-21 | Print fix: @page A4, шапка скрыта, фон cover, builder layout при печати |
+| 2026-04-21 | DTO audit: Counterparty в api.service.ts дополнен company-полями |
+| 2026-04-20 | Документация: Single Source of Truth, удалены дубли |
+| 2026-04-20 | Паспорт: рефакторинг до навигационного слоя (AI Execution Contract) |

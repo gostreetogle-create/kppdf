@@ -1,18 +1,68 @@
 @use 'styles/tokens' as *;
-@use 'styles/global';/* Global styles */
-* {
-  box-sizing: border-box;
-}
+@use 'styles/global';
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #f8f9fa;
-  color: #212529;
-}
+/* ─── PRINT STYLES (глобальные) ──────────────────────────── */
+@media print {
+  /* Убираем всё кроме документа КП */
+  app-shell > .shell-header,
+  app-shell > .shell-header *,
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+  /* Сброс body для печати */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Настройки страницы A4 */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  /* Убираем тени и отступы у листа */
+  .kp-sheet {
+    box-shadow: none !important;
+    margin: 0 !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Последний лист — без page-break */
+  .kp-sheet:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Стек страниц без gap */
+  .kp-stack {
+    gap: 0 !important;
+  }
+
+  /* Контент builder — только превью */
+  .builder__toolbar,
+  .builder__sidebar {
+    display: none !important;
+  }
+
+  .builder__body {
+    display: block !important;
+  }
+
+  .builder__preview {
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+
+  .builder {
+    height: auto !important;
+    overflow: visible !important;
+  }
 }

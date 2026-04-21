@@ -1,0 +1,15 @@
+<div class="toast-container">
+  @for (toast of ns.toasts(); track toast.id) {
+    <div class="toast toast--{{ toast.type }}" (click)="ns.dismiss(toast.id)">
+      <span class="toast__icon">
+        @switch (toast.type) {
+          @case ('success') { ✓ }
+          @case ('error')   { ✕ }
+          @case ('warning') { ⚠ }
+          @case ('info')    { ℹ }
+        }
+      </span>
+      <span class="toast__message">{{ toast.message }}</span>
+    </div>
+  }
+</div>

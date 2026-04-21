@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { tap, catchError, EMPTY } from 'rxjs';
+import { tap, firstValueFrom } from 'rxjs';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -21,32 +21,42 @@ export class AuthService {
   private readonly http   = inject(HttpClient);
   private readonly router = inject(Router);
 
-  // Токен и пользователь восстанавливаются из localStorage сразу
-  private readonly _token = signal<string | null>(localStorage.getItem(TOKEN_KEY));
-  private readonly _user  = signal<AuthUser | null>(this.restoreUser());
+  private readonly _token    = signal<string | null>(localStorage.getItem(TOKEN_KEY));
+  private readonly _user     = signal<AuthUser | null>(this.restoreUser());
+  // AUTH READY GATE — true только после завершения initAuth()
+  readonly authReady         = signal(false);
 
   readonly isAuthenticated = computed(() => !!this._token());
   readonly currentUser     = computed(() => this._user());
   readonly token           = computed(() => this._token());
 
-  constructor() {
-    // Если токен есть — тихо обновляем данные пользователя с сервера
-    // Используем прямой заголовок чтобы не зависеть от порядка инициализации interceptor
-    const token = this._token();
-    if (token) {
-      this.http.get<AuthUser>(`${BASE}/me`, {
-        headers: new HttpHeaders({ Authorization: `Bearer ${token}` })
-      }).pipe(
-        tap(user => {
-          this._user.set(user);
-          localStorage.setItem(USER_KEY, JSON.stringify(user));
-        }),
-        catchError(() => {
-          // Токен истёк — чистим
-          this.clearToken();
-          return EMPTY;
+  /**
+   * APP_INITIALIZER вызывает этот метод и ждёт Promise.
+   * Angular НЕ запускает роутинг пока Promise не resolved.
+   * Поэтому authGuard всегда видит authReady = true.
+   */
+  async initAuth(): Promise<void> {
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    if (!token) {
+      this.authReady.set(true);
+      return;
+    }
+
+    try {
+      const user = await firstValueFrom(
+        this.http.get<AuthUser>(`${BASE}/me`, {
+          headers: new HttpHeaders({ Authorization: `Bearer ${token}` })
         })
-      ).subscribe();
+      );
+      this._token.set(token);
+      this._user.set(user);
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } catch {
+      // Токен истёк или бэкенд недоступен → silent logout
+      this.clearToken();
+    } finally {
+      this.authReady.set(true);
     }
   }
 

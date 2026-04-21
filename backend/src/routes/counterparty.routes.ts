@@ -3,6 +3,17 @@ import { Counterparty } from '../models/counterparty.model';
 
 const router = Router();
 
+// GET /api/counterparties/company — наша компания (isOurCompany=true)
+router.get('/company', async (_req: Request, res: Response) => {
+  try {
+    const company = await Counterparty.findOne({ isOurCompany: true, status: 'active' });
+    if (!company) { res.status(404).json({ message: 'Компания не настроена' }); return; }
+    res.json(company);
+  } catch {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 // GET /api/counterparties?role=client&status=active&q=поиск
 router.get('/', async (req: Request, res: Response) => {
   try {
