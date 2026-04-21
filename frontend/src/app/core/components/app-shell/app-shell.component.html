@@ -1,20 +1,56 @@
-<header class="shell-header no-print">
-  <a routerLink="/" class="shell-header__brand">КП PDF</a>
-  <nav class="shell-header__nav">
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">КП</a>
-    <a routerLink="/products" routerLinkActive="active">Товары</a>
-    <a routerLink="/settings" routerLinkActive="active">Настройки</a>
-  </nav>
-  <div class="shell-header__user">
-    @if (user()) {
-      <span class="shell-header__name">{{ user()!.name }}</span>
-      <button ui-btn size="sm" (click)="logout()">Выйти</button>
-    }
-  </div>
-</header>
+<!-- Mobile overlay -->
+@if (sidebarOpen()) {
+  <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+}
 
-<main class="shell-content">
-  <router-outlet />
-</main>
+<!-- Mobile toggle -->
+<button class="sidebar-toggle no-print" (click)="toggleSidebar()" aria-label="Меню">
+  ☰
+</button>
+
+<div class="shell-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar no-print" [class.sidebar--open]="sidebarOpen()">
+    <div class="sidebar__brand">
+      <a routerLink="/" (click)="closeSidebar()">КП PDF</a>
+    </div>
+
+    <nav class="sidebar__nav">
+      <a routerLink="/"
+         routerLinkActive="active"
+         [routerLinkActiveOptions]="{exact:true}"
+         (click)="closeSidebar()">
+        <span class="sidebar__icon">📄</span> КП
+      </a>
+      <a routerLink="/products"
+         routerLinkActive="active"
+         (click)="closeSidebar()">
+        <span class="sidebar__icon">📦</span> Товары
+      </a>
+      <a routerLink="/counterparties"
+         routerLinkActive="active"
+         (click)="closeSidebar()">
+        <span class="sidebar__icon">🏢</span> Контрагенты
+      </a>
+      <a routerLink="/settings"
+         routerLinkActive="active"
+         (click)="closeSidebar()">
+        <span class="sidebar__icon">⚙️</span> Настройки
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      @if (user()) {
+        <span class="sidebar__username">{{ user()!.name }}</span>
+        <button ui-btn size="sm" variant="ghost" (click)="logout()">Выйти</button>
+      }
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="shell-content">
+    <router-outlet />
+  </main>
+</div>
 
 <app-toast />

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -15,6 +15,9 @@ import { ToastComponent } from '../toast/toast.component';
 export class AppShellComponent {
   private readonly auth = inject(AuthService);
   readonly user         = this.auth.currentUser;
+  readonly sidebarOpen  = signal(false);
 
-  logout() { this.auth.logout(); }
+  logout()         { this.auth.logout(); }
+  toggleSidebar()  { this.sidebarOpen.update(v => !v); }
+  closeSidebar()   { this.sidebarOpen.set(false); }
 }

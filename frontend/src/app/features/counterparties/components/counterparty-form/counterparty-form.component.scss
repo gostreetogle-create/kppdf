@@ -1,0 +1,73 @@
+@use '../../../../../styles/tokens' as *;
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+}
+
+.form-group {
+  margin-bottom: $space-4;
+}
+
+.form-label {
+  display: block;
+  font-size: $font-sm;
+  font-weight: 500;
+  color: $color-text;
+  margin-bottom: $space-2;
+}
+
+.required { color: $color-danger; margin-left: 2px; }
+
+.form-checkboxes {
+  display: flex;
+  gap: $space-4;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    font-size: $font-sm;
+    cursor: pointer;
+  }
+}
+
+.form-checkbox-row {
+  margin-bottom: $space-4;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    font-size: $font-sm;
+    cursor: pointer;
+  }
+}
+
+.inn-row {
+  display: flex;
+  align-items: flex-end;
+  gap: $space-3;
+  margin-bottom: $space-4;
+
+  ui-form-field { flex: 1; margin-bottom: 0; }
+  button { flex-shrink: 0; }
+}
+
+.lookup-error {
+  margin: -$space-3 0 $space-4;
+  font-size: $font-xs;
+  color: $color-danger;
+}
+
+.section-title {
+  font-size: $font-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $color-text-muted;
+  margin: $space-4 0 $space-3;
+  padding-top: $space-4;
+  border-top: 1px solid $color-border-light;
+}

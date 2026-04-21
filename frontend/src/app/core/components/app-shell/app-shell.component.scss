@@ -1,33 +1,58 @@
 @use '../../../../styles/tokens' as *;
 
-.shell-header {
+$sidebar-width: 220px;
+
+// ─── Layout ───────────────────────────────────────────────
+.shell-layout {
   display: flex;
-  align-items: center;
-  gap: $space-6;
-  padding: 0 $space-6;
-  height: 52px;
+  min-height: 100vh;
+}
+
+.shell-content {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+// ─── Sidebar ──────────────────────────────────────────────
+.sidebar {
+  width: $sidebar-width;
+  flex-shrink: 0;
   background: $color-bg;
-  border-bottom: 1px solid $color-border;
+  border-right: 1px solid $color-border;
+  display: flex;
+  flex-direction: column;
   position: sticky;
   top: 0;
-  z-index: 100;
-  box-shadow: $shadow-sm;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 200;
 
   &__brand {
-    font-weight: 700;
-    font-size: $font-lg;
-    color: $color-primary;
-    text-decoration: none;
-    letter-spacing: -0.02em;
+    padding: $space-5 $space-4;
+    border-bottom: 1px solid $color-border-light;
+
+    a {
+      font-weight: 700;
+      font-size: $font-lg;
+      color: $color-primary;
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
   }
 
   &__nav {
-    display: flex;
-    gap: $space-1;
     flex: 1;
+    padding: $space-3 $space-2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 
     a {
-      padding: $space-1 $space-3;
+      display: flex;
+      align-items: center;
+      gap: $space-3;
+      padding: $space-2 $space-3;
       border-radius: $radius-md;
       font-size: $font-sm;
       font-weight: 500;
@@ -40,23 +65,75 @@
     }
   }
 
-  &__user {
+  &__icon { font-size: 1rem; width: 20px; text-align: center; }
+
+  &__footer {
+    padding: $space-4;
+    border-top: 1px solid $color-border-light;
     display: flex;
-    align-items: center;
-    gap: $space-3;
+    flex-direction: column;
+    gap: $space-2;
   }
 
-  &__name {
-    font-size: $font-sm;
+  &__username {
+    font-size: $font-xs;
     color: $color-text-muted;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
-.shell-content {
-  min-height: calc(100vh - 52px);
+// ─── Mobile toggle ────────────────────────────────────────
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: $space-3;
+  left: $space-3;
+  z-index: 300;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-md;
+  cursor: pointer;
+  box-shadow: $shadow-sm;
 }
 
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 199;
+}
+
+// ─── Mobile ───────────────────────────────────────────────
+@media (max-width: 767px) {
+  .sidebar-toggle { display: block; }
+
+  .sidebar-overlay { display: block; }
+
+  .sidebar {
+    position: fixed;
+    left: -$sidebar-width;
+    top: 0;
+    height: 100vh;
+    transition: left 0.25s ease;
+    box-shadow: $shadow-xl;
+
+    &--open { left: 0; }
+  }
+
+  .shell-content {
+    padding-top: 52px; // space for toggle button
+  }
+}
+
+// ─── Print ────────────────────────────────────────────────
 @media print {
-  .shell-header { display: none !important; }
-  .shell-content { min-height: unset; }
+  .sidebar         { display: none !important; }
+  .sidebar-toggle  { display: none !important; }
+  .sidebar-overlay { display: none !important; }
+  .shell-content   { padding-top: 0 !important; }
 }

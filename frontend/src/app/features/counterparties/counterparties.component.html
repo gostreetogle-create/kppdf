@@ -1,0 +1,62 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Контрагенты</h1>
+    <button ui-btn variant="primary" (click)="openCreate()">+ Создать</button>
+  </div>
+
+  <div class="page-toolbar">
+    <input
+      class="search-input"
+      type="text"
+      placeholder="Поиск по названию или ИНН..."
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+    <select class="filter-select" [value]="filterRole()" (change)="filterRole.set($any($event.target).value)">
+      <option value="">Все роли</option>
+      <option value="client">Клиент</option>
+      <option value="supplier">Поставщик</option>
+    </select>
+    <select class="filter-select" [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)">
+      <option value="">Все статусы</option>
+      <option value="active">Активен</option>
+      <option value="inactive">Неактивен</option>
+    </select>
+  </div>
+
+  @if (error()) {
+    <ui-alert type="error">{{ error() }}</ui-alert>
+  }
+
+  @if (loading()) {
+    <div class="loading-state">Загрузка...</div>
+  } @else if (counterparties().length === 0) {
+    <div class="empty-state">
+      <p>Контрагенты не найдены</p>
+      <button ui-btn variant="primary" (click)="openCreate()">Создать первого</button>
+    </div>
+  } @else {
+    <app-counterparty-table
+      [counterparties]="counterparties()"
+      (edit)="openEdit($event)"
+      (delete)="confirmDelete($event)">
+    </app-counterparty-table>
+  }
+</div>
+
+@if (formOpen()) {
+  <app-counterparty-form
+    [counterparty]="editTarget()"
+    (saved)="onSaved($event)"
+    (cancelled)="closeForm()">
+  </app-counterparty-form>
+}
+
+@if (deleteTarget()) {
+  <app-confirm-dialog
+    title="Удалить контрагента?"
+    [message]="'Контрагент «' + deleteTarget()!.name + '» будет удалён без возможности восстановления.'"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="deleteTarget.set(null)">
+  </app-confirm-dialog>
+}

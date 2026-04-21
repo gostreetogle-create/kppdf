@@ -24,6 +24,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/products/products.component').then(m => m.ProductsComponent)
       },
       {
+        path: 'counterparties',
+        loadComponent: () => import('./features/counterparties/counterparties.component').then(m => m.CounterpartiesComponent)
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent)
       },
