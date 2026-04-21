@@ -70,7 +70,7 @@ export interface Dictionary {
 }
 
 export type LegalForm = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'Физлицо' | 'Другое';
-export type CpRole    = 'client' | 'supplier';
+export type CpRole    = 'client' | 'supplier' | 'company';
 
 export interface CpContact {
   name:      string;

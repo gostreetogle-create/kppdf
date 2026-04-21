@@ -241,3 +241,4 @@ KpBuilderComponent: GET kp + products + counterparties
 | 2026-04-21 | shared/types: canonical interfaces + алиасы для frontend |
 | 2026-04-21 | Паспорт: AI Thinking Mode, приоритеты, KNOWN ISSUES по приоритету |
 | 2026-04-21 | Sprint 1: Counterparties CRUD (list, create/edit, delete, DaData lookup, search/filter), Admin sidebar layout migration |
+| 2026-04-21 | CpRole расширен: добавлена роль `company` (наша компания, создаёт КП). Обновлены: Mongoose enum, shared/types, api.service.ts, форма и таблица контрагентов |

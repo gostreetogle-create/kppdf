@@ -17,10 +17,20 @@ export class CounterpartyTableComponent {
   delete         = output<Counterparty>();
 
   roleLabel(role: string): string {
-    return role === 'client' ? 'Клиент' : 'Поставщик';
+    const map: Record<string, string> = {
+      client:  'Клиент',
+      supplier: 'Поставщик',
+      company:  'Наша компания',
+    };
+    return map[role] ?? role;
   }
 
-  roleColor(role: string): 'blue' | 'orange' {
-    return role === 'client' ? 'blue' : 'orange';
+  roleColor(role: string): 'blue' | 'orange' | 'green' {
+    const map: Record<string, 'blue' | 'orange' | 'green'> = {
+      client:  'blue',
+      supplier: 'orange',
+      company:  'green',
+    };
+    return map[role] ?? 'blue';
   }
 }

@@ -69,7 +69,7 @@ const CounterpartySchema = new Schema<ICounterparty>({
     enum: ['ООО', 'ИП', 'АО', 'ПАО', 'Физлицо', 'Другое'],
     required: true
   },
-  role: { type: [String], enum: ['client', 'supplier'], default: ['client'] },
+  role: { type: [String], enum: ['client', 'supplier', 'company'], default: ['client'] },
   name:      { type: String, required: true, trim: true },
   shortName: { type: String, required: true, trim: true },
   inn:       { type: String, required: true, trim: true, match: [/^\d{10}(\d{2})?$/, 'ИНН должен содержать 10 или 12 цифр'] },

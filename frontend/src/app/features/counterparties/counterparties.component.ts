@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
+import { Component, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -22,7 +22,7 @@ import { AlertComponent } from '../../shared/ui/alert/alert.component';
   templateUrl: './counterparties.component.html',
   styleUrl: './counterparties.component.scss'
 })
-export class CounterpartiesComponent implements OnInit {
+export class CounterpartiesComponent {
   private readonly api        = inject(ApiService);
   private readonly ns         = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -37,8 +37,8 @@ export class CounterpartiesComponent implements OnInit {
   editTarget     = signal<Counterparty | null>(null);
   deleteTarget   = signal<Counterparty | null>(null);
 
-  ngOnInit() {
-    // Реактивный поиск + фильтрация с debounce
+  constructor() {
+    // toObservable() вызывается в constructor — injection context гарантирован
     combineLatest([
       toObservable(this.search),
       toObservable(this.filterRole),

@@ -12,6 +12,7 @@ interface CpFormModel {
   legalForm:            LegalForm;
   roleClient:           boolean;
   roleSupplier:         boolean;
+  roleCompany:          boolean;
   name:                 string;
   shortName:            string;
   inn:                  string;
@@ -36,7 +37,7 @@ interface CpFormModel {
 
 function emptyForm(): CpFormModel {
   return {
-    legalForm: 'ООО', roleClient: true, roleSupplier: false,
+    legalForm: 'ООО', roleClient: true, roleSupplier: false, roleCompany: false,
     name: '', shortName: '', inn: '', kpp: '', ogrn: '',
     legalAddress: '', actualAddress: '', sameAddress: false,
     phone: '', email: '', website: '',
@@ -79,6 +80,7 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
         legalForm:            cp.legalForm,
         roleClient:           cp.role.includes('client'),
         roleSupplier:         cp.role.includes('supplier'),
+        roleCompany:          cp.role.includes('company'),
         name:                 cp.name,
         shortName:            cp.shortName ?? '',
         inn:                  cp.inn,
@@ -111,7 +113,7 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
     if (!this.form.name.trim())     errs.push('Введите полное название');
     if (!this.form.inn.trim())      errs.push('Введите ИНН');
     if (!this.form.status)          errs.push('Выберите статус');
-    if (!this.form.roleClient && !this.form.roleSupplier) errs.push('Выберите хотя бы одну роль');
+    if (!this.form.roleClient && !this.form.roleSupplier && !this.form.roleCompany) errs.push('Выберите хотя бы одну роль');
     if (errs.length) { this.formError.set(errs.join('. ')); return false; }
     this.formError.set('');
     return true;
@@ -121,6 +123,7 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
     const role: CpRole[] = [];
     if (this.form.roleClient)   role.push('client');
     if (this.form.roleSupplier) role.push('supplier');
+    if (this.form.roleCompany)  role.push('company');
     return {
       legalForm:            this.form.legalForm,
       role,

@@ -1,7 +1,7 @@
 import { ImageContext } from './Product';
 
 export type LegalForm  = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'Физлицо' | 'Другое';
-export type CpRole     = 'client' | 'supplier';
+export type CpRole     = 'client' | 'supplier' | 'company';
 export type CpStatus   = 'active' | 'inactive';
 
 export interface CpContact {
