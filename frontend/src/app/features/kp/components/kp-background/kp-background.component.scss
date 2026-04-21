@@ -37,6 +37,8 @@
     max-height: 297mm;
     margin: 0;
     overflow: hidden;
+    break-inside: avoid;
+    page-break-inside: avoid;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }

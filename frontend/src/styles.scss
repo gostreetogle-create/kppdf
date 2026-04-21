@@ -59,6 +59,14 @@
     padding: 0 !important;
     background: white !important;
     overflow: visible !important;
+    display: block !important;
+  }
+
+  /* На экране документ масштабируется, но при печати нужен 1:1 A4 */
+  .builder__preview-scale {
+    transform: none !important;
+    transform-origin: top left !important;
+    width: 100% !important;
   }
 
   .builder {
