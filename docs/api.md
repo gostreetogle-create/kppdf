@@ -130,3 +130,22 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 | POST | `/api/dictionaries` | Создать запись |
 | PUT | `/api/dictionaries/:id` | Обновить |
 | DELETE | `/api/dictionaries/:id` | Удалить |
+
+---
+
+## Settings
+
+Все роуты ниже требуют роль `admin`.
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/settings` | Получить настройки (`{ list, map }`) |
+| PUT | `/api/settings/:key` | Обновить одну настройку |
+| PUT | `/api/settings` | Массово обновить настройки |
+| GET | `/api/settings/backups` | Список архивов бэкапов (`mongo` + `media`) |
+| POST | `/api/settings/backups/run` | Запустить ручной бэкап сейчас |
+| GET | `/api/settings/backups/download/:type/:filename` | Скачать архив |
+| DELETE | `/api/settings/backups/:type/:filename` | Удалить архив |
+| DELETE | `/api/settings/backups/cleanup?days=7&type=all` | Удалить архивы старше `days` |
+
+`type` для бэкапов: `mongo`, `media`, `all` (только для cleanup).

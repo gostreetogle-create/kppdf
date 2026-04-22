@@ -59,6 +59,13 @@ export interface SettingsMap {
   [key: string]:          unknown;
 }
 
+export interface BackupItem {
+  filename: string;
+  type: 'mongo' | 'media';
+  sizeBytes: number;
+  createdAt: string;
+}
+
 export type DictionaryType = 'category' | 'subcategory' | 'unit' | 'kind';
 
 export interface Dictionary {
@@ -265,6 +272,34 @@ export class ApiService {
   }
   updateSettings(updates: SettingsMap): Observable<{ list: Setting[]; map: SettingsMap }> {
     return this.http.put<{ list: Setting[]; map: SettingsMap }>(`${BASE}/settings`, updates);
+  }
+
+  getBackups(): Observable<{ items: BackupItem[] }> {
+    return this.http.get<{ items: BackupItem[] }>(`${BASE}/settings/backups`);
+  }
+
+  runBackupNow(): Observable<{ message: string; files: { mongo: string; media: string } }> {
+    return this.http.post<{ message: string; files: { mongo: string; media: string } }>(`${BASE}/settings/backups/run`, {});
+  }
+
+  deleteBackup(type: 'mongo' | 'media', filename: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/settings/backups/${type}/${encodeURIComponent(filename)}`);
+  }
+
+  cleanupBackups(days: number, type: 'all' | 'mongo' | 'media' = 'all'): Observable<{
+    message: string;
+    deleted: { mongo: number; media: number; total: number };
+  }> {
+    return this.http.delete<{
+      message: string;
+      deleted: { mongo: number; media: number; total: number };
+    }>(`${BASE}/settings/backups/cleanup`, { params: { days, type } as any });
+  }
+
+  downloadBackup(type: 'mongo' | 'media', filename: string): Observable<Blob> {
+    return this.http.get(`${BASE}/settings/backups/download/${type}/${encodeURIComponent(filename)}`, {
+      responseType: 'blob'
+    });
   }
 
   // ─── Counterparties ───────────────────────────────────

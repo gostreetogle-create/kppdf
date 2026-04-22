@@ -75,6 +75,103 @@
   }
 }
 
+.backups-toolbar {
+  display: flex;
+  gap: $space-2;
+  margin-bottom: $space-3;
+}
+
+.backups-filters {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: $space-2;
+  margin-bottom: $space-3;
+
+  &__search,
+  &__select {
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: 0.5rem $space-2;
+    font-size: $font-sm;
+    font-family: inherit;
+    background: $color-bg;
+  }
+}
+
+.backups-cleanup {
+  display: flex;
+  gap: $space-2;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $space-3;
+  padding: $space-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-soft;
+
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    color: $color-text;
+    font-size: $font-sm;
+  }
+
+  &__days {
+    width: 90px;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    padding: 0.35rem $space-2;
+  }
+}
+
+.empty-state {
+  padding: $space-3;
+  border: 1px dashed $color-border;
+  border-radius: $radius-md;
+  color: $color-text-muted;
+  background: $color-bg-soft;
+}
+
+.backup-list {
+  display: grid;
+  gap: $space-2;
+}
+
+.backup-item {
+  display: flex;
+  justify-content: space-between;
+  gap: $space-3;
+  align-items: center;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-3;
+  background: $color-bg-soft;
+
+  &__meta {
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    color: $color-text;
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  &__sub {
+    margin-top: $space-1;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__actions {
+    display: flex;
+    gap: $space-2;
+    flex-wrap: wrap;
+  }
+}
+
 .settings-grid {
   display: flex;
   flex-direction: column;

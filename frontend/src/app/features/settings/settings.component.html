@@ -75,6 +75,74 @@
         <input #productsFileInput type="file" accept=".json,application/json" hidden (change)="onProductsImportSelected($event)" />
         <input #counterpartiesFileInput type="file" accept=".json,application/json" hidden (change)="onCounterpartiesImportSelected($event)" />
       </section>
+
+      <section class="settings-card">
+        <div class="settings-card__head">
+          <h2>Бэкапы</h2>
+          <p>Ручной запуск, скачивание и удаление архивов MongoDB + media.</p>
+        </div>
+
+        <div class="backups-toolbar">
+          <button ui-btn variant="primary" size="sm" (click)="runBackupNow()" [disabled]="backupBusy()">
+            {{ backupBusy() ? 'Создание...' : 'Создать бэкап сейчас' }}
+          </button>
+          <button ui-btn variant="ghost" size="sm" (click)="loadBackups()" [disabled]="backupsLoading()">
+            {{ backupsLoading() ? 'Обновление...' : 'Обновить список' }}
+          </button>
+        </div>
+
+        <div class="backups-filters">
+          <input
+            class="backups-filters__search"
+            type="text"
+            placeholder="Поиск по имени архива..."
+            [ngModel]="backupQuery()"
+            (ngModelChange)="backupQuery.set($event)"
+          />
+          <select
+            class="backups-filters__select"
+            [ngModel]="backupTypeFilter()"
+            (ngModelChange)="backupTypeFilter.set($event)"
+          >
+            <option value="all">Все типы</option>
+            <option value="mongo">Только MongoDB</option>
+            <option value="media">Только Media</option>
+          </select>
+        </div>
+
+        <div class="backups-cleanup">
+          <label class="backups-cleanup__label">
+            Удалить архивы старше
+            <input class="backups-cleanup__days" type="number" min="1" [(ngModel)]="cleanupDays" />
+            дней
+          </label>
+          <button ui-btn variant="danger" size="sm" (click)="runCleanup()" [disabled]="backupBusy()">Очистить</button>
+        </div>
+
+        @if (backupsLoading()) {
+          <div class="loading-state">Загрузка списка бэкапов...</div>
+        } @else if (filteredBackups().length === 0) {
+          <div class="empty-state">Архивы пока не найдены</div>
+        } @else {
+          <div class="backup-list">
+            @for (backup of filteredBackups(); track backup.filename) {
+              <div class="backup-item">
+                <div class="backup-item__meta">
+                  <div class="backup-item__name">{{ backup.filename }}</div>
+                  <div class="backup-item__sub">
+                    {{ backupTypeLabel(backup.type) }} · {{ formatBytes(backup.sizeBytes) }} ·
+                    {{ backup.createdAt | date:'dd.MM.yyyy HH:mm:ss' }}
+                  </div>
+                </div>
+                <div class="backup-item__actions">
+                  <button ui-btn size="sm" variant="ghost" (click)="downloadBackup(backup)">Скачать</button>
+                  <button ui-btn size="sm" variant="danger" (click)="deleteBackup(backup)" [disabled]="backupBusy()">Удалить</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
     </div>
   }
 </div>

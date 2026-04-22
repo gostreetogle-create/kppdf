@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ApiService, Setting, SettingsMap, Product, Counterparty } from '../../core/services/api.service';
+import { ApiService, Setting, SettingsMap, Product, Counterparty, BackupItem } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ButtonComponent } from '../../shared/ui/index';
 
@@ -25,6 +25,12 @@ export class SettingsComponent implements OnInit {
   loading  = signal(true);
   saving   = signal(false);
   jsonBusy = signal(false);
+  backupBusy = signal(false);
+  backupsLoading = signal(false);
+  backups = signal<BackupItem[]>([]);
+  backupQuery = signal('');
+  backupTypeFilter = signal<'all' | 'mongo' | 'media'>('all');
+  cleanupDays = 7;
 
   @ViewChild('productsFileInput') productsFileInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('counterpartiesFileInput') counterpartiesFileInputRef!: ElementRef<HTMLInputElement>;
@@ -79,6 +85,7 @@ export class SettingsComponent implements OnInit {
         },
         error: () => { this.loading.set(false); this.ns.error('Не удалось загрузить настройки'); }
       });
+    this.loadBackups();
   }
 
   save() {
@@ -301,5 +308,132 @@ export class SettingsComponent implements OnInit {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  loadBackups() {
+    this.backupsLoading.set(true);
+    this.api.getBackups()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ items }) => {
+          this.backups.set(items);
+          this.backupsLoading.set(false);
+        },
+        error: () => {
+          this.backupsLoading.set(false);
+          this.ns.error('Не удалось загрузить список бэкапов');
+        }
+      });
+  }
+
+  runBackupNow() {
+    this.backupBusy.set(true);
+    this.api.runBackupNow()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.backupBusy.set(false);
+          this.ns.success('Бэкап создан');
+          this.loadBackups();
+        },
+        error: () => {
+          this.backupBusy.set(false);
+          this.ns.error('Не удалось создать бэкап');
+        }
+      });
+  }
+
+  deleteBackup(item: BackupItem) {
+    const ok = window.confirm(`Удалить ${item.filename}?`);
+    if (!ok) return;
+
+    this.backupBusy.set(true);
+    this.api.deleteBackup(item.type, item.filename)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.backupBusy.set(false);
+          this.ns.success('Бэкап удалён');
+          this.loadBackups();
+        },
+        error: () => {
+          this.backupBusy.set(false);
+          this.ns.error('Не удалось удалить бэкап');
+        }
+      });
+  }
+
+  downloadBackup(item: BackupItem) {
+    this.backupBusy.set(true);
+    this.api.downloadBackup(item.type, item.filename)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: blob => {
+          this.backupBusy.set(false);
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = item.filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          this.backupBusy.set(false);
+          this.ns.error('Не удалось скачать бэкап');
+        }
+      });
+  }
+
+  backupTypeLabel(type: BackupItem['type']): string {
+    return type === 'mongo' ? 'MongoDB' : 'Media';
+  }
+
+  formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    const mb = kb / 1024;
+    if (mb < 1024) return `${mb.toFixed(1)} MB`;
+    return `${(mb / 1024).toFixed(2)} GB`;
+  }
+
+  filteredBackups(): BackupItem[] {
+    const query = this.backupQuery().trim().toLowerCase();
+    const type = this.backupTypeFilter();
+    return this.backups().filter(item => {
+      const typeOk = type === 'all' || item.type === type;
+      if (!typeOk) return false;
+      if (!query) return true;
+      return item.filename.toLowerCase().includes(query);
+    });
+  }
+
+  runCleanup() {
+    const days = Number(this.cleanupDays);
+    if (!Number.isFinite(days) || days < 1) {
+      this.ns.error('Укажите корректное число дней (минимум 1)');
+      return;
+    }
+
+    const type = this.backupTypeFilter();
+    const ok = window.confirm(`Удалить архивы типа "${type}" старше ${days} дней?`);
+    if (!ok) return;
+
+    this.backupBusy.set(true);
+    this.api.cleanupBackups(days, type)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ deleted }) => {
+          this.backupBusy.set(false);
+          this.ns.success(`Удалено архивов: ${deleted.total}`);
+          this.loadBackups();
+        },
+        error: () => {
+          this.backupBusy.set(false);
+          this.ns.error('Не удалось очистить старые бэкапы');
+        }
+      });
   }
 }
