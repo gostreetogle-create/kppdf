@@ -30,7 +30,7 @@ export class SettingsComponent implements OnInit {
   backups = signal<BackupItem[]>([]);
   backupQuery = signal('');
   backupTypeFilter = signal<'all' | 'mongo' | 'media'>('all');
-  cleanupDays = 7;
+  cleanupDays = 30;
 
   @ViewChild('productsFileInput') productsFileInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('counterpartiesFileInput') counterpartiesFileInputRef!: ElementRef<HTMLInputElement>;
@@ -435,5 +435,28 @@ export class SettingsComponent implements OnInit {
           this.ns.error('Не удалось очистить старые бэкапы');
         }
       });
+  }
+
+  showRestoreHelp() {
+    const text = [
+      'Как восстановить бэкап через сервер:',
+      '',
+      '1) Скопировать архивы на сервер, например в /root/restore',
+      '   mongo-YYYY...archive.gz и media-YYYY...tar.gz',
+      '',
+      '2) Восстановить MongoDB (с полной заменой):',
+      'mongorestore --uri="mongodb://127.0.0.1:27017/kp-app" --archive="/root/restore/mongo-YYYY...archive.gz" --gzip --drop',
+      '',
+      '3) Восстановить media:',
+      'mkdir -p /opt/kppdf/media',
+      'tar -xzf /root/restore/media-YYYY...tar.gz -C /opt/kppdf/media',
+      '',
+      '4) Перезапустить backend:',
+      'systemctl restart kppdf-backend',
+      '',
+      'Проверьте:',
+      'curl -I http://127.0.0.1:3000/health'
+    ].join('\n');
+    window.alert(text);
   }
 }

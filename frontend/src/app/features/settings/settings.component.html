@@ -89,6 +89,9 @@
           <button ui-btn variant="ghost" size="sm" (click)="loadBackups()" [disabled]="backupsLoading()">
             {{ backupsLoading() ? 'Обновление...' : 'Обновить список' }}
           </button>
+          <button ui-btn variant="ghost" size="sm" (click)="showRestoreHelp()">
+            Как восстановить
+          </button>
         </div>
 
         <div class="backups-filters">
