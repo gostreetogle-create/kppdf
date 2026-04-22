@@ -146,6 +146,8 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-04-22 | `deploy/deploy.sh` исправлен: генерация `kppdf.conf` больше не пишет URI-часть в `proxy_pass` внутри regex-location (`/products/*`, `/kp/*`), поэтому `nginx -t` проходит стабильно на деплое |
+| 2026-04-22 | Исправлен nginx-конфиг для legacy media regex-location (`/products/*`, `/kp/*`): в `proxy_pass` удалена URI-часть, чтобы `nginx -t` не падал на деплое (`proxy_pass cannot have URI part in location given by regular expression`) |
 | 2026-04-22 | KP Builder preview: скролл центральной зоны сделан условным — включается только при многостраничном документе (`previewPageCount > 1`), чтобы 2+ страницы были доступны без постоянной полосы на одностраничном КП |
 | 2026-04-22 | Печать КП: убраны скроллбары в print preview — для `kp-builder` добавлены print-overrides (`height/overflow/grid/transform`), чтобы в печать попадал только чистый документ без UI-scroll контейнеров |
 | 2026-04-22 | KP Builder preview UX: вертикальный скролл центральной зоны сделан всегда видимым (`overflow-y: scroll` + `scrollbar-gutter: stable`), чтобы многостраничный документ (стр. 2+) был очевидно доступен для прокрутки |

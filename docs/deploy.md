@@ -122,6 +122,20 @@ nginx -t
 systemctl reload nginx
 ```
 
+### Важно по regex `location` и `proxy_pass`
+
+Если в nginx используется regex-location (например `location ~* ^/products/...`), в `proxy_pass` нельзя указывать URI-часть (`/products/`, `/kp/`), иначе `nginx -t` падает с ошибкой:
+
+`"proxy_pass" cannot have URI part in location given by regular expression`
+
+Корректно:
+
+```nginx
+location ~* ^/products/.+\.(?:png|jpg|jpeg|gif|svg|webp)$ {
+  proxy_pass http://127.0.0.1:3000;
+}
+```
+
 ---
 
 ## Шпаргалка эксплуатации (prod)
