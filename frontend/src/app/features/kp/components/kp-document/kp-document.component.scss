@@ -26,6 +26,13 @@
   padding: 6px 8px 5px;
 }
 
+.kp-footer-note {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--ui-text) 76%, transparent);
+}
+
 /* === Многостраничность === */
 .kp-stack {
   display: flex;

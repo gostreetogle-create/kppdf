@@ -52,6 +52,11 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     // Если дефолты не переданы — берём из Settings
     let body = { ...req.body };
+    const companyId = String(body.companyId ?? '').trim();
+    if (!companyId) {
+      res.status(400).json({ message: 'companyId обязателен при создании КП' });
+      return;
+    }
     if (!body.metadata?.validityDays) {
       const generatedNumber = await generateKpNumber();
       const s = await getKpSettings();
@@ -73,10 +78,25 @@ router.post('/', async (req: Request, res: Response) => {
       photoScalePercent: body.metadata?.photoScalePercent ?? 150
     };
 
-    // Автоматически привязываем нашу компанию
-    if (!body.companyId) {
-      const company = await Counterparty.findOne({ isOurCompany: true, status: 'active' });
-      if (company) body.companyId = company._id.toString();
+    const company = await Counterparty.findById(companyId)
+      .select('isOurCompany name shortName images footerText status')
+      .lean();
+    if (!company || company.isOurCompany !== true) {
+      res.status(400).json({ message: 'Компания-инициатор не найдена или не является нашей компанией' });
+      return;
+    }
+    body.companyId = companyId;
+    body.companySnapshot = {
+      name: String(company.shortName || company.name || '').trim(),
+      images: (Array.isArray(company.images) ? company.images : [])
+        .filter((img: any) => ['kp-page1', 'kp-page2', 'passport'].includes(img?.context))
+        .map((img: any) => ({ url: String(img.url || '').trim(), context: img.context }))
+        .filter((img: any) => Boolean(img.url)),
+      footerText: String(company.footerText || '')
+    };
+    if (!body.companySnapshot.name) {
+      res.status(400).json({ message: 'У выбранной компании не заполнено название для брендирования КП' });
+      return;
     }
 
     const kp = await Kp.create(body);
@@ -98,6 +118,7 @@ router.post('/:id/duplicate', async (req: Request, res: Response) => {
       title:      `Копия — ${original.title}`,
       status:     'draft',
       companyId:  original.companyId,
+      companySnapshot: original.companySnapshot,
       recipient:  original.recipient,
       metadata:   { ...original.metadata, number: generatedNumber },
       items:      original.items,

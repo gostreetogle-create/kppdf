@@ -1,27 +1,34 @@
 import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { ApiService, Kp } from '../../core/services/api.service';
-import { ButtonComponent, BadgeComponent, AlertComponent } from '../../shared/ui/index';
-import type { BadgeColor } from '../../shared/ui/badge/badge.component';
+import { ApiService, Counterparty, Kp } from '../../core/services/api.service';
+import { take } from 'rxjs';
+import { ButtonComponent, AlertComponent, StatusBadgeComponent } from '../../shared/ui/index';
+import { ModalService } from '../../core/services/modal.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent, BadgeComponent, AlertComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent, StatusBadgeComponent, AlertComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit {
   private readonly api        = inject(ApiService);
   private readonly router     = inject(Router);
+  private readonly modal      = inject(ModalService);
+  private readonly ns         = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   kpList      = signal<Kp[]>([]);
   loading     = signal(true);
   error       = signal('');
   duplicating = signal<string | null>(null);
+  companies   = signal<Counterparty[]>([]);
+  selectedCompanyId = signal<string | null>(null);
 
   ngOnInit() {
     this.api.getKpList()
@@ -30,18 +37,39 @@ export class HomeComponent implements OnInit {
         next:  list => { this.kpList.set(list); this.loading.set(false); },
         error: ()   => { this.loading.set(false); this.error.set('Не удалось загрузить список КП'); }
       });
+
+    this.api.getCounterparties({ isOurCompany: true, status: 'active' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: list => {
+          this.companies.set(list);
+          if (!this.selectedCompanyId() && list.length > 0) {
+            this.selectedCompanyId.set(list[0]._id);
+          }
+        },
+        error: () => this.ns.error('Не удалось загрузить список компаний-инициаторов')
+      });
   }
 
   createNew() {
+    const companyId = this.selectedCompanyId();
+    if (!companyId) {
+      this.ns.error('Выберите компанию-инициатора');
+      return;
+    }
     const draft: Partial<Kp> = {
       title: 'Новое КП', status: 'draft',
+      companyId,
       recipient: { name: '' },
       items: [], conditions: []
     };
     this.api.createKp(draft)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next:  kp  => this.router.navigate(['/kp', kp._id]),
+        next:  kp  => {
+          this.ns.success('Черновик КП создан');
+          this.router.navigate(['/kp', kp._id]);
+        },
         error: ()  => this.error.set('Не удалось создать КП')
       });
   }
@@ -50,11 +78,25 @@ export class HomeComponent implements OnInit {
 
   delete(id: string, event: Event) {
     event.stopPropagation();
-    this.api.deleteKp(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next:  () => this.kpList.update(list => list.filter(k => k._id !== id)),
-        error: () => this.error.set('Не удалось удалить КП')
+    this.modal.confirm({
+      title: 'Удалить КП',
+      message: 'Коммерческое предложение будет удалено без возможности восстановления.',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      type: 'danger'
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.api.deleteKp(id)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next:  () => {
+              this.kpList.update(list => list.filter(k => k._id !== id));
+              this.ns.success('КП удалено');
+            },
+            error: () => this.error.set('Не удалось удалить КП')
+          });
       });
   }
 
@@ -64,7 +106,11 @@ export class HomeComponent implements OnInit {
     this.api.duplicateKp(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next:  kp => { this.duplicating.set(null); this.router.navigate(['/kp', kp._id]); },
+        next:  kp => {
+          this.duplicating.set(null);
+          this.ns.success('КП дублировано');
+          this.router.navigate(['/kp', kp._id]);
+        },
         error: ()  => { this.duplicating.set(null); this.error.set('Не удалось дублировать КП'); }
       });
   }
@@ -74,11 +120,13 @@ export class HomeComponent implements OnInit {
     return sub + Math.round(sub * kp.vatPercent / 100);
   }
 
-  statusLabel(status: Kp['status']): string {
-    return { draft: 'Черновик', sent: 'Отправлен', accepted: 'Принят', rejected: 'Отклонён' }[status];
-  }
-
-  statusColor(status: Kp['status']): BadgeColor {
-    return { draft: 'default', sent: 'blue', accepted: 'green', rejected: 'red' }[status] as BadgeColor;
+  statusHint(status: Kp['status']): string {
+    const map: Record<Kp['status'], string> = {
+      draft: 'Можно редактировать и отправить клиенту',
+      sent: 'Ожидает решения клиента',
+      accepted: 'Клиент принял предложение',
+      rejected: 'Клиент отклонил предложение'
+    };
+    return map[status];
   }
 }

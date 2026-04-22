@@ -13,6 +13,17 @@ interface KpPageChunk {
   showTotals: boolean;
 }
 
+interface CompanySnapshotImage {
+  url: string;
+  context: 'kp-page1' | 'kp-page2' | 'passport';
+}
+
+interface CompanySnapshot {
+  name: string;
+  images: CompanySnapshotImage[];
+  footerText: string;
+}
+
 @Component({
   selector: 'app-kp-document',
   standalone: true,
@@ -48,14 +59,13 @@ export class KpDocumentComponent {
   items = input<KpCatalogItem[]>([]);
   conditions = input<string[]>([]);
   vatPercent = input<number>(20);
-
-  protected readonly backgroundUrl1 = '/media/kp/kp-1str.png';
-  protected readonly backgroundUrl2 = '/media/kp/kp-2str.png';
+  companySnapshot = input<CompanySnapshot | null>(null);
 
   protected readonly totals = computed((): KpTotals => {
     const subtotal = this.items().reduce((s, i) => s + i.price * i.qty, 0);
-    const vatAmount = Math.round(subtotal * this.vatPercent() / 100);
-    return { subtotal, vatPercent: this.vatPercent(), vatAmount, total: subtotal + vatAmount };
+    const vatPercent = this.vatPercent();
+    const vatAmount = Math.round(subtotal * vatPercent / (100 + vatPercent));
+    return { subtotal, vatPercent, vatAmount, total: subtotal };
   });
 
   protected readonly hasDescriptionColumn = computed(() =>
@@ -93,4 +103,16 @@ export class KpDocumentComponent {
   });
 
   protected readonly totalPages = computed(() => this.pageChunks().length);
+
+  protected backgroundForPage(pageIndex: number): string | null {
+    const snapshot = this.companySnapshot();
+    if (!snapshot?.images?.length) return null;
+    const context: CompanySnapshotImage['context'] = pageIndex === 0 ? 'kp-page1' : 'kp-page2';
+    const found = snapshot.images.find((img) => img.context === context);
+    return found?.url || null;
+  }
+
+  protected documentFooter(): string {
+    return this.companySnapshot()?.footerText?.trim() || '';
+  }
 }

@@ -51,6 +51,11 @@ export interface IKp {
   companyId?:      string;
   recipient:       KpRecipient;
   metadata:        KpMetadata;
+  companySnapshot: {
+    name: string;
+    images: Array<{ url: string; context: 'kp-page1' | 'kp-page2' | 'passport' }>;
+    footerText: string;
+  };
   items:           KpItem[];
   conditions:      string[];
   vatPercent:      number;

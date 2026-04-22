@@ -69,7 +69,7 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 |-------|------|----------|
 | GET | `/api/kp` | Список (новые первые) |
 | GET | `/api/kp/:id` | Одно КП |
-| POST | `/api/kp` | Создать черновик |
+| POST | `/api/kp` | Создать черновик (обязателен `companyId`) |
 | PUT | `/api/kp/:id` | Сохранить целиком |
 | DELETE | `/api/kp/:id` | Удалить |
 | POST | `/api/kp/:id/duplicate` | Дублировать → новый `_id`, `status: draft`, `title: "Копия — ..."` |
@@ -81,6 +81,12 @@ Rate limit: 10 попыток / 15 мин с одного IP.
   "title": "string",
   "status": "draft | sent | accepted | rejected",
   "counterpartyId": "string?",
+  "companyId": "string",
+  "companySnapshot": {
+    "name": "string",
+    "images": [{ "url": "string", "context": "kp-page1 | kp-page2 | passport" }],
+    "footerText": "string"
+  },
   "recipient": {
     "name": "string", "shortName": "string?", "legalForm": "string?",
     "inn": "string?", "kpp": "string?", "ogrn": "string?",
@@ -113,14 +119,15 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 |-------|------|----------|
 | GET | `/api/counterparties/lookup?inn=` | DaData поиск → данные для автозаполнения. Требует `DADATA_TOKEN`. |
 | GET | `/api/counterparties/company` | Наша компания (`isOurCompany=true`) для подстановки в КП |
-| GET | `/api/counterparties` | Список. Фильтры: `?role=client\|supplier\|company&status=active\|inactive&q=` |
+| GET | `/api/counterparties` | Список. Фильтры: `?role=client\|supplier\|company&status=active\|inactive&q=&isOurCompany=true\|false` |
 | POST | `/api/counterparties/bulk` | Массовый импорт JSON: `{ items: Counterparty[], mode: "skip" \| "update" }` |
 | GET | `/api/counterparties/:id` | Один контрагент |
 | POST | `/api/counterparties` | Создать |
 | PUT | `/api/counterparties/:id` | Обновить |
 | DELETE | `/api/counterparties/:id` | Удалить |
 
-Валидация контрагентов возвращает человекочитаемые сообщения на русском языке (без английских префиксов Mongoose): например `Краткое название обязательно`, `ИНН должен содержать 10 или 12 цифр`, `Контрагент с таким ИНН уже существует`.
+Валидация контрагентов возвращает человекочитаемые сообщения на русском языке (без английских префиксов Mongoose): например `Краткое название обязательно`, `ИНН должен содержать 10 или 12 цифр`, `Контрагент с таким ИНН уже существует`.  
+Особенность по ИНН: для `legalForm="Физлицо"` поле `inn` опционально; для остальных оргформ — обязательно.
 
 ---
 
@@ -156,6 +163,9 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 
 `type` для бэкапов: `mongo`, `media`, `all` (только для cleanup).
 
+Дополнительные ключи `settings`:
+- `rbac_labels` — объект с пользовательскими подписями ролей и полномочий для UI (`roles`, `permissions`).
+
 ---
 
 ## Users
@@ -169,3 +179,24 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 | PATCH | `/api/users/:id` | `{ username?, name?, role?, isActive?, mustChangePassword? }` | Обновить логин/профиль/роль/статус |
 | POST | `/api/users/:id/reset-password` | `{ password }` | Сбросить пароль и потребовать смену на первом входе |
 | DELETE | `/api/users/:id` | — | Удалить пользователя (запрещено удалять самого себя) |
+
+Поля пользователя в ответах:
+- `roleId: string | null`
+- `roleKey: string`
+- `roleName: string`
+- `isSystemRole?: boolean`
+
+---
+
+## Roles & Permissions
+
+Все роуты ниже требуют permission: `users.manage`.
+
+| Метод | Путь | Тело | Описание |
+|-------|------|------|----------|
+| GET | `/api/roles` | — | Список всех ролей (`_id`, `name`, `key`, `isSystem`, `permissions`) |
+| POST | `/api/roles` | `{ name, copyFromRoleId? }` | Создать кастомную роль |
+| PUT | `/api/roles/:id/name` | `{ name }` | Обновить название роли |
+| PUT | `/api/roles/:id/permissions` | `{ permissions: string[] }` | Обновить permissions роли (запрещено для `owner/admin`) |
+| DELETE | `/api/roles/:id` | — | Удалить кастомную роль (пользователи переназначаются на `manager`) |
+| GET | `/api/permissions` | — | Каталог доступных permission (`key`, `label`, `module`, `description`) |

@@ -8,5 +8,5 @@ import { Component, input } from '@angular/core';
 })
 export class KpBackgroundComponent {
   /** Можно передать любой фон */
-  imageUrl = input.required<string>();
+  imageUrl = input<string | null>(null);
 }

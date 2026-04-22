@@ -3,73 +3,116 @@
 .home-actions {
   display: flex;
   gap: $space-3;
+  align-items: center;
 }
 
-.kp-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: $space-6;
+.home-actions__company {
+  min-width: 260px;
 }
 
-.kp-card {
-  background: var(--ui-bg);
+.kp-table-wrap {
+  overflow-x: auto;
   border: 1px solid var(--ui-border);
   border-radius: $radius-lg;
-  padding: $space-5;
+  background: var(--ui-bg);
+}
+
+.kp-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: $space-3 $space-4;
+    border-bottom: 1px solid var(--ui-border-light);
+    vertical-align: middle;
+    font-size: $font-sm;
+  }
+
+  th {
+    font-size: $font-xs;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ui-text-muted);
+    background: color-mix(in srgb, var(--ui-bg-soft) 72%, var(--ui-bg));
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.kp-row {
   cursor: pointer;
-  transition: box-shadow $transition-normal, transform $transition-normal;
+  transition: background-color $transition-fast;
 
   &:hover {
-    box-shadow: $shadow-md;
-    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--ui-primary) 5%, var(--ui-bg));
+  }
+}
+
+.kp-cell-number,
+.kp-cell-date {
+  color: var(--ui-text-muted);
+  white-space: nowrap;
+}
+
+.kp-cell-title {
+  font-weight: 600;
+}
+
+.kp-cell-client {
+  color: var(--ui-text-muted);
+}
+
+.kp-cell-total {
+  font-weight: 650;
+  color: color-mix(in srgb, var(--ui-primary) 72%, var(--ui-text));
+}
+
+.is-right {
+  text-align: right !important;
+}
+
+.is-actions {
+  width: 110px;
+  text-align: center !important;
+  white-space: nowrap;
+}
+
+.kp-action-btn {
+  color: var(--ui-text-muted) !important;
+
+  &:hover {
+    color: var(--ui-primary) !important;
+    background: color-mix(in srgb, var(--ui-primary) 14%, transparent) !important;
   }
 
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: $space-2;
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.kp-delete-btn {
+  color: var(--ui-text-muted) !important;
+
+  &:hover {
+    color: var(--ui-danger) !important;
+    background: color-mix(in srgb, var(--ui-danger) 14%, transparent) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .home-actions {
+    flex-wrap: wrap;
   }
 
-  &__number { font-size: $font-xs; color: var(--ui-text-muted); }
-
-  &__title {
-    font-size: $font-md;
-    font-weight: 600;
-    margin-bottom: $space-1;
-  }
-
-  &__client {
-    font-size: $font-sm;
-    color: var(--ui-text-muted);
-    margin-bottom: $space-4;
-  }
-
-  &__footer {
-    display: flex;
-    align-items: center;
-    gap: $space-3;
-    font-size: $font-sm;
-  }
-
-  &__total {
-    font-weight: 650;
-    flex: 1;
-    color: color-mix(in srgb, var(--ui-primary) 72%, var(--ui-text));
-  }
-  &__date  { color: var(--ui-text-muted); }
-
-  &__delete {
-    color: var(--ui-text-muted) !important;
-    &:hover {
-      color: var(--ui-danger) !important;
-      background: color-mix(in srgb, var(--ui-danger) 14%, transparent) !important;
-    }
-  }
-
-  &__action {
-    color: var(--ui-text-muted) !important;
-    &:hover { color: var(--ui-primary) !important; background: color-mix(in srgb, var(--ui-primary) 14%, transparent) !important; }
-    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  .home-actions__company {
+    width: 100%;
+    min-width: 0;
   }
 }

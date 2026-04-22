@@ -1,4 +1,4 @@
-<section class="kp-sheet" [style.--kp-bg]="'url(' + imageUrl() + ')'">
+<section class="kp-sheet" [style.--kp-bg]="imageUrl() ? 'url(' + imageUrl() + ')' : 'none'">
 <div class="kp-sheet__content">
   <ng-content></ng-content>
 </div>

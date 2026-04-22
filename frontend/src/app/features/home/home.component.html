@@ -2,6 +2,16 @@
   <div class="page-header">
     <h1>Коммерческие предложения</h1>
     <div class="home-actions">
+      <select
+        class="home-actions__company form-control"
+        [ngModel]="selectedCompanyId()"
+        (ngModelChange)="selectedCompanyId.set($event || null)"
+      >
+        <option [ngValue]="null">Выберите компанию-инициатора</option>
+        @for (company of companies(); track company._id) {
+          <option [ngValue]="company._id">{{ company.shortName || company.name }}</option>
+        }
+      </select>
       <a routerLink="/products" ui-btn>Каталог товаров</a>
       <button ui-btn variant="primary" (click)="createNew()">+ Создать КП</button>
     </div>
@@ -19,30 +29,53 @@
       <button ui-btn variant="primary" (click)="createNew()">Создать первое КП</button>
     </div>
   } @else {
-    <div class="kp-grid">
-      @for (kp of kpList(); track kp._id) {
-        <div class="kp-card" (click)="open(kp._id)">
-          <div class="kp-card__header">
-            <span class="kp-card__number">{{ kp.metadata.number }}</span>
-            <ui-badge [color]="statusColor(kp.status)">{{ statusLabel(kp.status) }}</ui-badge>
-          </div>
-          <h3 class="kp-card__title">{{ kp.title }}</h3>
-          <p class="kp-card__client">{{ kp.recipient.name || 'Клиент не указан' }}</p>
-          <div class="kp-card__footer">
-            <span class="kp-card__total">{{ getTotal(kp) | number:'1.0-0' }} ₽</span>
-            <span class="kp-card__date">{{ kp.createdAt | date:'dd.MM.yyyy' }}</span>
-            <button
-              ui-btn icon
-              title="Дублировать"
-              [disabled]="duplicating() === kp._id"
-              (click)="duplicate(kp._id, $event)"
-              class="kp-card__action">
-              {{ duplicating() === kp._id ? '⏳' : '⎘' }}
-            </button>
-            <button ui-btn icon (click)="delete(kp._id, $event)" class="kp-card__delete">✕</button>
-          </div>
-        </div>
-      }
+    <div class="kp-table-wrap">
+      <table class="kp-table">
+        <thead>
+          <tr>
+            <th>№ КП</th>
+            <th>Статус</th>
+            <th>Название</th>
+            <th>Получатель</th>
+            <th class="is-right">Сумма</th>
+            <th>Дата</th>
+            <th class="is-actions">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (kp of kpList(); track kp._id) {
+            <tr class="kp-row" (click)="open(kp._id)">
+              <td class="kp-cell-number">{{ kp.metadata.number }}</td>
+              <td>
+                <ui-status-badge [variant]="kp.status" [hint]="statusHint(kp.status)"></ui-status-badge>
+              </td>
+              <td class="kp-cell-title">{{ kp.title }}</td>
+              <td class="kp-cell-client">{{ kp.recipient.name || 'Клиент не указан' }}</td>
+              <td class="is-right kp-cell-total">{{ getTotal(kp) | number:'1.0-0' }} ₽</td>
+              <td class="kp-cell-date">{{ kp.createdAt | date:'dd.MM.yyyy' }}</td>
+              <td class="is-actions">
+                <button
+                  ui-btn
+                  icon
+                  title="Дублировать"
+                  [disabled]="duplicating() === kp._id"
+                  (click)="duplicate(kp._id, $event)"
+                  class="kp-action-btn">
+                  {{ duplicating() === kp._id ? '⏳' : '⎘' }}
+                </button>
+                <button
+                  ui-btn
+                  icon
+                  title="Удалить"
+                  (click)="delete(kp._id, $event)"
+                  class="kp-delete-btn">
+                  ✕
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   }
 </div>

@@ -20,10 +20,14 @@ router.get('/company', async (_req: Request, res: Response) => {
 // GET /api/counterparties?role=client&status=active&q=поиск
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { role, status, q } = req.query;
+    const { role, status, q, isOurCompany } = req.query;
     const filter: Record<string, any> = {};
     if (role)   filter.role   = role;
     if (status) filter.status = status;
+    if (typeof isOurCompany === 'string') {
+      if (isOurCompany === 'true') filter.isOurCompany = true;
+      if (isOurCompany === 'false') filter.isOurCompany = false;
+    }
     if (q)      filter.$text  = { $search: String(q) };
     const list = await Counterparty.find(filter).sort({ name: 1 });
     res.json(list);

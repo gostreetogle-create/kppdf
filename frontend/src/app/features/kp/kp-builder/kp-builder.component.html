@@ -6,13 +6,18 @@
     <div class="builder__toolbar no-print">
       <div class="builder__toolbar-main">
         <button ui-btn class="builder__toolbar-btn" (click)="back()">← Назад</button>
-        <input class="builder__title" [(ngModel)]="kp()!.title" [disabled]="isReadOnly()" placeholder="Название КП" />
-        <select [(ngModel)]="kp()!.status" [disabled]="isReadOnly()" class="builder__status">
+        <input class="builder__title form-control" [(ngModel)]="kp()!.title" [disabled]="isReadOnly()" placeholder="Название КП" />
+        <select
+          class="builder__status form-control"
+          [ngModel]="kp()!.status"
+          [disabled]="isReadOnly()"
+          (ngModelChange)="onStatusChange($event)">
           <option value="draft" [disabled]="!canSelectStatus('draft')">Черновик</option>
           <option value="sent" [disabled]="!canSelectStatus('sent')">Отправлен</option>
           <option value="accepted" [disabled]="!canSelectStatus('accepted')">Принят</option>
           <option value="rejected" [disabled]="!canSelectStatus('rejected')">Отклонён</option>
         </select>
+        <ui-status-badge [variant]="kp()!.status"></ui-status-badge>
       </div>
       <div class="builder__toolbar-actions">
         <span class="save-status save-status--{{ autosave.status() }}">
@@ -67,11 +72,15 @@
           </button>
           @if (!recipientCollapsed()) {
 
+          <div class="recipient-snapshot-note">
+            <span class="recipient-snapshot-note__icon">📸</span>
+            <span>Данные получателя скопированы при создании КП и не меняются при изменении контрагента.</span>
+          </div>
           <div class="recipient-select-row">
             <select
-              class="sidebar-section__select"
-              [disabled]="isReadOnly()"
-              (change)="fillFromCounterparty($any($event.target).value)">
+              class="sidebar-section__select form-control"
+              [disabled]="!isDraft()"
+              (change)="replaceRecipient($any($event.target).value)">
               <option value="">— Выбрать из справочника —</option>
               @for (cp of counterparties(); track cp._id) {
                 <option [value]="cp._id"
@@ -85,12 +94,15 @@
               ui-btn
               size="sm"
               class="recipient-select-row__add"
-              [disabled]="isReadOnly()"
+              [disabled]="!isDraft()"
               (click)="openCreateRecipientForm()"
               title="Новый получатель">
               +
             </button>
           </div>
+          @if (!isDraft()) {
+            <p class="recipient-readonly-hint">Замена получателя доступна только в статусе «Черновик».</p>
+          }
           }
         </div>
         }
@@ -157,6 +169,7 @@
             [itemsPerPage]="kp()!.metadata.tablePageBreakAfter || 6"
             [items]="catalogItems()"
             [vatPercent]="kp()!.vatPercent"
+            [companySnapshot]="kp()!.companySnapshot ?? null"
             [conditions]="kp()!.conditions">
           </app-kp-document>
         </div>

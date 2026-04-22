@@ -50,6 +50,14 @@ export interface IKp extends Document {
   items: IKpItem[];
   conditions: string[];
   vatPercent: number;
+  companySnapshot: {
+    name: string;
+    images: Array<{
+      url: string;
+      context: 'kp-page1' | 'kp-page2' | 'passport';
+    }>;
+    footerText: string;
+  };
 }
 
 const KpItemSchema = new Schema<IKpItem>({
@@ -100,6 +108,21 @@ const KpSchema = new Schema<IKp>({
   items:      { type: [KpItemSchema], default: [] },
   conditions: { type: [String], default: [] },
   vatPercent: { type: Number, default: 20 },
+  companySnapshot: {
+    name: { type: String, required: true },
+    images: {
+      type: [{
+        url: { type: String, required: true },
+        context: {
+          type: String,
+          enum: ['kp-page1', 'kp-page2', 'passport'],
+          required: true
+        }
+      }],
+      default: []
+    },
+    footerText: { type: String, default: '' }
+  }
 }, { timestamps: true });
 
 export const Kp = model<IKp>('Kp', KpSchema);

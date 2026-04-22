@@ -66,16 +66,37 @@ export interface BackupItem {
   createdAt: string;
 }
 
-export type AppUserRole = 'owner' | 'admin' | 'manager' | 'viewer';
-
 export interface AppUser {
   _id: string;
   username: string;
   name: string;
-  role: AppUserRole;
+  roleId: string | null;
+  roleKey: string;
+  roleName: string;
+  permissions?: string[];
+  isSystemRole?: boolean;
   isActive: boolean;
   mustChangePassword: boolean;
   createdAt?: string;
+}
+
+export interface Role {
+  _id: string;
+  name: string;
+  key: string;
+  isSystem: boolean;
+  permissions: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type PermissionModule = 'kp' | 'products' | 'counterparties' | 'users' | 'settings' | 'backups';
+
+export interface PermissionDefinition {
+  key: string;
+  label: string;
+  module: PermissionModule;
+  description: string;
 }
 
 export type DictionaryType = 'category' | 'subcategory' | 'unit' | 'kind';
@@ -88,7 +109,7 @@ export interface Dictionary {
   isActive:  boolean;
 }
 
-export type LegalForm = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'Физлицо' | 'Другое';
+export type LegalForm = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'МКУ' | 'Физлицо' | 'Другое';
 export type CpRole    = 'client' | 'supplier' | 'company';
 
 export interface CpContact {
@@ -181,6 +202,11 @@ export interface Kp {
   items: KpItem[];
   conditions: string[];
   vatPercent: number;
+  companySnapshot: {
+    name: string;
+    images: Array<{ url: string; context: 'kp-page1' | 'kp-page2' | 'passport' }>;
+    footerText: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -324,11 +350,11 @@ export class ApiService {
     return this.http.get<AppUser[]>(`${BASE}/users`);
   }
 
-  createUser(data: { username: string; name: string; role: AppUserRole; password: string }): Observable<AppUser> {
+  createUser(data: { username: string; name: string; roleId: string; password: string }): Observable<AppUser> {
     return this.http.post<AppUser>(`${BASE}/users`, data);
   }
 
-  updateUser(id: string, data: Partial<Pick<AppUser, 'username' | 'name' | 'role' | 'isActive' | 'mustChangePassword'>>): Observable<AppUser> {
+  updateUser(id: string, data: Partial<Pick<AppUser, 'username' | 'name' | 'roleId' | 'isActive' | 'mustChangePassword'>>): Observable<AppUser> {
     return this.http.patch<AppUser>(`${BASE}/users/${id}`, data);
   }
 
@@ -340,12 +366,37 @@ export class ApiService {
     return this.http.delete<{ message: string }>(`${BASE}/users/${id}`);
   }
 
+  // ─── Roles & Permissions ───────────────────────────────
+  getRoles(): Observable<Role[]> {
+    return this.http.get<Role[]>(`${BASE}/roles`);
+  }
+
+  getPermissions(): Observable<PermissionDefinition[]> {
+    return this.http.get<PermissionDefinition[]>(`${BASE}/permissions`);
+  }
+
+  createRole(data: { name: string; copyFromRoleId?: string }): Observable<Role> {
+    return this.http.post<Role>(`${BASE}/roles`, data);
+  }
+
+  updateRoleName(roleId: string, name: string): Observable<Role> {
+    return this.http.put<Role>(`${BASE}/roles/${roleId}/name`, { name });
+  }
+
+  updateRolePermissions(roleId: string, permissions: string[]): Observable<Role> {
+    return this.http.put<Role>(`${BASE}/roles/${roleId}/permissions`, { permissions });
+  }
+
+  deleteRole(roleId: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/roles/${roleId}`);
+  }
+
   // ─── Counterparties ───────────────────────────────────
   getOurCompany(): Observable<Counterparty> {
     return this.http.get<Counterparty>(`${BASE}/counterparties/company`);
   }
 
-  getCounterparties(params?: { role?: CpRole; status?: string; q?: string }): Observable<Counterparty[]> {
+  getCounterparties(params?: { role?: CpRole; status?: string; q?: string; isOurCompany?: boolean }): Observable<Counterparty[]> {
     return this.http.get<Counterparty[]>(`${BASE}/counterparties`, { params: params as any });
   }
 

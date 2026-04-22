@@ -1,7 +1,7 @@
 <div class="kp-stack">
   @for (chunk of pageChunks(); track $index; let pageIndex = $index) {
     <app-kp-background 
-      [imageUrl]="chunk.useFirstBackground ? backgroundUrl1 : backgroundUrl2"
+      [imageUrl]="backgroundForPage(pageIndex)"
       [class.kp-page--continuation]="!chunk.useFirstBackground">
       
       <!-- Номер страницы (если больше одной) -->
@@ -27,6 +27,7 @@
           <!-- Таблица товаров для текущей страницы -->
           <app-kp-catalog 
             [items]="chunk.items"
+            [vatPercent]="vatPercent()"
             [showPhotoColumn]="hasPhotoColumn()"
             [showCodeColumn]="hasCodeColumn()"
             [showDescriptionColumn]="hasDescriptionColumn()"
@@ -50,6 +51,9 @@
               [conditions]="conditions()">
             </app-kp-table>
           </section>
+          @if (documentFooter()) {
+            <footer class="kp-footer-note" [innerHTML]="documentFooter()"></footer>
+          }
         }
       </main>
     </app-kp-background>
