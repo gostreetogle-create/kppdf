@@ -1,6 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 
 export type KpStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
 
 export interface IKpItem {
   productId:   string;
@@ -20,6 +21,7 @@ export interface IKpItem {
 export interface IKp extends Document {
   title: string;
   status: KpStatus;
+  kpType: KpType;
   counterpartyId?: string;
   companyId?:      string;   // ссылка на Counterparty с isOurCompany=true
   recipient: {
@@ -51,12 +53,30 @@ export interface IKp extends Document {
   conditions: string[];
   vatPercent: number;
   companySnapshot: {
-    name: string;
-    images: Array<{
-      url: string;
-      context: 'kp-page1' | 'kp-page2' | 'passport';
-    }>;
-    footerText: string;
+    companyId: Schema.Types.ObjectId | string;
+    companyName: string;
+    templateKey: string;
+    templateName: string;
+    kpType: KpType;
+    assets: {
+      kpPage1: string;
+      kpPage2?: string;
+      passport?: string;
+      appendix?: string;
+    };
+    texts: {
+      headerNote?: string;
+      introText?: string;
+      footerText?: string;
+      closingText?: string;
+    };
+    requisitesSnapshot?: {
+      inn?: string;
+      kpp?: string;
+      ogrn?: string;
+      phone?: string;
+      email?: string;
+    };
   };
 }
 
@@ -78,6 +98,7 @@ const KpItemSchema = new Schema<IKpItem>({
 const KpSchema = new Schema<IKp>({
   title:  { type: String, required: true },
   status: { type: String, enum: ['draft', 'sent', 'accepted', 'rejected'], default: 'draft' },
+  kpType: { type: String, enum: ['standard', 'response', 'special', 'tender', 'service'], required: true },
   counterpartyId: { type: String },
   companyId:      { type: String },
   recipient: {
@@ -109,19 +130,34 @@ const KpSchema = new Schema<IKp>({
   conditions: { type: [String], default: [] },
   vatPercent: { type: Number, default: 20 },
   companySnapshot: {
-    name: { type: String, required: true },
-    images: {
-      type: [{
-        url: { type: String, required: true },
-        context: {
-          type: String,
-          enum: ['kp-page1', 'kp-page2', 'passport'],
-          required: true
-        }
-      }],
-      default: []
+    companyId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Counterparty',
+      required: true
     },
-    footerText: { type: String, default: '' }
+    companyName: { type: String, required: true },
+    templateKey: { type: String, required: true },
+    templateName: { type: String, required: true },
+    kpType: { type: String, enum: ['standard', 'response', 'special', 'tender', 'service'], required: true },
+    assets: {
+      kpPage1:  { type: String, required: true },
+      kpPage2:  { type: String },
+      passport: { type: String },
+      appendix: { type: String },
+    },
+    texts: {
+      headerNote:  { type: String, default: '' },
+      introText:   { type: String, default: '' },
+      footerText:  { type: String, default: '' },
+      closingText: { type: String, default: '' },
+    },
+    requisitesSnapshot: {
+      inn:   String,
+      kpp:   String,
+      ogrn:  String,
+      phone: String,
+      email: String,
+    },
   }
 }, { timestamps: true });
 

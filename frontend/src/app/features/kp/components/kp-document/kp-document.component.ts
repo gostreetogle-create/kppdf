@@ -13,15 +13,24 @@ interface KpPageChunk {
   showTotals: boolean;
 }
 
-interface CompanySnapshotImage {
-  url: string;
-  context: 'kp-page1' | 'kp-page2' | 'passport';
-}
-
 interface CompanySnapshot {
-  name: string;
-  images: CompanySnapshotImage[];
-  footerText: string;
+  companyId: string;
+  companyName: string;
+  templateKey: string;
+  templateName: string;
+  kpType: 'standard' | 'response' | 'special' | 'tender' | 'service';
+  assets: {
+    kpPage1: string;
+    kpPage2?: string;
+    passport?: string;
+    appendix?: string;
+  };
+  texts: {
+    headerNote?: string;
+    introText?: string;
+    footerText?: string;
+    closingText?: string;
+  };
 }
 
 @Component({
@@ -59,7 +68,7 @@ export class KpDocumentComponent {
   items = input<KpCatalogItem[]>([]);
   conditions = input<string[]>([]);
   vatPercent = input<number>(20);
-  companySnapshot = input<CompanySnapshot | null>(null);
+  companySnapshot = input.required<CompanySnapshot>();
 
   protected readonly totals = computed((): KpTotals => {
     const subtotal = this.items().reduce((s, i) => s + i.price * i.qty, 0);
@@ -106,13 +115,24 @@ export class KpDocumentComponent {
 
   protected backgroundForPage(pageIndex: number): string | null {
     const snapshot = this.companySnapshot();
-    if (!snapshot?.images?.length) return null;
-    const context: CompanySnapshotImage['context'] = pageIndex === 0 ? 'kp-page1' : 'kp-page2';
-    const found = snapshot.images.find((img) => img.context === context);
-    return found?.url || null;
+    return pageIndex === 0
+      ? (snapshot.assets.kpPage1 || null)
+      : (snapshot.assets.kpPage2 || null);
+  }
+
+  protected headerNote(): string {
+    return this.companySnapshot().texts?.headerNote?.trim() || '';
+  }
+
+  protected introText(): string {
+    return this.companySnapshot().texts?.introText?.trim() || '';
+  }
+
+  protected closingText(): string {
+    return this.companySnapshot().texts?.closingText?.trim() || '';
   }
 
   protected documentFooter(): string {
-    return this.companySnapshot()?.footerText?.trim() || '';
+    return this.companySnapshot().texts?.footerText?.trim() || '';
   }
 }

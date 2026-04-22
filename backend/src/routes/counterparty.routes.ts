@@ -1,15 +1,44 @@
 import { Router, Request, Response } from 'express';
 import { Counterparty } from '../models/counterparty.model';
 import { requirePermission } from '../middleware/rbac.guard';
+import { CounterpartyController } from '../controllers/counterparty.controller';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = Router();
+const counterpartyController = new CounterpartyController();
+const mediaRoot = process.env.MEDIA_ROOT || path.resolve(process.cwd(), '..', 'media');
+const kpMediaDir = path.join(mediaRoot, 'kp');
+if (!fs.existsSync(kpMediaDir)) fs.mkdirSync(kpMediaDir, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, kpMediaDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase() || '.png';
+      const safeExt = ['.png', '.jpg', '.jpeg', '.webp'].includes(ext) ? ext : '.png';
+      cb(null, `kp-brand-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`);
+    }
+  }),
+  fileFilter: (_req, file, cb) => {
+    const ok = /^image\/(png|jpe?g|webp)$/i.test(file.mimetype);
+    if (!ok) {
+      cb(new Error('Допустимы только PNG/JPG/WEBP изображения'));
+      return;
+    }
+    cb(null, true);
+  },
+  limits: { fileSize: 8 * 1024 * 1024 }
+});
 
 router.use(requirePermission('counterparties.crud'));
 
 // GET /api/counterparties/company — наша компания (isOurCompany=true)
 router.get('/company', async (_req: Request, res: Response) => {
   try {
-    const company = await Counterparty.findOne({ isOurCompany: true, status: 'active' });
+    const company = await Counterparty.findOne({ isOurCompany: true, status: 'active' })
+      .sort({ isDefaultInitiator: -1, name: 1 });
     if (!company) { res.status(404).json({ message: 'Компания не настроена' }); return; }
     res.json(company);
   } catch {
@@ -25,7 +54,10 @@ router.get('/', async (req: Request, res: Response) => {
     if (role)   filter.role   = role;
     if (status) filter.status = status;
     if (typeof isOurCompany === 'string') {
-      if (isOurCompany === 'true') filter.isOurCompany = true;
+      if (isOurCompany === 'true') {
+        // Backward compatibility: historical records might have role=company but isOurCompany=false.
+        filter.$or = [{ isOurCompany: true }, { role: 'company' }];
+      }
       if (isOurCompany === 'false') filter.isOurCompany = false;
     }
     if (q)      filter.$text  = { $search: String(q) };
@@ -91,6 +123,25 @@ router.get('/lookup', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/counterparties/upload-branding-image
+router.post('/upload-branding-image', (req: Request, res: Response) => {
+  upload.single('file')(req as any, res as any, (err: any) => {
+    if (err) {
+      res.status(400).json({ message: err.message || 'Ошибка загрузки файла' });
+      return;
+    }
+    const file = (req as any).file;
+    if (!file?.filename) {
+      res.status(400).json({ message: 'Файл не передан' });
+      return;
+    }
+    res.json({ url: `/media/kp/${file.filename}` });
+  });
+});
+
+// GET /api/counterparties/:id/branding-templates
+router.get('/:id/branding-templates', counterpartyController.getBrandingTemplates);
+
 // POST /api/counterparties/bulk — массовый импорт
 // Body: { items: Array<counterparty fields>, mode: 'skip' | 'update' }
 router.post('/bulk', async (req: Request, res: Response) => {
@@ -148,7 +199,14 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/counterparties
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const cp = await Counterparty.create(req.body);
+    const payload = buildPayload(req.body);
+    const cp = await Counterparty.create(payload);
+    if (cp.isDefaultInitiator) {
+      await Counterparty.updateMany(
+        { _id: { $ne: cp._id }, isOurCompany: true, isDefaultInitiator: true },
+        { $set: { isDefaultInitiator: false } }
+      );
+    }
     res.status(201).json(cp);
   } catch (e: any) {
     res.status(400).json({ message: formatCounterpartyError(e) });
@@ -158,8 +216,15 @@ router.post('/', async (req: Request, res: Response) => {
 // PUT /api/counterparties/:id
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const cp = await Counterparty.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const payload = buildPayload(req.body);
+    const cp = await Counterparty.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     if (!cp) { res.status(404).json({ message: 'Контрагент не найден' }); return; }
+    if (cp.isDefaultInitiator) {
+      await Counterparty.updateMany(
+        { _id: { $ne: cp._id }, isOurCompany: true, isDefaultInitiator: true },
+        { $set: { isDefaultInitiator: false } }
+      );
+    }
     res.json(cp);
   } catch (e: any) {
     res.status(400).json({ message: formatCounterpartyError(e) });
@@ -219,8 +284,10 @@ function buildPayload(body: any) {
     notes:                 body.notes?.trim(),
     tags:                  Array.isArray(body.tags) ? body.tags.map((v: string) => v.trim()).filter(Boolean) : [],
     isOurCompany:          Boolean(body.isOurCompany),
+    isDefaultInitiator:    Boolean(body.isOurCompany) && Boolean(body.isDefaultInitiator),
     images:                Array.isArray(body.images) ? body.images : [],
-    footerText:            body.footerText ?? ''
+    footerText:            body.footerText ?? '',
+    brandingTemplates:     Array.isArray(body.brandingTemplates) ? body.brandingTemplates : []
   };
 }
 

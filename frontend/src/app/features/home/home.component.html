@@ -5,17 +5,39 @@
       <select
         class="home-actions__company form-control"
         [ngModel]="selectedCompanyId()"
-        (ngModelChange)="selectedCompanyId.set($event || null)"
+        (ngModelChange)="onCompanyChanged($event || null)"
       >
         <option [ngValue]="null">Выберите компанию-инициатора</option>
         @for (company of companies(); track company._id) {
           <option [ngValue]="company._id">{{ company.shortName || company.name }}</option>
         }
       </select>
+      <select
+        class="home-actions__kptype form-control"
+        [ngModel]="selectedKpType()"
+        (ngModelChange)="onKpTypeChanged($event || null)">
+        <option [ngValue]="null">Выберите тип КП</option>
+        @for (item of availableKpTypes(); track item.value) {
+          <option [ngValue]="item.value">{{ item.label }}</option>
+        }
+      </select>
+      <select
+        class="home-actions__template form-control"
+        [ngModel]="selectedTemplateMode()"
+        (ngModelChange)="selectedTemplateMode.set($event || 'auto')">
+        <option [ngValue]="'auto'">Авто (по умолчанию)</option>
+        @for (template of templatesForSelectedType(); track template.key) {
+          <option [ngValue]="template.key">{{ templateLabel(template) }}</option>
+        }
+      </select>
       <a routerLink="/products" ui-btn>Каталог товаров</a>
-      <button ui-btn variant="primary" (click)="createNew()">+ Создать КП</button>
+      <button ui-btn variant="primary" [disabled]="!canCreateKp()" (click)="createNew()">+ Создать КП</button>
     </div>
   </div>
+
+  @if (templatesWarning()) {
+    <ui-alert type="error">{{ templatesWarning() }}</ui-alert>
+  }
 
   @if (error()) {
     <ui-alert type="error">{{ error() }}</ui-alert>
@@ -29,8 +51,8 @@
       <button ui-btn variant="primary" (click)="createNew()">Создать первое КП</button>
     </div>
   } @else {
-    <div class="kp-table-wrap">
-      <table class="kp-table">
+    <div class="table-scroll kp-table-wrap">
+      <table class="kp-table data-table">
         <thead>
           <tr>
             <th>№ КП</th>
@@ -53,7 +75,7 @@
               <td class="kp-cell-client">{{ kp.recipient.name || 'Клиент не указан' }}</td>
               <td class="is-right kp-cell-total">{{ getTotal(kp) | number:'1.0-0' }} ₽</td>
               <td class="kp-cell-date">{{ kp.createdAt | date:'dd.MM.yyyy' }}</td>
-              <td class="is-actions">
+              <td class="is-actions ui-table-actions">
                 <button
                   ui-btn
                   icon

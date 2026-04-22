@@ -7,6 +7,15 @@ const BASE = environment.apiUrl;
 
 export type ProductKind   = 'ITEM' | 'SERVICE' | 'WORK';
 export type ImageContext  = 'product' | 'kp-page1' | 'kp-page2' | 'passport';
+export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
+
+export const KP_TYPE_LABELS: Record<KpType, string> = {
+  standard: 'Обычное КП',
+  response: 'Ответ на письмо',
+  special: 'Спецпредложение',
+  tender: 'Для тендера',
+  service: 'На услуги',
+};
 
 export interface ProductImage {
   url:       string;
@@ -146,10 +155,32 @@ export interface Counterparty {
   tags:                  string[];
   // Company profile (isOurCompany=true)
   isOurCompany?:         boolean;
+  isDefaultInitiator?:   boolean;
   images?:               ProductImage[];
   footerText?:           string;
+  brandingTemplates?:    BrandingTemplate[];
   createdAt:             string;
   updatedAt:             string;
+}
+
+export interface BrandingTemplate {
+  key: string;
+  name: string;
+  kpType: KpType;
+  isDefault: boolean;
+  assets: {
+    kpPage1: string;
+    kpPage2?: string;
+    passport?: string;
+    appendix?: string;
+  };
+  conditions?: string[];
+}
+
+export interface BrandingTemplatesDto {
+  kpTypes: Array<{ value: KpType; label: string }>;
+  templatesByType: Partial<Record<KpType, Array<{ key: string; name: string; isDefault: boolean }>>>;
+  defaultByType: Partial<Record<KpType, string>>;
 }
 
 export interface KpItem {
@@ -171,6 +202,7 @@ export interface Kp {
   _id: string;
   title: string;
   status: 'draft' | 'sent' | 'accepted' | 'rejected';
+  kpType: KpType;
   counterpartyId?: string;
   companyId?:      string;
   recipient: {
@@ -203,12 +235,44 @@ export interface Kp {
   conditions: string[];
   vatPercent: number;
   companySnapshot: {
-    name: string;
-    images: Array<{ url: string; context: 'kp-page1' | 'kp-page2' | 'passport' }>;
-    footerText: string;
+    companyId: string;
+    companyName: string;
+    templateKey: string;
+    templateName: string;
+    kpType: KpType;
+    assets: {
+      kpPage1: string;
+      kpPage2?: string;
+      passport?: string;
+      appendix?: string;
+    };
+    texts: {
+      headerNote?: string;
+      introText?: string;
+      footerText?: string;
+      closingText?: string;
+    };
+    requisitesSnapshot?: {
+      inn?: string;
+      kpp?: string;
+      ogrn?: string;
+      phone?: string;
+      email?: string;
+    };
   };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateKpPayload {
+  title: string;
+  status: 'draft' | 'sent' | 'accepted' | 'rejected';
+  companyId: string;
+  kpType: KpType;
+  templateKey?: string;
+  recipient: { name: string };
+  items: KpItem[];
+  conditions: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -272,7 +336,7 @@ export class ApiService {
     return this.http.get<Kp>(`${BASE}/kp/${id}`);
   }
 
-  createKp(data: Partial<Kp>): Observable<Kp> {
+  createKp(data: CreateKpPayload): Observable<Kp> {
     return this.http.post<Kp>(`${BASE}/kp`, data);
   }
 
@@ -406,6 +470,16 @@ export class ApiService {
 
   getCounterparty(id: string): Observable<Counterparty> {
     return this.http.get<Counterparty>(`${BASE}/counterparties/${id}`);
+  }
+
+  uploadBrandingImage(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string }>(`${BASE}/counterparties/upload-branding-image`, formData);
+  }
+
+  getBrandingTemplates(companyId: string): Observable<BrandingTemplatesDto> {
+    return this.http.get<BrandingTemplatesDto>(`${BASE}/counterparties/${companyId}/branding-templates`);
   }
 
   createCounterparty(data: Omit<Counterparty, '_id' | 'createdAt' | 'updatedAt'>): Observable<Counterparty> {

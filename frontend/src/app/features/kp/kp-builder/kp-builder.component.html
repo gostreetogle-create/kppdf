@@ -169,7 +169,7 @@
             [itemsPerPage]="kp()!.metadata.tablePageBreakAfter || 6"
             [items]="catalogItems()"
             [vatPercent]="kp()!.vatPercent"
-            [companySnapshot]="kp()!.companySnapshot ?? null"
+            [companySnapshot]="kp()!.companySnapshot"
             [conditions]="kp()!.conditions">
           </app-kp-document>
         </div>

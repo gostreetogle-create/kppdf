@@ -1,5 +1,6 @@
 .kp-sheet {
   position: relative;
+  box-sizing: border-box;
   width: 210mm;
   min-height: 297mm;
   margin: 0 auto;
@@ -37,6 +38,8 @@
     min-height: 297mm;
     max-height: 297mm;
     margin: 0;
+    border: none;
+    box-shadow: none;
     overflow: hidden;
     break-inside: avoid;
     page-break-inside: avoid;

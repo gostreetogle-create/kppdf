@@ -69,7 +69,7 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 |-------|------|----------|
 | GET | `/api/kp` | Список (новые первые) |
 | GET | `/api/kp/:id` | Одно КП |
-| POST | `/api/kp` | Создать черновик (обязателен `companyId`) |
+| POST | `/api/kp` | Создать черновик (обязательны `companyId`, `kpType`; опц. `templateKey`) |
 | PUT | `/api/kp/:id` | Сохранить целиком |
 | DELETE | `/api/kp/:id` | Удалить |
 | POST | `/api/kp/:id/duplicate` | Дублировать → новый `_id`, `status: draft`, `title: "Копия — ..."` |
@@ -80,12 +80,34 @@ Rate limit: 10 попыток / 15 мин с одного IP.
   "_id": "string",
   "title": "string",
   "status": "draft | sent | accepted | rejected",
+  "kpType": "standard | response | special | tender | service",
   "counterpartyId": "string?",
   "companyId": "string",
   "companySnapshot": {
-    "name": "string",
-    "images": [{ "url": "string", "context": "kp-page1 | kp-page2 | passport" }],
-    "footerText": "string"
+    "companyId": "string",
+    "companyName": "string",
+    "templateKey": "string",
+    "templateName": "string",
+    "kpType": "standard | response | special | tender | service",
+    "assets": {
+      "kpPage1": "string",
+      "kpPage2": "string?",
+      "passport": "string?",
+      "appendix": "string?"
+    },
+    "texts": {
+      "headerNote": "string?",
+      "introText": "string?",
+      "footerText": "string? (HTML)",
+      "closingText": "string?"
+    },
+    "requisitesSnapshot": {
+      "inn": "string?",
+      "kpp": "string?",
+      "ogrn": "string?",
+      "phone": "string?",
+      "email": "string?"
+    }
   },
   "recipient": {
     "name": "string", "shortName": "string?", "legalForm": "string?",
@@ -120,14 +142,22 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 | GET | `/api/counterparties/lookup?inn=` | DaData поиск → данные для автозаполнения. Требует `DADATA_TOKEN`. |
 | GET | `/api/counterparties/company` | Наша компания (`isOurCompany=true`) для подстановки в КП |
 | GET | `/api/counterparties` | Список. Фильтры: `?role=client\|supplier\|company&status=active\|inactive&q=&isOurCompany=true\|false` |
+| POST | `/api/counterparties/upload-branding-image` | Upload изображения шаблона КП (`multipart/form-data`, поле `file`) |
+| GET | `/api/counterparties/:id/branding-templates` | Шаблоны брендирования компании по типам КП (`kpTypes`, `templatesByType`, `defaultByType`) |
 | POST | `/api/counterparties/bulk` | Массовый импорт JSON: `{ items: Counterparty[], mode: "skip" \| "update" }` |
 | GET | `/api/counterparties/:id` | Один контрагент |
 | POST | `/api/counterparties` | Создать |
 | PUT | `/api/counterparties/:id` | Обновить |
 | DELETE | `/api/counterparties/:id` | Удалить |
 
+Для компаний-инициаторов поддерживается флаг `isDefaultInitiator: boolean`:
+- при `GET /api/counterparties/company` сервер возвращает приоритетно запись с `isDefaultInitiator=true` (если есть);
+- при `POST/PUT /api/counterparties` если сохраняется `isDefaultInitiator=true`, сервер автоматически сбрасывает этот флаг у остальных `isOurCompany=true`.
+
 Валидация контрагентов возвращает человекочитаемые сообщения на русском языке (без английских префиксов Mongoose): например `Краткое название обязательно`, `ИНН должен содержать 10 или 12 цифр`, `Контрагент с таким ИНН уже существует`.  
 Особенность по ИНН: для `legalForm="Физлицо"` поле `inn` опционально; для остальных оргформ — обязательно.
+Шаблоны брендирования (`brandingTemplates`) валидируются на сервере: обязательны `name`, `kpType`, `assets.kpPage1`; `key` уникален в рамках компании; `isDefault=true` не может повторяться внутри одного `kpType`.
+В шаблоне доступен список `conditions: string[]` (пункты условий КП). При `POST /api/kp`, если `conditions` не передан или пустой, сервер подставляет `selectedTemplate.conditions`.
 
 ---
 

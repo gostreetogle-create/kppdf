@@ -3,6 +3,7 @@ import { ImageContext } from './Product';
 export type LegalForm  = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'МКУ' | 'Физлицо' | 'Другое';
 export type CpRole     = 'client' | 'supplier' | 'company';
 export type CpStatus   = 'active' | 'inactive';
+export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
 
 export interface CpContact {
   name:      string;
@@ -47,6 +48,24 @@ export interface ICounterparty {
   isOurCompany?:         boolean;
   images?:               CpImage[];
   footerText?:           string;
+  brandingTemplates?: Array<{
+    key: string;
+    name: string;
+    kpType: KpType;
+    isDefault: boolean;
+    assets: {
+      kpPage1: string;
+      kpPage2?: string;
+      passport?: string;
+      appendix?: string;
+    };
+    texts: {
+      headerNote?: string;
+      introText?: string;
+      footerText?: string;
+      closingText?: string;
+    };
+  }>;
   createdAt?:            string;
   updatedAt?:            string;
 }

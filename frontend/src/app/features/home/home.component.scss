@@ -10,39 +10,17 @@
   min-width: 260px;
 }
 
+.home-actions__kptype,
+.home-actions__template {
+  min-width: 220px;
+}
+
 .kp-table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--ui-border);
   border-radius: $radius-lg;
-  background: var(--ui-bg);
 }
 
 .kp-table {
-  width: 100%;
   min-width: 860px;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: $space-3 $space-4;
-    border-bottom: 1px solid var(--ui-border-light);
-    vertical-align: middle;
-    font-size: $font-sm;
-  }
-
-  th {
-    font-size: $font-xs;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--ui-text-muted);
-    background: color-mix(in srgb, var(--ui-bg-soft) 72%, var(--ui-bg));
-    text-align: left;
-    white-space: nowrap;
-  }
-
-  tbody tr:last-child td {
-    border-bottom: none;
-  }
 }
 
 .kp-row {
@@ -77,34 +55,9 @@
   text-align: right !important;
 }
 
-.is-actions {
-  width: 110px;
-  text-align: center !important;
-  white-space: nowrap;
-}
+.is-actions { width: 110px; }
 
-.kp-action-btn {
-  color: var(--ui-text-muted) !important;
-
-  &:hover {
-    color: var(--ui-primary) !important;
-    background: color-mix(in srgb, var(--ui-primary) 14%, transparent) !important;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-}
-
-.kp-delete-btn {
-  color: var(--ui-text-muted) !important;
-
-  &:hover {
-    color: var(--ui-danger) !important;
-    background: color-mix(in srgb, var(--ui-danger) 14%, transparent) !important;
-  }
-}
+.kp-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 @media (max-width: 900px) {
   .home-actions {
@@ -112,6 +65,12 @@
   }
 
   .home-actions__company {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .home-actions__kptype,
+  .home-actions__template {
     width: 100%;
     min-width: 0;
   }

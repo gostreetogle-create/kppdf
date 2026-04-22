@@ -12,10 +12,11 @@ import { ButtonComponent } from '../button/button.component';
 export class ModalComponent {
   title    = input('');
   maxWidth = input('540px');
+  closeOnBackdrop = input(true);
   closed   = output<void>();
 
   onBackdrop(e: MouseEvent) {
-    if ((e.target as HTMLElement).classList.contains('modal-backdrop')) {
+    if (this.closeOnBackdrop() && (e.target as HTMLElement).classList.contains('modal-backdrop')) {
       this.closed.emit();
     }
   }

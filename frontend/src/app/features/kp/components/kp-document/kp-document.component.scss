@@ -9,6 +9,26 @@
   margin-bottom: 8px;
 }
 
+.kp-brand-note {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--ui-text) 82%, transparent);
+}
+
+.kp-content__intro,
+.kp-content__closing {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--ui-text) 88%, transparent);
+  white-space: pre-wrap;
+}
+
+.kp-content__closing {
+  margin-top: 8px;
+}
+
 .kp-content__main-block {
   border: 1px solid color-mix(in srgb, var(--ui-border) 62%, transparent);
   border-radius: 6px;
@@ -18,8 +38,7 @@
 
 .kp-content__summary-block {
   margin-top: 10px;
-  margin-left: auto;
-  width: min(100%, 58%);
+  width: 100%;
   border: 1px solid color-mix(in srgb, var(--ui-border) 66%, transparent);
   border-radius: 6px;
   background: transparent;

@@ -1,3 +1,12 @@
+.kp-summary-layout {
+  width: 100%;
+}
+
+.kp-summary-totals {
+  width: min(100%, 58%);
+  margin-left: auto;
+}
+
 /* === Итоги === */
 .kp-totals {
   --kp-total-main: 0.875rem;
@@ -53,11 +62,16 @@
 }
 
 /* === Дополнительные условия === */
+.kp-summary-conditions {
+  width: 100%;
+}
+
 .kp-conditions {
   margin-top: 12px;
   font-size: var(--kp-conditions-size);
   line-height: 1.35;
   color: var(--ui-text-muted);
+  text-align: left;
 }
 
 .kp-conditions p {

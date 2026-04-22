@@ -1,12 +1,12 @@
 <div class="table-scroll">
-  <table class="cp-table data-table">
+  <table class="cp-table counterparty-table data-table">
     <thead>
       <tr>
-        <th>Название</th>
-        <th>ИНН</th>
-        <th>Роль</th>
-        <th>Статус</th>
-        <th>Орг. форма</th>
+        <th class="col-name">Название</th>
+        <th class="col-inn">ИНН</th>
+        <th class="col-role">Роль</th>
+        <th class="col-status">Статус</th>
+        <th class="col-form">Орг. форма</th>
         <th class="col-actions"></th>
       </tr>
     </thead>
@@ -15,26 +15,26 @@
         <tr>
           <td class="col-name">
             <span class="cp-name">{{ cp.shortName || cp.name }}</span>
-            @if (cp.shortName && cp.shortName !== cp.name) {
-              <span class="cp-short">{{ cp.name }}</span>
-            }
           </td>
           <td class="col-inn">{{ cp.inn }}</td>
           <td class="col-role">
-            @for (role of cp.role; track role) {
-              <ui-status-badge [variant]="roleVariant(role)" [label]="roleLabel(role)"></ui-status-badge>
-            }
-            @if (cp.isOurCompany) {
-              <ui-status-badge variant="company" label="Наша компания"></ui-status-badge>
+            @for (role of displayedRoles(cp); track role) {
+              @if (role === 'company') {
+                <ui-status-badge variant="company" label="Наша компания"></ui-status-badge>
+              } @else {
+                <ui-status-badge [variant]="roleVariant(role)" [label]="roleLabel(role)"></ui-status-badge>
+              }
             }
           </td>
           <td class="col-status">
             <ui-status-badge [variant]="cp.status === 'active' ? 'active' : 'inactive'"></ui-status-badge>
           </td>
           <td class="col-form">{{ cp.legalForm }}</td>
-          <td class="col-actions ui-table-actions">
-            <button ui-btn size="sm" (click)="edit.emit(cp)">Изменить</button>
-            <button ui-btn size="sm" variant="danger" (click)="delete.emit(cp)">Удалить</button>
+          <td class="col-actions">
+            <div class="ui-table-actions">
+              <button ui-btn size="sm" (click)="edit.emit(cp)">Изменить</button>
+              <button ui-btn size="sm" variant="danger" (click)="delete.emit(cp)">Удалить</button>
+            </div>
           </td>
         </tr>
       }

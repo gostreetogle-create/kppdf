@@ -5,6 +5,8 @@ import { Counterparty } from '../models/counterparty.model';
 import { requirePermission } from '../middleware/rbac.guard';
 
 const router = Router();
+const KP_TYPE_VALUES = ['standard', 'response', 'special', 'tender', 'service'] as const;
+type KpType = (typeof KP_TYPE_VALUES)[number];
 
 router.use((req, res, next) => {
   if (req.method === 'GET') return requirePermission('kp.view')(req, res, next);
@@ -53,8 +55,14 @@ router.post('/', async (req: Request, res: Response) => {
     // Если дефолты не переданы — берём из Settings
     let body = { ...req.body };
     const companyId = String(body.companyId ?? '').trim();
+    const kpType = String(body.kpType ?? '').trim() as KpType;
+    const templateKey = String(body.templateKey ?? '').trim();
     if (!companyId) {
       res.status(400).json({ message: 'companyId обязателен при создании КП' });
+      return;
+    }
+    if (!KP_TYPE_VALUES.includes(kpType)) {
+      res.status(400).json({ message: 'kpType обязателен и должен быть одним из: standard, response, special, tender, service' });
       return;
     }
     if (!body.metadata?.validityDays) {
@@ -79,24 +87,85 @@ router.post('/', async (req: Request, res: Response) => {
     };
 
     const company = await Counterparty.findById(companyId)
-      .select('isOurCompany name shortName images footerText status')
+      .select('isOurCompany role name shortName status inn kpp ogrn phone email brandingTemplates')
       .lean();
-    if (!company || company.isOurCompany !== true) {
+    const isCompanyInitiator = Boolean(
+      company &&
+      (company.isOurCompany === true || (Array.isArray((company as any).role) && (company as any).role.includes('company')))
+    );
+    if (!company || !isCompanyInitiator) {
       res.status(400).json({ message: 'Компания-инициатор не найдена или не является нашей компанией' });
       return;
     }
+
+    const templates = Array.isArray((company as any).brandingTemplates) ? (company as any).brandingTemplates : [];
+    let selectedTemplate = null as any;
+
+    if (templateKey) {
+      selectedTemplate = templates.find((template: any) =>
+        String(template?.key ?? '') === templateKey && String(template?.kpType ?? '') === kpType
+      );
+      if (!selectedTemplate) {
+        res.status(400).json({ message: 'Выбранный шаблон не найден для указанного типа КП' });
+        return;
+      }
+    } else {
+      selectedTemplate = templates.find((template: any) =>
+        String(template?.kpType ?? '') === kpType && template?.isDefault === true
+      );
+      if (!selectedTemplate) {
+        res.status(400).json({
+          message: `Для типа КП "${kpType}" не задан шаблон по умолчанию. Настройте шаблоны в карточке компании.`
+        });
+        return;
+      }
+    }
+
+    const kpPage1 = String(selectedTemplate?.assets?.kpPage1 ?? '').trim();
+    if (!kpPage1) {
+      res.status(400).json({ message: 'Выбранный шаблон не содержит обязательный фон первой страницы (assets.kpPage1)' });
+      return;
+    }
+
     body.companyId = companyId;
+    body.kpType = kpType;
     body.companySnapshot = {
-      name: String(company.shortName || company.name || '').trim(),
-      images: (Array.isArray(company.images) ? company.images : [])
-        .filter((img: any) => ['kp-page1', 'kp-page2', 'passport'].includes(img?.context))
-        .map((img: any) => ({ url: String(img.url || '').trim(), context: img.context }))
-        .filter((img: any) => Boolean(img.url)),
-      footerText: String(company.footerText || '')
+      companyId: company._id,
+      companyName: String(company.shortName || company.name || '').trim(),
+      templateKey: String(selectedTemplate.key),
+      templateName: String(selectedTemplate.name),
+      kpType,
+      assets: {
+        kpPage1,
+        kpPage2: String(selectedTemplate?.assets?.kpPage2 ?? '').trim() || undefined,
+        passport: String(selectedTemplate?.assets?.passport ?? '').trim() || undefined,
+        appendix: String(selectedTemplate?.assets?.appendix ?? '').trim() || undefined,
+      },
+      texts: {
+        headerNote: '',
+        introText: '',
+        footerText: '',
+        closingText: '',
+      },
+      requisitesSnapshot: {
+        inn: String(company.inn ?? '').trim() || undefined,
+        kpp: String(company.kpp ?? '').trim() || undefined,
+        ogrn: String(company.ogrn ?? '').trim() || undefined,
+        phone: String(company.phone ?? '').trim() || undefined,
+        email: String(company.email ?? '').trim() || undefined,
+      }
     };
-    if (!body.companySnapshot.name) {
+    if (!body.companySnapshot.companyName) {
       res.status(400).json({ message: 'У выбранной компании не заполнено название для брендирования КП' });
       return;
+    }
+    const hasRequestConditions = Array.isArray(body.conditions) && body.conditions.length > 0;
+    if (!hasRequestConditions) {
+      body.conditions = Array.isArray(selectedTemplate?.conditions)
+        ? selectedTemplate.conditions
+            .map((value: unknown) => String(value ?? '').trim())
+            .filter(Boolean)
+        : [];
     }
 
     const kp = await Kp.create(body);
@@ -118,6 +187,7 @@ router.post('/:id/duplicate', async (req: Request, res: Response) => {
       title:      `Копия — ${original.title}`,
       status:     'draft',
       companyId:  original.companyId,
+      kpType:     (original as any).kpType ?? original.companySnapshot?.kpType ?? 'standard',
       companySnapshot: original.companySnapshot,
       recipient:  original.recipient,
       metadata:   { ...original.metadata, number: generatedNumber },

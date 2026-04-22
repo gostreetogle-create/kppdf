@@ -1,4 +1,5 @@
 export type KpStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
 
 export interface KpItem {
   productId:   string;
@@ -47,14 +48,36 @@ export interface IKp {
   _id:             string;
   title:           string;
   status:          KpStatus;
+  kpType:          KpType;
   counterpartyId?: string;
   companyId?:      string;
   recipient:       KpRecipient;
   metadata:        KpMetadata;
   companySnapshot: {
-    name: string;
-    images: Array<{ url: string; context: 'kp-page1' | 'kp-page2' | 'passport' }>;
-    footerText: string;
+    companyId: string;
+    companyName: string;
+    templateKey: string;
+    templateName: string;
+    kpType: KpType;
+    assets: {
+      kpPage1: string;
+      kpPage2?: string;
+      passport?: string;
+      appendix?: string;
+    };
+    texts: {
+      headerNote?: string;
+      introText?: string;
+      footerText?: string;
+      closingText?: string;
+    };
+    requisitesSnapshot?: {
+      inn?: string;
+      kpp?: string;
+      ogrn?: string;
+      phone?: string;
+      email?: string;
+    };
   };
   items:           KpItem[];
   conditions:      string[];

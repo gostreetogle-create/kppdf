@@ -1,9 +1,10 @@
 import { Schema, model, Document } from 'mongoose';
 
 export type LegalForm    = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'МКУ' | 'Физлицо' | 'Другое';
-export type CpRole       = 'client' | 'supplier';
+export type CpRole       = 'client' | 'supplier' | 'company';
 export type CpStatus     = 'active' | 'inactive';
 export type ImageContext  = 'product' | 'kp-page1' | 'kp-page2' | 'passport';
+export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
 
 export interface IContact {
   name:      string;
@@ -45,8 +46,22 @@ export interface ICounterparty extends Document {
   tags:                 string[];
   // Company profile fields
   isOurCompany:         boolean;
+  isDefaultInitiator?:  boolean;
   images:               IImage[];   // context: kp-page1, kp-page2, passport
   footerText?:          string;     // HTML — текст внизу КП
+  brandingTemplates: Array<{
+    key: string;
+    name: string;
+    kpType: KpType;
+    isDefault: boolean;
+    assets: {
+      kpPage1: string;
+      kpPage2?: string;
+      passport?: string;
+      appendix?: string;
+    };
+    conditions?: string[];
+  }>;
 }
 
 const ContactSchema = new Schema<IContact>({
@@ -61,6 +76,20 @@ const ImageSchema = new Schema<IImage>({
   isMain:    { type: Boolean, default: false },
   sortOrder: { type: Number, default: 0 },
   context:   { type: String, enum: ['product', 'kp-page1', 'kp-page2', 'passport'], required: true },
+}, { _id: false });
+
+const BrandingTemplateSchema = new Schema({
+  key:      { type: String, required: true, trim: true },
+  name:     { type: String, required: true, trim: true },
+  kpType:   { type: String, enum: ['standard', 'response', 'special', 'tender', 'service'], required: true },
+  isDefault:{ type: Boolean, default: false },
+  assets: {
+    kpPage1:  { type: String, required: true, trim: true },
+    kpPage2:  { type: String, trim: true },
+    passport: { type: String, trim: true },
+    appendix: { type: String, trim: true },
+  },
+  conditions: { type: [String], default: [] }
 }, { _id: false });
 
 const CounterpartySchema = new Schema<ICounterparty>({
@@ -114,9 +143,38 @@ const CounterpartySchema = new Schema<ICounterparty>({
 
   // Company profile
   isOurCompany: { type: Boolean, default: false },
+  isDefaultInitiator: { type: Boolean, default: false },
   images:       { type: [ImageSchema], default: [] },
   footerText:   { type: String, default: '' },
+  brandingTemplates: { type: [BrandingTemplateSchema], default: [] },
 }, { timestamps: true });
+
+CounterpartySchema.pre('validate', function(next) {
+  const templates = Array.isArray(this.brandingTemplates) ? this.brandingTemplates : [];
+
+  const keys = new Set<string>();
+  for (const template of templates) {
+    const key = String(template?.key ?? '').trim();
+    if (!key) return next(new Error('У шаблона брендирования обязателен ключ'));
+    if (keys.has(key)) return next(new Error(`Ключ шаблона "${key}" должен быть уникальным в рамках компании`));
+    keys.add(key);
+
+    const kpPage1 = String(template?.assets?.kpPage1 ?? '').trim();
+    if (!kpPage1) {
+      return next(new Error(`Шаблон "${template?.name || key}" должен содержать фон первой страницы (assets.kpPage1)`));
+    }
+  }
+
+  const kpTypes: KpType[] = ['standard', 'response', 'special', 'tender', 'service'];
+  for (const kpType of kpTypes) {
+    const defaults = templates.filter((template: any) => template?.kpType === kpType && template?.isDefault === true);
+    if (defaults.length > 1) {
+      return next(new Error(`Для типа КП "${kpType}" может быть только один шаблон по умолчанию`));
+    }
+  }
+
+  return next();
+});
 
 CounterpartySchema.index({ inn: 1 });
 CounterpartySchema.index({ name: 'text', shortName: 'text' });

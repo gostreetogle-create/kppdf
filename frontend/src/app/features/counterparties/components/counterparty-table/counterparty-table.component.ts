@@ -16,6 +16,17 @@ export class CounterpartyTableComponent {
   edit           = output<Counterparty>();
   delete         = output<Counterparty>();
 
+  displayedRoles(cp: Counterparty): string[] {
+    const allowed = new Set(['client', 'supplier', 'company']);
+    const unique = new Set(
+      (cp.role ?? [])
+        .map((role) => String(role || '').trim())
+        .filter((role) => allowed.has(role))
+    );
+    if (cp.isOurCompany) unique.add('company');
+    return Array.from(unique);
+  }
+
   roleLabel(role: string): string {
     const map: Record<string, string> = {
       client:  'Клиент',

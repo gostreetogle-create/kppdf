@@ -18,11 +18,17 @@
             [recipient]="recipient()" 
             [metadata]="metadata()">
           </app-kp-header>
+          @if (headerNote()) {
+            <p class="kp-brand-note">{{ headerNote() }}</p>
+          }
         </section>
       }
 
       <!-- Основной контент -->
       <main class="kp-content" [class.kp-content--continuation]="!chunk.showHeader">
+        @if (chunk.showHeader && introText()) {
+          <section class="kp-content__intro">{{ introText() }}</section>
+        }
         <section class="kp-content__main-block">
           <!-- Таблица товаров для текущей страницы -->
           <app-kp-catalog 
@@ -51,6 +57,9 @@
               [conditions]="conditions()">
             </app-kp-table>
           </section>
+          @if (closingText()) {
+            <section class="kp-content__closing">{{ closingText() }}</section>
+          }
           @if (documentFooter()) {
             <footer class="kp-footer-note" [innerHTML]="documentFooter()"></footer>
           }
