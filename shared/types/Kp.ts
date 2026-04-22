@@ -9,6 +9,10 @@ export interface KpItem {
   price:       number;
   qty:         number;
   imageUrl?:   string;
+  markupEnabled?: boolean;
+  markupPercent?: number;
+  discountEnabled?: boolean;
+  discountPercent?: number;
 }
 
 export interface KpRecipient {
@@ -36,6 +40,7 @@ export interface KpMetadata {
   prepaymentPercent: number;
   productionDays:    number;
   tablePageBreakAfter: number;
+  photoScalePercent?: number;
 }
 
 export interface IKp {

@@ -26,6 +26,7 @@ export interface KpMetadata {
   prepaymentPercent: number;
   productionDays:    number;
   tablePageBreakAfter: number;
+  photoScalePercent?: number;
 }
 
 @Component({
@@ -38,6 +39,22 @@ export interface KpMetadata {
 export class KpHeaderComponent {
   recipient = input.required<KpRecipient>();
   metadata  = input.required<KpMetadata>();
+
+  protected recipientDisplayName(): string {
+    const recipient = this.recipient();
+    const baseName = (recipient.shortName || recipient.name || '').trim();
+    const legalForm = (recipient.legalForm || '').trim();
+
+    if (!legalForm || legalForm === 'Физлицо') {
+      return `"${baseName}"`;
+    }
+
+    if (baseName.toLowerCase().startsWith(legalForm.toLowerCase())) {
+      return `"${baseName}"`;
+    }
+
+    return `${legalForm} "${baseName}"`;
+  }
 
   protected displayDate(): Date {
     const value = this.metadata().createdAt;

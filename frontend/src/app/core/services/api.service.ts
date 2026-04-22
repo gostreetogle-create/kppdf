@@ -128,6 +128,10 @@ export interface KpItem {
   price:       number;
   qty:         number;
   imageUrl?:   string;
+  markupEnabled?: boolean;
+  markupPercent?: number;
+  discountEnabled?: boolean;
+  discountPercent?: number;
 }
 
 export interface Kp {
@@ -160,6 +164,7 @@ export interface Kp {
     prepaymentPercent: number;
     productionDays: number;
     tablePageBreakAfter: number;
+    photoScalePercent?: number;
   };
   items: KpItem[];
   conditions: string[];
