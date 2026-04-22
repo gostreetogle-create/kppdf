@@ -45,7 +45,7 @@
         </button>
       </div>
     </div>
-    @if (isManager()) {
+    @if (can('kp.edit') && !can('kp.delete')) {
       <div class="builder__toolbar-hint no-print">
         <span class="role-hint">Менеджер: доступен переход только draft → sent</span>
       </div>

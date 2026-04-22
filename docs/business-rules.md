@@ -9,30 +9,31 @@ draft ──→ sent ──→ accepted
 
 | Статус | Значение | Редактирование | Кто устанавливает |
 |--------|----------|----------------|-------------------|
-| `draft` | Черновик | Полное | manager, admin |
-| `sent` | Отправлен клиенту | Только статус | manager, admin |
-| `accepted` | Клиент принял | Только просмотр | admin |
-| `rejected` | Клиент отклонил | Только просмотр | admin |
+| `draft` | Черновик | Полное | manager, admin, owner |
+| `sent` | Отправлен клиенту | Только статус | manager, admin, owner |
+| `accepted` | Клиент принял | Только просмотр | admin, owner |
+| `rejected` | Клиент отклонил | Только просмотр | admin, owner |
 
 Допустимые переходы: `draft→sent`, `sent→accepted`, `sent→rejected`, `rejected→draft`  
 Реализовано в `shared/types/Kp.ts` → `KP_STATUS_TRANSITIONS`
 
-Ограничение редактирования на фронтенде реализовано: при `sent` и `accepted` редактор КП работает в режиме read-only.  
-Проверка ролей (`admin/manager`) остаётся TODO.
+Ограничение редактирования на фронтенде реализовано: при `sent` и `accepted` редактор КП работает в режиме read-only.
 
 ---
 
-## Роли пользователей
+## RBAC роли и permissions
 
-| Роль | Возможности |
+| Роль | Permissions |
 |------|-------------|
-| `admin` | Все операции, все переходы статусов |
-| `manager` | CRUD товаров, CRUD КП, переход статуса только `draft→sent` |
+| `owner` | Все (`kp.*`, `products.*`, `counterparties.crud`, `settings.write`, `backups.manage`, `users.manage`) |
+| `admin` | Все, кроме системного владения (фактически та же рабочая матрица) |
+| `manager` | `kp.create`, `kp.edit`, `kp.view`, `products.view`, `counterparties.crud` |
+| `viewer` | `kp.view`, `products.view` |
 
-Ограничения реализованы:
-- backend: `settings` и `dictionaries` доступны только `admin` (`403` при недостатке прав);
-- backend: для `manager` запрещены переходы статусов КП кроме `draft→sent`;
-- frontend: маршруты `/settings` и `/dictionaries` защищены `adminGuard`, ссылки скрыты для `manager`.
+Правила enforcement:
+- backend authoritative: каждый защищённый endpoint проходит через `requirePermission(permission)`;
+- frontend использует `permissionsService.can(permission)` и `*appCan` только для UI-видимости;
+- при `mustChangePassword=true` пользователь блокируется от рабочих endpoint'ов до смены пароля.
 
 ---
 
@@ -76,7 +77,7 @@ total     = subtotal + vatAmount
 - Блок `Параметры КП` в `KpBuilder` редактирует `metadata.number`, `metadata.validityDays`, `metadata.prepaymentPercent`, `metadata.productionDays`, `vatPercent`
 - Поле `metadata.tablePageBreakAfter` задаёт, после какой строки таблицы делать перенос на новую страницу (используется как `itemsPerPage` в документе)
 - Для нового КП значения по умолчанию берутся из `Settings` на бэкенде (frontend не должен подставлять локальные дефолты)
-- Резервные копии (MongoDB + media) управляются централизованно через `/settings` (раздел "Бэкапы"): ручной запуск, поиск/фильтрация, скачивание, удаление и очистка старше N дней; операции доступны только `admin`
+- Резервные копии (MongoDB + media) управляются централизованно через `/settings` (раздел "Бэкапы"): ручной запуск, поиск/фильтрация, скачивание, удаление и очистка старше N дней; операции требуют `backups.manage`
 - Новый получатель из редактора КП: кнопка «+» открывает ту же форму контрагента в модальном окне на странице КП (`shared/components/counterparty-form`); после сохранения контрагент попадает в локальный список сайдбара и сразу выбирается как получатель (`Kp.recipient` — snapshot). Уход со страницы при несохранённом КП — через `ui-modal`, не системный `confirm`
 
 ---

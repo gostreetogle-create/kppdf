@@ -1,65 +1,71 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model';
 import { authGuard } from '../middleware/auth.middleware';
+import type { AuthPayload } from '../middleware/auth.middleware';
+import { AuthService } from '../auth/auth.service';
 
 const router = Router();
-const JWT_SECRET  = () => process.env.JWT_SECRET || 'dev-secret';
-const JWT_EXPIRES = '7d';
+const authService = new AuthService();
 
-// Простой rate limiter — не более 10 попыток за 15 минут с одного IP
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+function signAccessToken(payload: Omit<AuthPayload, 'type'>): string {
+  return authService.signAccessToken(payload);
+}
 
-function checkRateLimit(ip: string): boolean {
-  const now  = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
-    return true;
-  }
-  if (entry.count >= 10) return false;
-  entry.count++;
-  return true;
+function signRefreshToken(payload: Omit<AuthPayload, 'type'>): string {
+  return authService.signRefreshToken(payload);
+}
+
+function toSafeUser(user: any) {
+  return {
+    _id: user._id,
+    username: user.username,
+    name: user.name,
+    role: user.role,
+    isActive: user.isActive,
+    mustChangePassword: user.mustChangePassword,
+    createdAt: user.createdAt
+  };
 }
 
 // POST /api/auth/login
 router.post('/login', async (req: Request, res: Response) => {
-  const ip = req.ip ?? 'unknown';
-  if (!checkRateLimit(ip)) {
-    res.status(429).json({ message: 'Слишком много попыток. Подождите 15 минут.' });
-    return;
-  }
+  const { username, password } = req.body;
 
-  const { email, password } = req.body;
-
-  if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
-    res.status(400).json({ message: 'Email и пароль обязательны' });
+  if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
+    res.status(400).json({ message: 'Логин и пароль обязательны' });
     return;
   }
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const normalizedUsername = username.toLowerCase().trim();
+    const user = await User.findOne({ username: normalizedUsername });
     if (!user) {
-      res.status(401).json({ message: 'Неверный email или пароль' });
+      res.status(401).json({ message: 'Неверный логин или пароль' });
+      return;
+    }
+    if (!user.isActive) {
+      res.status(403).json({ message: 'Пользователь деактивирован' });
       return;
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      res.status(401).json({ message: 'Неверный email или пароль' });
+      res.status(401).json({ message: 'Неверный логин или пароль' });
       return;
     }
 
-    const token = jwt.sign(
-      { userId: user._id.toString(), email: user.email, role: user.role },
-      JWT_SECRET(),
-      { expiresIn: JWT_EXPIRES }
-    );
+    const payload = { userId: user._id.toString(), username: user.username, role: user.role };
+    const accessToken = signAccessToken(payload);
+    const refreshToken = signRefreshToken(payload);
+    user.refreshTokenHash = await authService.hashToken(refreshToken);
+    user.refreshTokenExpiresAt = new Date(Date.now() + authService.refreshTtlMs);
+    await user.save();
 
     res.json({
-      token,
-      user: { _id: user._id, email: user.email, name: user.name, role: user.role }
+      accessToken,
+      refreshToken,
+      user: toSafeUser(user)
     });
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -67,16 +73,98 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/logout
-router.post('/logout', (_req: Request, res: Response) => {
-  res.json({ message: 'Выход выполнен' });
+router.post('/logout', authGuard, async (req: Request, res: Response) => {
+  try {
+    await User.findByIdAndUpdate(req.user!.userId, {
+      refreshTokenHash: null,
+      refreshTokenExpiresAt: null
+    });
+    res.json({ message: 'Выход выполнен' });
+  } catch {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// POST /api/auth/refresh
+router.post('/refresh', async (req: Request, res: Response) => {
+  const { refreshToken } = req.body as { refreshToken?: string };
+  if (!refreshToken) {
+    res.status(400).json({ message: 'refreshToken обязателен' });
+    return;
+  }
+  try {
+    const payload = authService.verifyToken<AuthPayload>(refreshToken);
+    if (payload.type !== 'refresh') {
+      res.status(401).json({ message: 'Неверный тип токена' });
+      return;
+    }
+    const user = await User.findById(payload.userId);
+    if (!user || !user.isActive || !user.refreshTokenHash) {
+      res.status(401).json({ message: 'Сессия не найдена' });
+      return;
+    }
+    if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt.getTime() < Date.now()) {
+      res.status(401).json({ message: 'Сессия истекла' });
+      return;
+    }
+
+    const matches = await authService.compareToken(refreshToken, user.refreshTokenHash);
+    if (!matches) {
+      res.status(401).json({ message: 'Сессия невалидна' });
+      return;
+    }
+
+    const nextPayload = { userId: user._id.toString(), username: user.username, role: user.role };
+    const nextAccessToken = signAccessToken(nextPayload);
+    const nextRefreshToken = signRefreshToken(nextPayload);
+    user.refreshTokenHash = await authService.hashToken(nextRefreshToken);
+    user.refreshTokenExpiresAt = new Date(Date.now() + authService.refreshTtlMs);
+    await user.save();
+
+    res.json({ accessToken: nextAccessToken, refreshToken: nextRefreshToken });
+  } catch {
+    res.status(401).json({ message: 'refreshToken недействителен' });
+  }
+});
+
+// POST /api/auth/change-password
+router.post('/change-password', authGuard, async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+  if (!currentPassword || !newPassword || newPassword.length < 8) {
+    res.status(400).json({ message: 'Укажите текущий пароль и новый пароль (минимум 8 символов)' });
+    return;
+  }
+  try {
+    const user = await User.findById(req.user!.userId);
+    if (!user) {
+      res.status(404).json({ message: 'Пользователь не найден' });
+      return;
+    }
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      res.status(400).json({ message: 'Текущий пароль неверный' });
+      return;
+    }
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.mustChangePassword = false;
+    user.updatedBy = user._id.toString();
+    await user.save();
+    res.json({ message: 'Пароль обновлён' });
+  } catch {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
 });
 
 // GET /api/auth/me
 router.get('/me', authGuard, async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(req.user!.userId).select('-passwordHash');
+    const user = await User.findById(req.user!.userId).select('-passwordHash -refreshTokenHash');
     if (!user) { res.status(404).json({ message: 'Пользователь не найден' }); return; }
-    res.json(user);
+    if (!user.isActive) {
+      res.status(403).json({ message: 'Пользователь деактивирован' });
+      return;
+    }
+    res.json(toSafeUser(user));
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
   }

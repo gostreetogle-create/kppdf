@@ -2,8 +2,17 @@ import { Router, Request, Response } from 'express';
 import { Kp } from '../models/kp.model';
 import { Setting, DEFAULT_SETTINGS } from '../models/settings.model';
 import { Counterparty } from '../models/counterparty.model';
+import { requirePermission } from '../middleware/rbac.guard';
 
 const router = Router();
+
+router.use((req, res, next) => {
+  if (req.method === 'GET') return requirePermission('kp.view')(req, res, next);
+  if (req.method === 'POST') return requirePermission('kp.create')(req, res, next);
+  if (req.method === 'PUT' || req.method === 'PATCH') return requirePermission('kp.edit')(req, res, next);
+  if (req.method === 'DELETE') return requirePermission('kp.delete')(req, res, next);
+  return next();
+});
 
 async function generateKpNumber() {
   const all = await Kp.find(
@@ -119,18 +128,6 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     const existing = await Kp.findById(req.params.id);
     if (!existing) { res.status(404).json({ message: 'Not found' }); return; }
-
-    const nextStatus = req.body?.status as string | undefined;
-    if (nextStatus && nextStatus !== existing.status) {
-      const role = req.user?.role;
-      if (role === 'manager') {
-        const isAllowedForManager = existing.status === 'draft' && nextStatus === 'sent';
-        if (!isAllowedForManager) {
-          res.status(403).json({ message: 'Менеджер может менять статус только draft → sent' });
-          return;
-        }
-      }
-    }
 
     const kp = await Kp.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!kp) { res.status(404).json({ message: 'Not found' }); return; }

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { canDeactivateBuilder } from './features/kp/kp-builder/can-deactivate.guard';
-import { adminGuard } from './core/guards/admin.guard';
+import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
   // Публичный маршрут
@@ -31,12 +31,20 @@ export const routes: Routes = [
       {
         path: 'settings',
         loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
-        canActivate: [adminGuard]
+        canActivate: [permissionGuard],
+        data: { permission: 'settings.write' }
       },
       {
         path: 'dictionaries',
         loadComponent: () => import('./features/dictionaries/dictionaries.component').then(m => m.DictionariesComponent),
-        canActivate: [adminGuard]
+        canActivate: [permissionGuard],
+        data: { permission: 'settings.write' }
+      },
+      {
+        path: 'users',
+        loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent),
+        canActivate: [permissionGuard],
+        data: { permission: 'users.manage' }
       },
       {
         path: 'kp/:id',

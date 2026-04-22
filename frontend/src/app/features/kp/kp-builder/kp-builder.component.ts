@@ -11,8 +11,8 @@ import { ButtonComponent, ModalComponent } from '../../../shared/ui/index';
 import { CounterpartyFormComponent } from '../../../shared/components/counterparty-form/counterparty-form.component';
 import { ProductFormComponent } from '../../products/components/product-form/product-form.component';
 import { AutosaveService } from './autosave.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PermissionsService } from '../../../core/services/permissions.service';
 
 @Component({
   selector: 'app-kp-builder',
@@ -32,7 +32,7 @@ export class KpBuilderComponent implements OnInit {
   private readonly route       = inject(ActivatedRoute);
   private readonly router      = inject(Router);
   private readonly api         = inject(ApiService);
-  private readonly auth        = inject(AuthService);
+  private readonly permissions = inject(PermissionsService);
   private readonly ns          = inject(NotificationService);
   readonly autosave            = inject(AutosaveService);
 
@@ -98,8 +98,7 @@ export class KpBuilderComponent implements OnInit {
       return inCategory && inSearch;
     });
   });
-  readonly isAdmin = this.auth.isAdmin;
-  readonly isManager = this.auth.isManager;
+  readonly can = (permission: Parameters<PermissionsService['can']>[0]) => this.permissions.can(permission);
   readonly isReadOnly = computed(() => {
     const status = this.kp()?.status;
     return status === 'sent' || status === 'accepted';
@@ -522,7 +521,7 @@ export class KpBuilderComponent implements OnInit {
   }
 
   canSelectStatus(targetStatus: Kp['status']): boolean {
-    if (this.isAdmin()) return true;
+    if (this.can('kp.edit') && this.can('kp.delete')) return true;
     const current = this.kp()?.status;
     if (!current) return false;
     if (current === targetStatus) return true;

@@ -97,7 +97,7 @@ createImage(url, { context: 'product' })
 Коллекция `Settings`: `{ key, value, label }`
 Ключи: `kp_validity_days`, `kp_prepayment_percent`, `kp_production_days`, `kp_vat_percent`
 JSON-операции (импорт/экспорт товаров и контрагентов) выполняются централизованно через страницу `Settings`.
-Бэкапы (MongoDB + media): ручной запуск, список архивов, скачивание и удаление — через `/settings` (только admin).
+Бэкапы (MongoDB + media): ручной запуск, список архивов, скачивание и удаление — через `/settings` (permission `backups.manage`).
 **Settings = DEFAULT SOURCE OF CONFIGURATION.** Переопределяется на уровне Company.
 
 ### KP Snapshot Rule
@@ -144,8 +144,9 @@ sudo systemctl start mongod          # MongoDB :27017
 cd backend && npm run dev            # API :3000
 cd frontend && npm start             # SPA :4200
 cd backend && npm run seed:demo      # 20 товаров + 5 контрагентов + 7 КП + admin
+cd backend && npm run seed:owner     # создать владельца системы
 ```
-Вход: `admin@example.com` / `admin123`
+Вход: `admin` / `admin123`
 
 ---
 
@@ -349,3 +350,4 @@ KpBuilderComponent: forkJoin(GET kp + GET counterparties), отдельно GET 
 | 2026-04-22 | KP table premium lines pass: в `kp-catalog` смягчены базовые границы таблицы (особенно вертикали), при этом сохранены чуть более заметные разделители для числовых колонок, чтобы снизить “Excel-решётку” без потери читаемости |
 | 2026-04-22 | KP default page break changed: параметр `Перенос таблицы после строки №` переведён на дефолт `6` (backend schema/create fallback + frontend fallback в builder/document), чтобы новая КП сразу открывалась с более плотной пагинацией |
 | 2026-04-22 | Deploy type-sync hotfix: в frontend/shared типы `KpItem`/`KpMetadata` добавлены поля `markupEnabled/markupPercent/discountEnabled/discountPercent` и `photoScalePercent`, чтобы устранить падение `ng build` на сервере (`TS2339`/`TS2353`) |
+| 2026-04-22 | RBAC rollout (phase-based): внедрены роли `owner/admin/manager/viewer`, единый permission layer (`permissions.ts`, `can()`), backend guard `requirePermission`, username-only auth с `access(15m)+refresh rotation`, `mustChangePassword` gate, Users API (`/api/users*`), frontend `permissions.service` + `*appCan` + страница `/users` |

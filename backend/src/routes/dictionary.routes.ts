@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { Dictionary, DictionaryType } from '../models/dictionary.model';
+import { requirePermission } from '../middleware/rbac.guard';
 
 const router = Router();
+
+router.use(requirePermission('settings.write'));
 
 // GET /api/dictionaries?type=category
 router.get('/', async (req: Request, res: Response) => {

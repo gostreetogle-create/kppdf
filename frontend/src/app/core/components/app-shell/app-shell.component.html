@@ -32,23 +32,35 @@
          (click)="closeSidebar()">
         <span class="sidebar__icon">🏢</span> Контрагенты
       </a>
-      @if (isAdmin()) {
+      <ng-container *appCan="'settings.write'">
         <a routerLink="/settings"
            routerLinkActive="active"
            (click)="closeSidebar()">
           <span class="sidebar__icon">⚙️</span> Настройки
         </a>
+      </ng-container>
+      <ng-container *appCan="'users.manage'">
+        <a routerLink="/users"
+           routerLinkActive="active"
+           (click)="closeSidebar()">
+          <span class="sidebar__icon">👤</span> Пользователи
+        </a>
+      </ng-container>
+      <ng-container *appCan="'settings.write'">
         <a routerLink="/dictionaries"
            routerLinkActive="active"
            (click)="closeSidebar()">
           <span class="sidebar__icon">📚</span> Справочники
         </a>
-      }
+      </ng-container>
     </nav>
 
     <div class="sidebar__footer">
       @if (user()) {
         <span class="sidebar__username">{{ user()!.name }}</span>
+        <button ui-btn size="sm" variant="ghost" (click)="toggleTheme()">
+          @if (themeMode() === 'dark') { ☀️ Светлая } @else { 🌙 Тёмная }
+        </button>
         <button ui-btn size="sm" variant="ghost" (click)="logout()">Выйти</button>
       }
     </div>

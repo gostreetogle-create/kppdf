@@ -18,9 +18,11 @@ Auth: `Authorization: Bearer <token>` — все роуты кроме `/api/aut
 
 | Метод | Путь | Тело | Ответ |
 |-------|------|------|-------|
-| POST | `/api/auth/login` | `{ email, password }` | `{ token, user: { _id, email, name, role } }` |
+| POST | `/api/auth/login` | `{ username, password }` | `{ accessToken, refreshToken, user: { _id, username, name, role, isActive, mustChangePassword } }` |
+| POST | `/api/auth/refresh` | `{ refreshToken }` | `{ accessToken, refreshToken }` (rotation) |
+| POST | `/api/auth/change-password` | `{ currentPassword, newPassword }` | `{ message }` |
 | POST | `/api/auth/logout` | — | `{ message }` |
-| GET | `/api/auth/me` | — | `IUser` без passwordHash |
+| GET | `/api/auth/me` | — | `IUser` без `passwordHash` |
 
 Rate limit: 10 попыток / 15 мин с одного IP.
 
@@ -137,7 +139,9 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 
 ## Settings
 
-Все роуты ниже требуют роль `admin`.
+Все роуты ниже защищены permission-based RBAC:
+- `settings.write` для настроек и справочников
+- `backups.manage` для операций с бэкапами
 
 | Метод | Путь | Описание |
 |-------|------|----------|
@@ -151,3 +155,16 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 | DELETE | `/api/settings/backups/cleanup?days=7&type=all` | Удалить архивы старше `days` |
 
 `type` для бэкапов: `mongo`, `media`, `all` (только для cleanup).
+
+---
+
+## Users
+
+Все роуты ниже требуют permission: `users.manage`.
+
+| Метод | Путь | Тело | Описание |
+|-------|------|------|----------|
+| GET | `/api/users` | — | Список пользователей |
+| POST | `/api/users` | `{ username, name, role, password }` | Создать пользователя (с `mustChangePassword=true`) |
+| PATCH | `/api/users/:id` | `{ name?, role?, isActive?, mustChangePassword? }` | Обновить профиль/роль/статус |
+| POST | `/api/users/:id/reset-password` | `{ password }` | Сбросить пароль и потребовать смену на первом входе |

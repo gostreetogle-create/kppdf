@@ -1,0 +1,33 @@
+.users-create,
+.users-list {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  padding: var(--ui-space-4);
+}
+
+.users-create__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+  align-items: end;
+}
+
+.users-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.users-reset {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+@media (max-width: 1024px) {
+  .users-create__grid {
+    grid-template-columns: 1fr;
+  }
+}
+

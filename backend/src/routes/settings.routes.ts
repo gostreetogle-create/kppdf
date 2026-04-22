@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { createReadStream } from 'fs';
 import { spawn } from 'child_process';
+import { requirePermission } from '../middleware/rbac.guard';
 
 const router = Router();
 const backupRoot = process.env.BACKUP_ROOT || '/var/backups/kppdf';
@@ -11,6 +12,13 @@ const mongoBackupDir = path.join(backupRoot, 'mongo');
 const mediaBackupDir = path.join(backupRoot, 'media');
 const mediaRoot = process.env.MEDIA_ROOT || path.resolve(process.cwd(), '..', 'media');
 const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/kp-app';
+
+router.use((req, res, next) => {
+  if (req.path.startsWith('/backups')) {
+    return requirePermission('backups.manage')(req, res, next);
+  }
+  return requirePermission('settings.write')(req, res, next);
+});
 
 // Инициализация дефолтных настроек (если не существуют)
 async function ensureDefaults() {

@@ -16,24 +16,20 @@ export class LoginComponent {
   private readonly auth   = inject(AuthService);
   private readonly router = inject(Router);
 
-  email    = '';
+  username = '';
   password = '';
   loading  = signal(false);
   error    = signal('');
 
   submit() {
-    if (!this.email || !this.password) {
-      this.error.set('Введите email и пароль');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
-      this.error.set('Введите корректный email');
+    if (!this.username || !this.password) {
+      this.error.set('Введите логин и пароль');
       return;
     }
     this.loading.set(true);
     this.error.set('');
 
-    this.auth.login(this.email, this.password).subscribe({
+    this.auth.login(this.username, this.password).subscribe({
       next:  () => this.router.navigate(['/']),
       error: err => {
         this.loading.set(false);

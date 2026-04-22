@@ -120,15 +120,17 @@ async function run() {
   }
 
   // Admin
-  const adminExists = await User.findOne({ email: 'admin@example.com' });
+  const adminExists = await User.findOne({ username: 'admin' });
   if (!adminExists) {
     await User.create({
-      email: 'admin@example.com',
+      username: 'admin',
       passwordHash: await bcrypt.hash('admin123', 10),
       name: 'Администратор',
       role: 'admin',
+      isActive: true,
+      mustChangePassword: true
     });
-    console.log('✅ Admin создан: admin@example.com / admin123');
+    console.log('✅ Admin создан: admin / admin123');
   }
 
   // КП

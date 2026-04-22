@@ -1,12 +1,12 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { PermissionsService } from '../services/permissions.service';
 
 export const adminGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
+  const permissions = inject(PermissionsService);
   const router = inject(Router);
 
-  if (auth.currentUser()?.role === 'admin') return true;
+  if (permissions.can('settings.write')) return true;
   router.navigate(['/']);
   return false;
 };

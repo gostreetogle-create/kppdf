@@ -7,13 +7,13 @@
       <ui-alert type="error">{{ error() }}</ui-alert>
     }
 
-    <ui-form-field label="Email" [required]="true">
+    <ui-form-field label="Логин" [required]="true">
       <input
-        type="email"
-        [(ngModel)]="email"
-        placeholder="admin@example.com"
+        type="text"
+        [(ngModel)]="username"
+        placeholder="owner"
         (keydown.enter)="submit()"
-        autocomplete="email"
+        autocomplete="username"
       />
     </ui-form-field>
 

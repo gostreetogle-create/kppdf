@@ -9,7 +9,9 @@ import authRoutes from './routes/auth.routes';
 import counterpartyRoutes from './routes/counterparty.routes';
 import dictionaryRoutes from './routes/dictionary.routes';
 import settingsRoutes from './routes/settings.routes';
-import { authGuard, requireRole } from './middleware/auth.middleware';
+import usersRoutes from './routes/users.routes';
+import { authGuard, enforcePasswordChange } from './middleware/auth.middleware';
+import { requirePermission } from './middleware/rbac.guard';
 
 dotenv.config();
 
@@ -36,15 +38,34 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+app.use('/api/auth/login', (req, res, next) => {
+  const ip = req.ip ?? 'unknown';
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    next();
+    return;
+  }
+  if (entry.count >= 10) {
+    res.status(429).json({ message: 'Слишком много попыток. Подождите 15 минут.' });
+    return;
+  }
+  entry.count++;
+  next();
+});
+
 // Публичные роуты
 app.use('/api/auth', authRoutes);
 
 // Защищённые роуты
-app.use('/api/settings',        authGuard, requireRole('admin'), settingsRoutes);
-app.use('/api/dictionaries',    authGuard, requireRole('admin'), dictionaryRoutes);
-app.use('/api/counterparties',  authGuard, counterpartyRoutes);
-app.use('/api/products',        authGuard, productRoutes);
-app.use('/api/kp',              authGuard, kpRoutes);
+app.use('/api/settings',        authGuard, enforcePasswordChange, settingsRoutes);
+app.use('/api/dictionaries',    authGuard, enforcePasswordChange, dictionaryRoutes);
+app.use('/api/counterparties',  authGuard, enforcePasswordChange, counterpartyRoutes);
+app.use('/api/products',        authGuard, enforcePasswordChange, productRoutes);
+app.use('/api/kp',              authGuard, enforcePasswordChange, kpRoutes);
+app.use('/api/users',           authGuard, enforcePasswordChange, requirePermission('users.manage'), usersRoutes);
 
 const PORT     = process.env.PORT     || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/kp-app';

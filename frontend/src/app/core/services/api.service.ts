@@ -66,6 +66,18 @@ export interface BackupItem {
   createdAt: string;
 }
 
+export type AppUserRole = 'owner' | 'admin' | 'manager' | 'viewer';
+
+export interface AppUser {
+  _id: string;
+  username: string;
+  name: string;
+  role: AppUserRole;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  createdAt?: string;
+}
+
 export type DictionaryType = 'category' | 'subcategory' | 'unit' | 'kind';
 
 export interface Dictionary {
@@ -305,6 +317,23 @@ export class ApiService {
     return this.http.get(`${BASE}/settings/backups/download/${type}/${encodeURIComponent(filename)}`, {
       responseType: 'blob'
     });
+  }
+
+  // ─── Users ─────────────────────────────────────────────
+  getUsers(): Observable<AppUser[]> {
+    return this.http.get<AppUser[]>(`${BASE}/users`);
+  }
+
+  createUser(data: { username: string; name: string; role: AppUserRole; password: string }): Observable<AppUser> {
+    return this.http.post<AppUser>(`${BASE}/users`, data);
+  }
+
+  updateUser(id: string, data: Partial<Pick<AppUser, 'name' | 'role' | 'isActive' | 'mustChangePassword'>>): Observable<AppUser> {
+    return this.http.patch<AppUser>(`${BASE}/users/${id}`, data);
+  }
+
+  resetUserPassword(id: string, password: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${BASE}/users/${id}/reset-password`, { password });
   }
 
   // ─── Counterparties ───────────────────────────────────

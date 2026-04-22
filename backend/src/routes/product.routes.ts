@@ -1,8 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { Product } from '../models/product.model';
 import { Dictionary } from '../models/dictionary.model';
+import { requirePermission } from '../middleware/rbac.guard';
 
 const router = Router();
+
+router.use((req, res, next) => {
+  const isRead = req.method === 'GET';
+  return requirePermission(isRead ? 'products.view' : 'products.write')(req, res, next);
+});
 
 function validateProduct(req: Request, res: Response, next: NextFunction): void {
   const { name, code, unit, price } = req.body;

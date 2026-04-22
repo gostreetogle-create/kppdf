@@ -1,7 +1,7 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -16,9 +16,26 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError(err => {
       if (err instanceof HttpErrorResponse && err.status === 401) {
-        // Токен истёк или недействителен — разлогиниваем
-        auth.logout();
-        router.navigate(['/login']);
+        const isAuthRefreshCall = req.url.includes('/api/auth/refresh');
+        if (isAuthRefreshCall) {
+          auth.logout();
+          router.navigate(['/login']);
+          return throwError(() => err);
+        }
+        return from(auth.tryRefresh()).pipe(
+          switchMap(ok => {
+            if (!ok) {
+              auth.logout();
+              router.navigate(['/login']);
+              return throwError(() => err);
+            }
+            const nextToken = auth.token();
+            const retriedReq = nextToken
+              ? req.clone({ setHeaders: { Authorization: `Bearer ${nextToken}` } })
+              : req;
+            return next(retriedReq);
+          })
+        );
       }
       return throwError(() => err);
     })

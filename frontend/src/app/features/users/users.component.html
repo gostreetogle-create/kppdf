@@ -1,0 +1,91 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Пользователи</h1>
+    <button ui-btn variant="ghost" (click)="loadUsers()">Обновить</button>
+  </div>
+
+  <section class="users-create">
+    <h2>Создать пользователя</h2>
+    <div class="users-create__grid">
+      <input
+        type="text"
+        placeholder="Логин"
+        [ngModel]="createModel().username"
+        (ngModelChange)="createModel.set({ ...createModel(), username: $event })" />
+      <input
+        type="text"
+        placeholder="Имя"
+        [ngModel]="createModel().name"
+        (ngModelChange)="createModel.set({ ...createModel(), name: $event })" />
+      <select
+        [ngModel]="createModel().role"
+        (ngModelChange)="createModel.set({ ...createModel(), role: $event })">
+        <option value="owner">owner</option>
+        <option value="admin">admin</option>
+        <option value="manager">manager</option>
+        <option value="viewer">viewer</option>
+      </select>
+      <input
+        type="password"
+        placeholder="Временный пароль"
+        [ngModel]="createModel().password"
+        (ngModelChange)="createModel.set({ ...createModel(), password: $event })" />
+      <button ui-btn variant="primary" (click)="createUser()" [disabled]="busy()">Создать</button>
+    </div>
+  </section>
+
+  <section class="users-list">
+    <h2>Список пользователей</h2>
+    @if (loading()) {
+      <div class="loading-state">Загрузка...</div>
+    } @else {
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Логин</th>
+          <th>Имя</th>
+          <th>Роль</th>
+          <th>Статус</th>
+          <th>Сброс пароля</th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user._id) {
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.name }}</td>
+              <td>
+                <select [ngModel]="user.role" (ngModelChange)="updateUser(user, { role: $event })">
+                  <option value="owner">owner</option>
+                  <option value="admin">admin</option>
+                  <option value="manager">manager</option>
+                  <option value="viewer">viewer</option>
+                </select>
+              </td>
+              <td>
+                <label class="users-status">
+                  <input
+                    type="checkbox"
+                    [checked]="user.isActive"
+                    (change)="updateUser(user, { isActive: $any($event.target).checked })" />
+                  {{ user.isActive ? 'active' : 'inactive' }}
+                </label>
+              </td>
+              <td>
+                <div class="users-reset">
+                  <input
+                    type="password"
+                    placeholder="Новый пароль"
+                    [ngModel]="resetPasswordDraft()[user._id] || ''"
+                    (ngModelChange)="setResetPasswordDraft(user._id, $event)" />
+                  <button ui-btn size="sm" variant="ghost" (click)="resetPassword(user)">Сбросить</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</div>
+

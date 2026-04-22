@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { Counterparty } from '../models/counterparty.model';
+import { requirePermission } from '../middleware/rbac.guard';
 
 const router = Router();
+
+router.use(requirePermission('counterparties.crud'));
 
 // GET /api/counterparties/company — наша компания (isOurCompany=true)
 router.get('/company', async (_req: Request, res: Response) => {

@@ -6,6 +6,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "seed:admin": "ts-node-dev --respawn src/scripts/seed-admin.ts",
+    "seed:owner": "ts-node-dev --respawn src/scripts/seed-owner.ts",
     "seed:demo": "ts-node-dev --respawn src/scripts/seed-demo.ts",
     "seed:products": "ts-node-dev --respawn src/scripts/seed-products.ts",
     "seed:products:update": "ts-node-dev --respawn src/scripts/seed-products.ts -- --mode=update"
