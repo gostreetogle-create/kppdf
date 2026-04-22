@@ -51,13 +51,18 @@ router.post('/', async (req: Request, res: Response) => {
         validityDays:      s['kp_validity_days'],
         prepaymentPercent: s['kp_prepayment_percent'],
         productionDays:    s['kp_production_days'],
-        tablePageBreakAfter: body.metadata?.tablePageBreakAfter ?? 10,
+        tablePageBreakAfter: body.metadata?.tablePageBreakAfter ?? 6,
+        photoScalePercent: body.metadata?.photoScalePercent ?? 150,
       };
       body.vatPercent = body.vatPercent ?? s['kp_vat_percent'];
     }
     if (!body.metadata?.number) {
       body.metadata = { ...body.metadata, number: await generateKpNumber() };
     }
+    body.metadata = {
+      ...body.metadata,
+      photoScalePercent: body.metadata?.photoScalePercent ?? 150
+    };
 
     // Автоматически привязываем нашу компанию
     if (!body.companyId) {

@@ -41,7 +41,12 @@ draft ──→ sent ──→ accepted
 Только на фронтенде (`KpBuilderComponent` computed signals). В MongoDB **не хранятся**.
 
 ```
-subtotal  = Σ (item.price × item.qty)
+effectiveUnitPrice = round(item.price × (1 + markup%/100) × (1 - discount%/100))
+  where:
+  - markup% применяется только если `markupEnabled = true` (0..500)
+  - discount% применяется только если `discountEnabled = true` (0..100)
+
+subtotal  = Σ (effectiveUnitPrice × item.qty)
 vatAmount = round(subtotal × vatPercent / 100)
 total     = subtotal + vatAmount
 ```
@@ -58,7 +63,12 @@ total     = subtotal + vatAmount
 ## Логика редактора КП
 
 - Добавить товар: если уже есть — `qty++`, иначе новая позиция с `qty=1`
-- Добавить вручную: если товара нет в каталоге, позиция создаётся из формы в блоке `Состав КП` (name/code/unit/price/qty)
+- Для корректировок цены используется массовое применение к выбранным строкам:
+  - у позиции есть чекбокс `Выбрать`;
+  - в панели `Состав КП` задаются `% Наценка` (до 500) и `% Скидка` (до 100);
+  - кнопки `Применить к выбранным` записывают значения в поля позиции;
+  - кнопка `Сбросить наценку/скидку` очищает корректировки у выбранных позиций.
+- В `Состав КП` всегда показывается фото позиции (если есть `imageUrl`)
 - Изменить qty: минимум 1
 - Удалить позицию: явной кнопкой `Удалить` для конкретной строки (по `productId`)
 - Автосохранение: debounce 2 сек после изменения в КП, но только после первой добавленной товарной позиции (`items.length > 0`) → `PUT /api/kp/:id`
@@ -73,7 +83,7 @@ total     = subtotal + vatAmount
 
 ## Многостраничность документа A4
 
-`KpDocumentComponent` разбивает items на страницы (`itemsPerPage = 10`):
+`KpDocumentComponent` разбивает items на страницы (`itemsPerPage = 6` по умолчанию):
 - Стр. 1: фон `kp-1str.png` + `KpHeaderComponent` (получатель + метаданные)
 - Стр. 2+: фон `kp-2str.png`, без шапки, `margin-top: 20mm`
 - Последняя стр.: `KpTableComponent` (итоги + условия)

@@ -4,43 +4,63 @@
   <div class="builder">
 
     <div class="builder__toolbar no-print">
-      <button ui-btn (click)="back()">← Назад</button>
-      <input class="builder__title" [(ngModel)]="kp()!.title" [disabled]="isReadOnly()" placeholder="Название КП" />
-      <select [(ngModel)]="kp()!.status" [disabled]="isReadOnly()" class="builder__status">
-        <option value="draft" [disabled]="!canSelectStatus('draft')">Черновик</option>
-        <option value="sent" [disabled]="!canSelectStatus('sent')">Отправлен</option>
-        <option value="accepted" [disabled]="!canSelectStatus('accepted')">Принят</option>
-        <option value="rejected" [disabled]="!canSelectStatus('rejected')">Отклонён</option>
-      </select>
-      @if (isManager()) {
-        <span class="role-hint">Менеджер: доступен переход только draft → sent</span>
-      }
-      @if (isReadOnly()) {
-        <span class="readonly-badge">Режим только чтение</span>
-      }
-      <span class="save-status save-status--{{ autosave.status() }}">
-        @switch (autosave.status()) {
-          @case ('saving')  { ⏳ Сохранение... }
-          @case ('saved')   { ✓ Сохранено }
-          @case ('unsaved') { ● Не сохранено }
-          @case ('error')   { ✕ Ошибка сохранения }
+      <div class="builder__toolbar-main">
+        <button ui-btn class="builder__toolbar-btn" (click)="back()">← Назад</button>
+        <input class="builder__title" [(ngModel)]="kp()!.title" [disabled]="isReadOnly()" placeholder="Название КП" />
+        <select [(ngModel)]="kp()!.status" [disabled]="isReadOnly()" class="builder__status">
+          <option value="draft" [disabled]="!canSelectStatus('draft')">Черновик</option>
+          <option value="sent" [disabled]="!canSelectStatus('sent')">Отправлен</option>
+          <option value="accepted" [disabled]="!canSelectStatus('accepted')">Принят</option>
+          <option value="rejected" [disabled]="!canSelectStatus('rejected')">Отклонён</option>
+        </select>
+      </div>
+      <div class="builder__toolbar-actions">
+        <span class="save-status save-status--{{ autosave.status() }}">
+          @switch (autosave.status()) {
+            @case ('saving')  { ⏳ Сохранение... }
+            @case ('saved')   { ✓ Сохранено }
+            @case ('unsaved') { ● Есть изменения }
+            @case ('error')   { ✕ Ошибка }
+          }
+        </span>
+        @if (isReadOnly()) {
+          <span class="readonly-badge">Режим только чтение</span>
         }
-      </span>
-      <button ui-btn (click)="save()" [disabled]="isReadOnly() || autosave.status() === 'saving'">
-        Сохранить
-      </button>
-      <button ui-btn variant="ghost" (click)="focusCatalog.set(!focusCatalog())">
-        {{ focusCatalog() ? 'Обычный режим' : 'Фокус: каталог' }}
-      </button>
-      <button ui-btn variant="primary" (click)="print()">Печать / PDF</button>
+        <button ui-btn class="builder__toolbar-btn" variant="ghost" (click)="openPreview()">
+          Предпросмотр
+        </button>
+        <button ui-btn class="builder__toolbar-btn" variant="ghost" (click)="print()">
+          PDF / Печать
+        </button>
+        <button ui-btn class="builder__toolbar-btn" variant="ghost" (click)="openMoreActions()">
+          Доп. действия
+        </button>
+        <button
+          ui-btn
+          class="builder__toolbar-btn"
+          variant="primary"
+          (click)="save()"
+          [disabled]="isReadOnly() || autosave.status() === 'saving'">
+          @if (autosave.status() === 'saving') { Сохраняю... } @else { Сохранить }
+        </button>
+      </div>
     </div>
+    @if (isManager()) {
+      <div class="builder__toolbar-hint no-print">
+        <span class="role-hint">Менеджер: доступен переход только draft → sent</span>
+      </div>
+    }
 
-    <div class="builder__body" [class.builder__body--with-right]="!focusCatalog()">
+    <div
+      class="builder__body"
+      [class.builder__body--with-right]="!focusCatalog()"
+      [class.builder__body--catalog-collapsed]="catalogCollapsed()"
+    >
 
-      <aside class="builder__sidebar no-print">
+      <aside class="builder__sidebar builder__slot builder__slot--left no-print">
 
         @if (!focusCatalog()) {
-        <div class="sidebar-section">
+        <div class="sidebar-section sidebar-section--recipient" [class.sidebar-section--open]="!recipientCollapsed()">
           <button class="sidebar-section__title-btn" (click)="toggleSection('recipient')">
             <span class="sidebar-section__title">Получатель</span>
             <span class="sidebar-section__chevron">{{ recipientCollapsed() ? '▸' : '▾' }}</span>
@@ -75,7 +95,11 @@
         </div>
         }
 
-        <div class="sidebar-section" [class.sidebar-section--expanded]="focusCatalog()">
+        <div
+          class="sidebar-section sidebar-section--catalog"
+          [class.sidebar-section--expanded]="focusCatalog()"
+          [class.sidebar-section--open]="!catalogCollapsed()"
+        >
           <button class="sidebar-section__title-btn" (click)="toggleSection('catalog')">
             <span class="sidebar-section__title">Каталог товаров</span>
             <span class="sidebar-section__chevron">{{ catalogCollapsed() ? '▸' : '▾' }}</span>
@@ -125,12 +149,12 @@
 
       </aside>
 
-      <div class="builder__preview">
+      <div class="builder__preview builder__slot builder__slot--center">
         <div class="builder__preview-scale">
           <app-kp-document
             [recipient]="kp()!.recipient"
             [metadata]="kp()!.metadata"
-            [itemsPerPage]="kp()!.metadata.tablePageBreakAfter || 10"
+            [itemsPerPage]="kp()!.metadata.tablePageBreakAfter || 6"
             [items]="catalogItems()"
             [vatPercent]="kp()!.vatPercent"
             [conditions]="kp()!.conditions">
@@ -139,8 +163,8 @@
       </div>
 
       @if (!focusCatalog()) {
-      <aside class="builder__right no-print">
-        <div class="sidebar-section">
+      <aside class="builder__right builder__slot builder__slot--right no-print">
+        <div class="sidebar-section sidebar-section--params" [class.sidebar-section--open]="!paramsCollapsed()">
           <button class="sidebar-section__title-btn" (click)="toggleSection('params')">
             <span class="sidebar-section__title">Параметры КП</span>
             <span class="sidebar-section__chevron">{{ paramsCollapsed() ? '▸' : '▾' }}</span>
@@ -198,72 +222,131 @@
                 (change)="kp()!.vatPercent = +$any($event.target).value"
               />
             </label>
-            <label class="kp-params-grid__field">
+            <label class="kp-params-grid__field kp-params-grid__field--wide">
               <span>Перенос таблицы после строки №</span>
               <input
                 type="number"
                 min="1"
-                [value]="kp()!.metadata.tablePageBreakAfter || 10"
+                [value]="kp()!.metadata.tablePageBreakAfter || 6"
                 [disabled]="isReadOnly()"
                 (change)="updateTablePageBreakAfter(+$any($event.target).value)"
               />
+            </label>
+            <label class="kp-params-grid__field kp-params-grid__field--wide">
+              <span>Размер фото (%)</span>
+              <div class="photo-scale-control">
+                <input
+                  class="photo-scale-control__range"
+                  type="range"
+                  min="150"
+                  max="350"
+                  step="5"
+                  [value]="kp()!.metadata.photoScalePercent || 150"
+                  [disabled]="isReadOnly()"
+                  (input)="updatePhotoScalePercent(+$any($event.target).value)"
+                />
+                <span class="photo-scale-control__value">{{ kp()!.metadata.photoScalePercent || 150 }}%</span>
+                <input
+                  class="photo-scale-control__number"
+                  type="number"
+                  min="150"
+                  max="350"
+                  [value]="kp()!.metadata.photoScalePercent || 150"
+                  [disabled]="isReadOnly()"
+                  (change)="updatePhotoScalePercent(+$any($event.target).value)"
+                />
+              </div>
             </label>
           </div>
           }
         </div>
 
-        <div class="sidebar-section">
+        <div class="sidebar-section sidebar-section--items" [class.sidebar-section--open]="!itemsCollapsed()">
           <button class="sidebar-section__title-btn" (click)="toggleSection('items')">
             <span class="sidebar-section__title">Состав КП</span>
             <span class="sidebar-section__chevron">{{ itemsCollapsed() ? '▸' : '▾' }}</span>
           </button>
           @if (!itemsCollapsed()) {
           <div class="manual-item-form">
-            <p class="manual-item-form__title">Добавить позицию вручную</p>
-            <input
-              placeholder="Название товара *"
-              [disabled]="isReadOnly()"
-              [(ngModel)]="manualItemDraft.name"
-            />
-            <input
-              placeholder="Артикул"
-              [disabled]="isReadOnly()"
-              [(ngModel)]="manualItemDraft.code"
-            />
-            <input
-              type="number"
-              min="0"
-              placeholder="Цена, ₽"
-              [disabled]="isReadOnly()"
-              [(ngModel)]="manualItemDraft.price"
-            />
-            <input
-              type="number"
-              min="1"
-              placeholder="Кол-во"
-              [disabled]="isReadOnly()"
-              [(ngModel)]="manualItemDraft.qty"
-            />
-            <input
-              placeholder="Ед. изм. (шт, м2, компл.)"
-              [disabled]="isReadOnly()"
-              [(ngModel)]="manualItemDraft.unit"
-            />
             <button
               ui-btn
               size="sm"
               variant="primary"
-              class="manual-item-form__submit"
-              [disabled]="isReadOnly() || !canAddManualItem()"
-              (click)="addManualItem()">
-              Добавить позицию
+              [disabled]="isReadOnly()"
+              (click)="openCreateProductForm()">
+              + Добавить товар
             </button>
+          </div>
+          <div class="bulk-adjustments">
+            <div class="bulk-adjustments__row">
+              <label>
+                <span>Наценка (%)</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="500"
+                  step="1"
+                  [disabled]="isReadOnly() || selectedItemIds().length === 0"
+                  [value]="bulkMarkupPercent()"
+                  (input)="onBulkMarkupInput($any($event.target).value)"
+                />
+              </label>
+            </div>
+            <div class="bulk-adjustments__row">
+              <label>
+                <span>Скидка (%)</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  [disabled]="isReadOnly() || selectedItemIds().length === 0"
+                  [value]="bulkDiscountPercent()"
+                  (input)="onBulkDiscountInput($any($event.target).value)"
+                />
+              </label>
+            </div>
+            <div class="bulk-adjustments__actions">
+              <span>Выбрано: {{ selectedItemIds().length }}</span>
+              <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly() || kp()!.items.length === 0" (click)="selectAllItems()">
+                Выбрать все
+              </button>
+              <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly() || selectedItemIds().length === 0" (click)="clearBulkAdjustments()">
+                Сбросить наценку/скидку
+              </button>
+              <button ui-btn size="sm" variant="ghost" [disabled]="selectedItemIds().length === 0" (click)="clearSelection()">
+                Снять выделение
+              </button>
+            </div>
           </div>
           @for (item of kp()!.items; track item.productId) {
             <div class="item-row">
+              <div class="item-row__thumb">
+                @if (normalizeImageUrl(item.imageUrl)) {
+                  <img [src]="normalizeImageUrl(item.imageUrl)" [alt]="item.name" loading="lazy" />
+                } @else {
+                  <span>Нет фото</span>
+                }
+              </div>
               <div class="item-row__meta">
+                <label class="item-row__select">
+                  <input
+                    type="checkbox"
+                    [checked]="isItemSelected(item)"
+                    [disabled]="isReadOnly()"
+                    (change)="toggleItemSelection(item, $any($event.target).checked)"
+                  />
+                  <span>Выбрать</span>
+                </label>
                 <span class="item-row__name">{{ item.name }}</span>
                 <span class="item-row__code">@if (item.code) { {{ item.code }} } @else { без артикула }</span>
+                <span class="item-row__price">
+                  {{ itemUnitPrice(item) | number:'1.0-0' }} ₽ / {{ item.unit }}
+                </span>
+                @if (itemAdjustmentsLabel(item)) {
+                  <span class="item-row__applied">{{ itemAdjustmentsLabel(item) }}</span>
+                }
+                <span class="item-row__formula">{{ itemPriceFormula(item) }}</span>
               </div>
               <div class="item-row__controls">
                 <button ui-btn icon [disabled]="isReadOnly()" (click)="decrementQty(item)">−</button>
@@ -300,7 +383,7 @@
           }
         </div>
 
-        <div class="sidebar-section">
+        <div class="sidebar-section sidebar-section--conditions" [class.sidebar-section--open]="!conditionsCollapsed()">
           <button class="sidebar-section__title-btn" (click)="toggleSection('conditions')">
             <span class="sidebar-section__title">Условия</span>
             <span class="sidebar-section__chevron">{{ conditionsCollapsed() ? '▸' : '▾' }}</span>
@@ -350,6 +433,13 @@
       [formHeading]="'Новый получатель'"
       (saved)="onRecipientFormSaved($event)"
       (cancelled)="closeRecipientForm()" />
+  }
+
+  @if (productFormOpen()) {
+    <app-product-form
+      [product]="null"
+      (saved)="onProductFormSaved($event)"
+      (cancelled)="closeProductForm()" />
   }
 
   @if (showLeaveConfirm()) {

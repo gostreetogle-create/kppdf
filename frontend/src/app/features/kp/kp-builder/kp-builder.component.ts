@@ -9,6 +9,7 @@ import { type KpCatalogItem } from '../components/kp-catalog/kp-catalog.componen
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent, ModalComponent } from '../../../shared/ui/index';
 import { CounterpartyFormComponent } from '../../../shared/components/counterparty-form/counterparty-form.component';
+import { ProductFormComponent } from '../../products/components/product-form/product-form.component';
 import { AutosaveService } from './autosave.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -16,7 +17,7 @@ import { NotificationService } from '../../../core/services/notification.service
 @Component({
   selector: 'app-kp-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, KpDocumentComponent, ButtonComponent, ModalComponent, CounterpartyFormComponent],
+  imports: [CommonModule, FormsModule, KpDocumentComponent, ButtonComponent, ModalComponent, CounterpartyFormComponent, ProductFormComponent],
   providers: [AutosaveService],   // scope — только этот компонент
   templateUrl: './kp-builder.component.html',
   styleUrls: [
@@ -40,30 +41,24 @@ export class KpBuilderComponent implements OnInit {
   counterparties = signal<Counterparty[]>([]);
   loading        = signal(true);
   conditionDraft = '';
+  selectedItemIds = signal<string[]>([]);
+  bulkMarkupPercent = signal(0);
+  bulkDiscountPercent = signal(0);
   focusCatalog = signal(false);
   catalogSearch = signal('');
   catalogCategory = signal('');
-  recipientCollapsed = signal(false);
-  catalogCollapsed = signal(false);
-  paramsCollapsed = signal(false);
-  itemsCollapsed = signal(false);
-  conditionsCollapsed = signal(false);
+  recipientCollapsed = signal(true);
+  catalogCollapsed = signal(true);
+  paramsCollapsed = signal(true);
+  itemsCollapsed = signal(true);
+  conditionsCollapsed = signal(true);
   /** Модалка создания контрагента без ухода со страницы КП */
   recipientFormOpen = signal(false);
+  /** Модалка создания товара прямо из КП */
+  productFormOpen = signal(false);
   /** Подтверждение ухода со страницы (ui-modal, не window.confirm) */
   showLeaveConfirm = signal(false);
   lastRemovedItem = signal<KpItem | null>(null);
-  manualItemDraft = {
-    name: '',
-    code: '',
-    unit: 'шт',
-    price: 0,
-    qty: 1
-  };
-
-  readonly canAddManualItem = computed(() =>
-    this.manualItemDraft.name.trim().length > 0
-  );
 
   // ─── computed ─────────────────────────────────────────
   readonly catalogItems = computed<KpCatalogItem[]>(() =>
@@ -73,14 +68,16 @@ export class KpBuilderComponent implements OnInit {
       name:        i.name,
       description: i.description,
       unit:        i.unit,
-      price:       i.price,
+      price:       this.itemUnitPrice(i),
+      basePrice:   i.price,
+      adjustmentsLabel: this.itemAdjustmentsLabel(i),
       qty:         i.qty,
       imageUrl:    this.normalizeImageUrl(i.imageUrl)
     }))
   );
 
   readonly subtotal = computed(() =>
-    this.kp()?.items.reduce((s, i) => s + i.price * i.qty, 0) ?? 0
+    this.kp()?.items.reduce((s, i) => s + this.itemUnitPrice(i) * i.qty, 0) ?? 0
   );
   readonly vatAmount = computed(() =>
     Math.round(this.subtotal() * (this.kp()?.vatPercent ?? 20) / 100)
@@ -146,22 +143,30 @@ export class KpBuilderComponent implements OnInit {
 
     forkJoin({ kp: this.api.getKp(id), counterparties: counterparties$ })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ kp, counterparties }) => {
-        this.counterparties.set(counterparties);
-        this.kp.set(kp);
-        this.loading.set(false);
-        Promise.resolve().then(() => {
-          if (selectCpId) {
-            this.fillFromCounterparty(selectCpId);
-            void this.router.navigate([], {
-              relativeTo: this.route,
-              queryParams: { selectCp: null },
-              queryParamsHandling: 'merge',
-              replaceUrl: true
-            });
-          }
-          this.initialized = true;
-        });
+      .subscribe({
+        next: ({ kp, counterparties }) => {
+          this.counterparties.set(counterparties);
+          this.kp.set(kp);
+          if (kp.items.length > 0) this.itemsCollapsed.set(false);
+          this.loading.set(false);
+          Promise.resolve().then(() => {
+            if (selectCpId) {
+              this.fillFromCounterparty(selectCpId);
+              void this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: { selectCp: null },
+                queryParamsHandling: 'merge',
+                replaceUrl: true
+              });
+            }
+            this.initialized = true;
+          });
+        },
+        error: () => {
+          this.loading.set(false);
+          this.ns.error('КП не найдено или недоступно');
+          void this.router.navigate(['/']);
+        }
       });
 
     this.api.getProducts()
@@ -177,6 +182,24 @@ export class KpBuilderComponent implements OnInit {
 
   closeRecipientForm() {
     this.recipientFormOpen.set(false);
+  }
+
+  openCreateProductForm() {
+    if (this.isReadOnly()) return;
+    this.productFormOpen.set(true);
+  }
+
+  closeProductForm() {
+    this.productFormOpen.set(false);
+  }
+
+  onProductFormSaved(product: Product) {
+    this.products.update(list =>
+      list.some(p => p._id === product._id) ? list.map(p => p._id === product._id ? product : p) : [product, ...list]
+    );
+    this.addItem(product);
+    this.productFormOpen.set(false);
+    this.ns.success('Товар создан и добавлен в КП');
   }
 
   onRecipientFormSaved(cp: Counterparty) {
@@ -257,9 +280,14 @@ export class KpBuilderComponent implements OnInit {
           unit:        product.unit,
           price:       product.price,
           qty:         1,
-          imageUrl:    this.normalizeImageUrl(product.images.find(i => i.isMain)?.url ?? product.images[0]?.url ?? '')
+          imageUrl:    this.normalizeImageUrl(product.images.find(i => i.isMain)?.url ?? product.images[0]?.url ?? ''),
+          markupEnabled: false,
+          markupPercent: 0,
+          discountEnabled: false,
+          discountPercent: 0
         }];
     this.kp.set({ ...kp, items });
+    if (items.length > 0) this.itemsCollapsed.set(false);
   }
 
   removeItem(item: KpItem) {
@@ -268,6 +296,7 @@ export class KpBuilderComponent implements OnInit {
     if (!kp) return;
     this.lastRemovedItem.set(item);
     this.kp.set({ ...kp, items: kp.items.filter(i => i.productId !== item.productId) });
+    this.selectedItemIds.update(ids => ids.filter(id => id !== item.productId));
   }
 
   updateQty(item: KpItem, qty: number) {
@@ -286,35 +315,119 @@ export class KpBuilderComponent implements OnInit {
     this.updateQty(item, Math.max(1, item.qty - 1));
   }
 
-  addManualItem() {
+  isItemSelected(item: KpItem): boolean {
+    return this.selectedItemIds().includes(item.productId);
+  }
+
+  toggleItemSelection(item: KpItem, checked: boolean) {
+    if (this.isReadOnly()) return;
+    if (checked) {
+      this.selectedItemIds.update(ids => (ids.includes(item.productId) ? ids : [...ids, item.productId]));
+      // Apply current bulk values immediately for newly selected row.
+      this.applyBulkMarkup();
+      this.applyBulkDiscount();
+      return;
+    }
+    const kp = this.kp();
+    if (!kp) return;
+
+    // Interactive behavior: unselecting a row resets applied bulk adjustments for this row.
+    this.kp.set({
+      ...kp,
+      items: kp.items.map(i =>
+        i.productId === item.productId
+          ? { ...i, markupEnabled: false, markupPercent: 0, discountEnabled: false, discountPercent: 0 }
+          : i
+      )
+    });
+    this.selectedItemIds.update(ids => ids.filter(id => id !== item.productId));
+  }
+
+  clearSelection() {
+    this.selectedItemIds.set([]);
+  }
+
+  onBulkMarkupInput(rawValue: string | number) {
+    const percent = this.clampPercent(this.parsePercentInput(rawValue), 0, 500);
+    this.bulkMarkupPercent.set(percent);
+    this.applyBulkMarkup();
+  }
+
+  onBulkDiscountInput(rawValue: string | number) {
+    const percent = this.clampPercent(this.parsePercentInput(rawValue), 0, 100);
+    this.bulkDiscountPercent.set(percent);
+    this.applyBulkDiscount();
+  }
+
+  selectAllItems() {
+    const ids = (this.kp()?.items ?? []).map(i => i.productId);
+    this.selectedItemIds.set(ids);
+  }
+
+  applyBulkMarkup() {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    const name = this.manualItemDraft.name.trim();
-    if (!name) return;
-    const qty = Math.max(1, Number(this.manualItemDraft.qty) || 1);
-    const price = Math.max(0, Number(this.manualItemDraft.price) || 0);
-    const unit = this.manualItemDraft.unit.trim() || 'шт';
-    const code = this.manualItemDraft.code.trim();
-    const manualItem: KpItem = {
-      productId: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      code,
-      name,
-      description: '',
-      unit,
-      price,
-      qty,
-      imageUrl: ''
-    };
-    this.kp.set({ ...kp, items: [...kp.items, manualItem] });
-    this.manualItemDraft = { name: '', code: '', unit: 'шт', price: 0, qty: 1 };
+    const selected = new Set(this.selectedItemIds());
+    if (selected.size === 0) return;
+    const percent = this.clampPercent(this.bulkMarkupPercent(), 0, 500);
+    this.bulkMarkupPercent.set(percent);
+    this.kp.set({
+      ...kp,
+      items: kp.items.map(i =>
+        selected.has(i.productId)
+          ? { ...i, markupEnabled: percent > 0, markupPercent: percent }
+          : i
+      )
+    });
+  }
+
+  applyBulkDiscount() {
+    if (this.isReadOnly()) return;
+    const kp = this.kp();
+    if (!kp) return;
+    const selected = new Set(this.selectedItemIds());
+    if (selected.size === 0) return;
+    const percent = this.clampPercent(this.bulkDiscountPercent(), 0, 100);
+    this.bulkDiscountPercent.set(percent);
+    this.kp.set({
+      ...kp,
+      items: kp.items.map(i =>
+        selected.has(i.productId)
+          ? { ...i, discountEnabled: percent > 0, discountPercent: percent }
+          : i
+      )
+    });
+  }
+
+  clearBulkAdjustments() {
+    if (this.isReadOnly()) return;
+    const kp = this.kp();
+    if (!kp) return;
+    const selected = new Set(this.selectedItemIds());
+    if (selected.size === 0) return;
+    this.kp.set({
+      ...kp,
+      items: kp.items.map(i =>
+        selected.has(i.productId)
+          ? { ...i, markupEnabled: false, markupPercent: 0, discountEnabled: false, discountPercent: 0 }
+          : i
+      )
+    });
   }
 
   updateTablePageBreakAfter(value: number) {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    kp.metadata.tablePageBreakAfter = Math.max(1, value || 10);
+    kp.metadata.tablePageBreakAfter = Math.max(1, value || 6);
+  }
+
+  updatePhotoScalePercent(value: number) {
+    if (this.isReadOnly()) return;
+    const kp = this.kp();
+    if (!kp) return;
+    kp.metadata.photoScalePercent = this.clampPercent(value, 150, 350);
   }
 
   /** Ручное сохранение — немедленно, сбрасывает дебаунс */
@@ -387,6 +500,7 @@ export class KpBuilderComponent implements OnInit {
     const kp = this.kp();
     if (!removed || !kp) return;
     this.kp.set({ ...kp, items: [...kp.items, removed] });
+    this.itemsCollapsed.set(false);
     this.lastRemovedItem.set(null);
   }
 
@@ -415,7 +529,7 @@ export class KpBuilderComponent implements OnInit {
     return current === 'draft' && targetStatus === 'sent';
   }
 
-  private normalizeImageUrl(url?: string): string {
+  normalizeImageUrl(url?: string): string {
     if (!url) return '';
     if (/^(https?:|data:|blob:)/i.test(url)) return url;
 
@@ -427,11 +541,67 @@ export class KpBuilderComponent implements OnInit {
     return normalized.startsWith('/') ? normalized : `/${normalized}`;
   }
 
+  itemUnitPrice(item: KpItem): number {
+    const markupPercent = item.markupEnabled ? this.clampPercent(item.markupPercent ?? 0, 0, 500) : 0;
+    const discountPercent = item.discountEnabled ? this.clampPercent(item.discountPercent ?? 0, 0, 100) : 0;
+    const withMarkup = item.price * (1 + markupPercent / 100);
+    const withDiscount = withMarkup * (1 - discountPercent / 100);
+    return Math.max(0, Math.round(withDiscount));
+  }
+
+  itemAdjustmentsLabel(item: KpItem): string {
+    const chunks: string[] = [];
+    if (item.markupEnabled && (item.markupPercent ?? 0) > 0) {
+      chunks.push(`Наценка +${this.clampPercent(item.markupPercent ?? 0, 0, 500)}%`);
+    }
+    if (item.discountEnabled && (item.discountPercent ?? 0) > 0) {
+      chunks.push(`Скидка -${this.clampPercent(item.discountPercent ?? 0, 0, 100)}%`);
+    }
+    return chunks.join(' · ');
+  }
+
+  itemPriceFormula(item: KpItem): string {
+    const base = Math.round(item.price);
+    const markup = item.markupEnabled ? this.clampPercent(item.markupPercent ?? 0, 0, 500) : 0;
+    const discount = item.discountEnabled ? this.clampPercent(item.discountPercent ?? 0, 0, 100) : 0;
+    const finalUnit = this.itemUnitPrice(item);
+
+    if (markup === 0 && discount === 0) {
+      return `База ${base.toLocaleString('ru-RU')} ₽`;
+    }
+
+    const parts = [`База ${base.toLocaleString('ru-RU')} ₽`];
+    if (markup > 0) parts.push(`+${markup}%`);
+    if (discount > 0) parts.push(`-${discount}%`);
+    parts.push(`= ${finalUnit.toLocaleString('ru-RU')} ₽`);
+    return parts.join(' → ');
+  }
+
+  private clampPercent(value: number, min: number, max: number): number {
+    const n = Number.isFinite(value) ? value : 0;
+    return Math.min(max, Math.max(min, n));
+  }
+
+  private parsePercentInput(value: string | number): number {
+    if (typeof value === 'number') return value;
+    if (!value?.trim()) return 0;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
   readonly conditionTemplates = [
     'Срок поставки: 15 рабочих дней с момента оплаты.',
     'Гарантия на продукцию: 12 месяцев.',
     'Доставка рассчитывается отдельно и не входит в стоимость КП.'
   ];
+
+  openPreview() {
+    this.focusCatalog.set(false);
+  }
+
+  openMoreActions() {
+    this.ns.info('Доп. действия появятся в следующем этапе');
+  }
 
   print() { window.print(); }
   back()  { this.router.navigate(['/']); }

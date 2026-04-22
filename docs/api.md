@@ -89,7 +89,9 @@ Rate limit: 10 попыток / 15 мин с одного IP.
   },
   "metadata": {
     "number": "string", "validityDays": 10,
-    "prepaymentPercent": 50, "productionDays": 15
+    "prepaymentPercent": 50, "productionDays": 15,
+    "tablePageBreakAfter": 6,
+    "photoScalePercent": 150
   },
   "items": [{
     "productId": "string", "code": "string?", "name": "string",

@@ -41,7 +41,8 @@ export class KpDocumentComponent {
     validityDays: 10,
     prepaymentPercent: 50,
     productionDays: 15,
-    tablePageBreakAfter: 10
+    tablePageBreakAfter: 6,
+    photoScalePercent: 150
   });
 
   items = input<KpCatalogItem[]>([]);
@@ -70,7 +71,7 @@ export class KpDocumentComponent {
   );
 
   protected readonly resolvedItemsPerPage = computed(() =>
-    Math.max(1, Number(this.itemsPerPage()) || 10)
+    Math.max(1, Number(this.itemsPerPage()) || 6)
   );
 
   protected readonly pageChunks = computed((): KpPageChunk[] => {

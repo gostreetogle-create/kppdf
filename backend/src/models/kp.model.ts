@@ -11,6 +11,10 @@ export interface IKpItem {
   price:       number;
   qty:         number;
   imageUrl?:   string;
+  markupEnabled?: boolean;
+  markupPercent?: number;
+  discountEnabled?: boolean;
+  discountPercent?: number;
 }
 
 export interface IKp extends Document {
@@ -41,6 +45,7 @@ export interface IKp extends Document {
     prepaymentPercent: number;
     productionDays: number;
     tablePageBreakAfter: number;
+    photoScalePercent?: number;
   };
   items: IKpItem[];
   conditions: string[];
@@ -56,6 +61,10 @@ const KpItemSchema = new Schema<IKpItem>({
   price:       { type: Number, required: true },
   qty:         { type: Number, required: true, default: 1, min: [1, 'qty должен быть >= 1'] },
   imageUrl:    { type: String, default: '' },
+  markupEnabled:   { type: Boolean, default: false },
+  markupPercent:   { type: Number, default: 0, min: [0, 'markupPercent должен быть >= 0'] },
+  discountEnabled: { type: Boolean, default: false },
+  discountPercent: { type: Number, default: 0, min: [0, 'discountPercent должен быть >= 0'], max: [100, 'discountPercent должен быть <= 100'] },
 }, { _id: false });
 
 const KpSchema = new Schema<IKp>({
@@ -85,7 +94,8 @@ const KpSchema = new Schema<IKp>({
     validityDays:      { type: Number, default: 10 },
     prepaymentPercent: { type: Number, default: 50 },
     productionDays:    { type: Number, default: 15 },
-    tablePageBreakAfter: { type: Number, default: 10, min: [1, 'tablePageBreakAfter должен быть >= 1'] },
+    tablePageBreakAfter: { type: Number, default: 6, min: [1, 'tablePageBreakAfter должен быть >= 1'] },
+    photoScalePercent: { type: Number, default: 150, min: [150, 'photoScalePercent должен быть >= 150'], max: [350, 'photoScalePercent должен быть <= 350'] },
   },
   items:      { type: [KpItemSchema], default: [] },
   conditions: { type: [String], default: [] },
