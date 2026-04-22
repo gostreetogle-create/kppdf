@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import { UsersService } from '../services/users.service';
-import type { UserRole } from '../auth/permissions';
 
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -15,21 +14,21 @@ export class UsersController {
   };
 
   create = async (req: Request, res: Response) => {
-    const { username, name, role, password } = req.body as {
+    const { username, name, roleId, password } = req.body as {
       username?: string;
       name?: string;
-      role?: UserRole;
+      roleId?: string;
       password?: string;
     };
-    if (!username || !name || !role || !password) {
-      res.status(400).json({ message: 'username, name, role, password обязательны' });
+    if (!username || !name || !roleId || !password) {
+      res.status(400).json({ message: 'username, name, roleId, password обязательны' });
       return;
     }
     try {
       const user = await this.usersService.create({
         username,
         name,
-        role,
+        roleId,
         password,
         actorUserId: req.user?.userId
       });
@@ -37,7 +36,9 @@ export class UsersController {
         _id: user._id,
         username: user.username,
         name: user.name,
-        role: user.role,
+        roleId: (user as any).roleId?._id?.toString?.() ?? user.roleId,
+        roleKey: (user as any).roleId?.key ?? (user as any).role,
+        roleName: (user as any).roleId?.name ?? (user as any).role,
         isActive: user.isActive,
         mustChangePassword: user.mustChangePassword,
         createdAt: user.createdAt
@@ -59,11 +60,11 @@ export class UsersController {
       const user = await this.usersService.update(req.params.id, {
         username: req.body?.username,
         name: req.body?.name,
-        role: req.body?.role,
+        roleId: req.body?.roleId,
         isActive: req.body?.isActive,
         mustChangePassword: req.body?.mustChangePassword,
         actorUserId: req.user?.userId,
-        actorRole: req.user?.role
+        actorRoleKey: req.user?.roleKey
       });
       res.json(user);
     } catch (e: any) {

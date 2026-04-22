@@ -5,3 +5,4 @@ export { FormFieldComponent } from './form-field/form-field.component';
 export { AlertComponent } from './alert/alert.component';
 export { SearchInputComponent } from './search-input/search-input.component';
 export { FilterSelectComponent } from './filter-select/filter-select.component';
+export { StatusBadgeComponent } from './status-badge/status-badge.component';

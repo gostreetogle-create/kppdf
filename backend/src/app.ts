@@ -10,8 +10,11 @@ import counterpartyRoutes from './routes/counterparty.routes';
 import dictionaryRoutes from './routes/dictionary.routes';
 import settingsRoutes from './routes/settings.routes';
 import usersRoutes from './routes/users.routes';
+import rolesRoutes from './routes/roles.routes';
+import permissionsRoutes from './routes/permissions.routes';
 import { authGuard, enforcePasswordChange } from './middleware/auth.middleware';
 import { requirePermission } from './middleware/rbac.guard';
+import { initRolesAndMigrateUsers } from './services/role-init.service';
 
 dotenv.config();
 
@@ -66,6 +69,8 @@ app.use('/api/counterparties',  authGuard, enforcePasswordChange, counterpartyRo
 app.use('/api/products',        authGuard, enforcePasswordChange, productRoutes);
 app.use('/api/kp',              authGuard, enforcePasswordChange, kpRoutes);
 app.use('/api/users',           authGuard, enforcePasswordChange, requirePermission('users.manage'), usersRoutes);
+app.use('/api/roles',           authGuard, enforcePasswordChange, requirePermission('users.manage'), rolesRoutes);
+app.use('/api/permissions',     authGuard, enforcePasswordChange, requirePermission('users.manage'), permissionsRoutes);
 
 const PORT     = process.env.PORT     || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/kp-app';
@@ -73,6 +78,9 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/kp-app';
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected:', MONGO_URI);
+    return initRolesAndMigrateUsers();
+  })
+  .then(() => {
     app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
   })
   .catch(err => {

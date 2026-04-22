@@ -2,15 +2,15 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ApiService, type AppUser, type AppUserRole } from '../../core/services/api.service';
+import { ApiService, type AppUser, type Role } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ButtonComponent } from '../../shared/ui';
+import { ButtonComponent, StatusBadgeComponent } from '../../shared/ui';
 import { ModalComponent } from '../../shared/ui/modal/modal.component';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, StatusBadgeComponent, ModalComponent],
   templateUrl: './users.component.html',
   styleUrl: './users.component.scss'
 })
@@ -23,21 +23,23 @@ export class UsersComponent {
   readonly loading = signal(true);
   readonly busy = signal(false);
   readonly savingUserId = signal<string | null>(null);
+  readonly roles = signal<Role[]>([]);
 
   readonly createModel = signal({
     username: '',
     name: '',
-    role: 'manager' as AppUserRole,
+    roleId: '',
     password: ''
   });
 
-  readonly editDraft = signal<Record<string, { username: string; name: string; role: AppUserRole; isActive: boolean }>>({});
+  readonly editDraft = signal<Record<string, { username: string; name: string; roleId: string | null; isActive: boolean }>>({});
   readonly deletingUser = signal<AppUser | null>(null);
   readonly openActionsForUserId = signal<string | null>(null);
   readonly resettingUser = signal<AppUser | null>(null);
   readonly resetPasswordValue = signal('');
 
   constructor() {
+    this.loadRoles();
     this.loadUsers();
   }
 
@@ -52,7 +54,7 @@ export class UsersComponent {
             Object.fromEntries(
               users.map(user => [
                 user._id,
-                { username: user.username, name: user.name, role: user.role, isActive: user.isActive }
+                { username: user.username, name: user.name, roleId: user.roleId, isActive: user.isActive }
               ])
             )
           );
@@ -89,18 +91,28 @@ export class UsersComponent {
       return;
     }
 
+    if (!model.roleId) {
+      this.ns.error('Выберите роль');
+      return;
+    }
+
     this.busy.set(true);
     this.api.createUser({
       username,
       name,
-      role: model.role,
+      roleId: model.roleId,
       password
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.busy.set(false);
-          this.createModel.set({ username: '', name: '', role: 'manager', password: '' });
+          this.createModel.set({
+            username: '',
+            name: '',
+            roleId: this.defaultRoleId(),
+            password: ''
+          });
           this.ns.success('Пользователь создан');
           this.loadUsers();
         },
@@ -111,7 +123,7 @@ export class UsersComponent {
       });
   }
 
-  setEditDraft(userId: string, patch: Partial<{ username: string; name: string; role: AppUserRole; isActive: boolean }>) {
+  setEditDraft(userId: string, patch: Partial<{ username: string; name: string; roleId: string | null; isActive: boolean }>) {
     this.editDraft.update(state => ({
       ...state,
       [userId]: { ...state[userId], ...patch }
@@ -142,7 +154,7 @@ export class UsersComponent {
     this.api.updateUser(user._id, {
       username,
       name: draft.name.trim(),
-      role: draft.role,
+      roleId: draft.roleId ?? undefined,
       isActive: draft.isActive
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -220,6 +232,30 @@ export class UsersComponent {
 
   closeActionsMenu() {
     this.openActionsForUserId.set(null);
+  }
+
+  roleNameById(roleId: string | null): string {
+    if (!roleId) return '—';
+    return this.roles().find(r => r._id === roleId)?.name ?? '—';
+  }
+
+  private loadRoles() {
+    this.api.getRoles()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (roles) => {
+          this.roles.set(roles);
+          if (!this.createModel().roleId) {
+            this.createModel.update(model => ({ ...model, roleId: this.defaultRoleId() }));
+          }
+        },
+        error: () => this.ns.error('Не удалось загрузить роли')
+      });
+  }
+
+  private defaultRoleId(): string {
+    const managerRole = this.roles().find(role => role.key === 'manager');
+    return managerRole?._id ?? this.roles()[0]?._id ?? '';
   }
 }
 

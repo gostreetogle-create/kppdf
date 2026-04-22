@@ -1,13 +1,13 @@
 import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Counterparty } from '../../../../core/services/api.service';
-import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
+import { StatusBadgeComponent, StatusBadgeVariant } from '../../../../shared/ui/status-badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/ui/button/button.component';
 
 @Component({
   selector: 'app-counterparty-table',
   standalone: true,
-  imports: [CommonModule, BadgeComponent, ButtonComponent],
+  imports: [CommonModule, StatusBadgeComponent, ButtonComponent],
   templateUrl: './counterparty-table.component.html',
   styleUrl: './counterparty-table.component.scss'
 })
@@ -25,12 +25,12 @@ export class CounterpartyTableComponent {
     return map[role] ?? role;
   }
 
-  roleColor(role: string): 'blue' | 'orange' | 'green' {
-    const map: Record<string, 'blue' | 'orange' | 'green'> = {
-      client:  'blue',
-      supplier: 'orange',
-      company:  'green',
+  roleVariant(role: string): StatusBadgeVariant {
+    const map: Record<string, StatusBadgeVariant> = {
+      client: 'client',
+      supplier: 'supplier',
+      company: 'company',
     };
-    return map[role] ?? 'blue';
+    return map[role] ?? 'client';
   }
 }

@@ -1,4 +1,6 @@
 @use 'tokens' as *;
+@use 'forms';
+@use 'buttons';
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -26,6 +28,7 @@
   --ui-spacing-5: #{$space-5};
   --ui-spacing-6: #{$space-6};
   --ui-spacing-8: #{$space-8};
+  --ui-font-size-md: #{$font-sm};
 
   /* Layout system */
   --layout-shell-sidebar: 220px;

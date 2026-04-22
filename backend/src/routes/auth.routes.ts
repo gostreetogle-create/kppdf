@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/user.model';
+import { Role } from '../models/role.model';
 import { authGuard } from '../middleware/auth.middleware';
 import type { AuthPayload } from '../middleware/auth.middleware';
 import { AuthService } from '../auth/auth.service';
@@ -17,11 +18,17 @@ function signRefreshToken(payload: Omit<AuthPayload, 'type'>): string {
 }
 
 function toSafeUser(user: any) {
+  const roleDoc = user.roleId && typeof user.roleId === 'object' ? user.roleId : null;
+  const roleKey = roleDoc?.key ?? user.role ?? 'manager';
+  const permissions = Array.isArray(roleDoc?.permissions) ? roleDoc.permissions : [];
   return {
     _id: user._id,
     username: user.username,
     name: user.name,
-    role: user.role,
+    roleId: roleDoc?._id?.toString?.() ?? user.roleId?.toString?.() ?? null,
+    roleKey,
+    roleName: roleDoc?.name ?? roleKey,
+    permissions,
     isActive: user.isActive,
     mustChangePassword: user.mustChangePassword,
     createdAt: user.createdAt
@@ -55,7 +62,18 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    const payload = { userId: user._id.toString(), username: user.username, role: user.role };
+    const roleDoc = await Role.findById(user.roleId).select('key permissions name');
+    if (!roleDoc) {
+      res.status(400).json({ message: 'Роль пользователя не найдена' });
+      return;
+    }
+    const payload = {
+      userId: user._id.toString(),
+      username: user.username,
+      roleId: roleDoc._id.toString(),
+      roleKey: roleDoc.key,
+      permissions: roleDoc.permissions
+    };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
     user.refreshTokenHash = await authService.hashToken(refreshToken);
@@ -65,7 +83,7 @@ router.post('/login', async (req: Request, res: Response) => {
     res.json({
       accessToken,
       refreshToken,
-      user: toSafeUser(user)
+      user: toSafeUser({ ...user.toObject(), roleId: roleDoc })
     });
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -98,7 +116,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
       res.status(401).json({ message: 'Неверный тип токена' });
       return;
     }
-    const user = await User.findById(payload.userId);
+    const user = await User.findById(payload.userId).populate('roleId', 'key permissions name');
     if (!user || !user.isActive || !user.refreshTokenHash) {
       res.status(401).json({ message: 'Сессия не найдена' });
       return;
@@ -114,7 +132,18 @@ router.post('/refresh', async (req: Request, res: Response) => {
       return;
     }
 
-    const nextPayload = { userId: user._id.toString(), username: user.username, role: user.role };
+    const roleDoc = (user as any).roleId ?? await Role.findById(user.roleId).select('key permissions name');
+    if (!roleDoc) {
+      res.status(400).json({ message: 'Роль пользователя не найдена' });
+      return;
+    }
+    const nextPayload = {
+      userId: user._id.toString(),
+      username: user.username,
+      roleId: roleDoc._id.toString(),
+      roleKey: roleDoc.key,
+      permissions: roleDoc.permissions
+    };
     const nextAccessToken = signAccessToken(nextPayload);
     const nextRefreshToken = signRefreshToken(nextPayload);
     user.refreshTokenHash = await authService.hashToken(nextRefreshToken);
@@ -158,7 +187,9 @@ router.post('/change-password', authGuard, async (req: Request, res: Response) =
 // GET /api/auth/me
 router.get('/me', authGuard, async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(req.user!.userId).select('-passwordHash -refreshTokenHash');
+    const user = await User.findById(req.user!.userId)
+      .select('-passwordHash -refreshTokenHash')
+      .populate('roleId', 'key permissions name');
     if (!user) { res.status(404).json({ message: 'Пользователь не найден' }); return; }
     if (!user.isActive) {
       res.status(403).json({ message: 'Пользователь деактивирован' });

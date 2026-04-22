@@ -8,16 +8,18 @@ import { KpDocumentComponent } from '../components/kp-document/kp-document.compo
 import { type KpCatalogItem } from '../components/kp-catalog/kp-catalog.component';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent, ModalComponent } from '../../../shared/ui/index';
+import { StatusBadgeComponent } from '../../../shared/ui/status-badge/status-badge.component';
 import { CounterpartyFormComponent } from '../../../shared/components/counterparty-form/counterparty-form.component';
 import { ProductFormComponent } from '../../products/components/product-form/product-form.component';
 import { AutosaveService } from './autosave.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PermissionsService } from '../../../core/services/permissions.service';
+import { ModalService } from '../../../core/services/modal.service';
 
 @Component({
   selector: 'app-kp-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, KpDocumentComponent, ButtonComponent, ModalComponent, CounterpartyFormComponent, ProductFormComponent],
+  imports: [CommonModule, FormsModule, KpDocumentComponent, ButtonComponent, ModalComponent, StatusBadgeComponent, CounterpartyFormComponent, ProductFormComponent],
   providers: [AutosaveService],   // scope — только этот компонент
   templateUrl: './kp-builder.component.html',
   styleUrls: [
@@ -33,6 +35,7 @@ export class KpBuilderComponent implements OnInit {
   private readonly router      = inject(Router);
   private readonly api         = inject(ApiService);
   private readonly permissions = inject(PermissionsService);
+  private readonly modal       = inject(ModalService);
   private readonly ns          = inject(NotificationService);
   readonly autosave            = inject(AutosaveService);
 
@@ -103,6 +106,7 @@ export class KpBuilderComponent implements OnInit {
     const status = this.kp()?.status;
     return status === 'sent' || status === 'accepted';
   });
+  readonly isDraft = computed(() => this.kp()?.status === 'draft');
 
   /** Есть ли несохранённые изменения — используется в CanDeactivate guard */
   readonly isDirty = computed(() => this.autosave.status() === 'unsaved');
@@ -175,7 +179,7 @@ export class KpBuilderComponent implements OnInit {
 
   /** Модалка нового контрагента на месте (без смены маршрута) */
   openCreateRecipientForm() {
-    if (this.isReadOnly()) return;
+    if (!this.isDraft()) return;
     this.recipientFormOpen.set(true);
   }
 
@@ -230,11 +234,36 @@ export class KpBuilderComponent implements OnInit {
 
   /** Заполнить получателя из справочника контрагентов */
   fillFromCounterparty(id: string) {
-    if (this.isReadOnly()) return;
+    if (!this.isDraft()) return;
     if (!id) return;
     const cp = this.counterparties().find(c => c._id === id);
     if (!cp) return;
     this.applyCounterpartyToKp(cp);
+  }
+
+  replaceRecipient(id: string) {
+    if (!this.isDraft()) {
+      this.ns.warning('Заменять получателя можно только в черновике');
+      return;
+    }
+    if (!id) return;
+    const cp = this.counterparties().find(c => c._id === id);
+    if (!cp) return;
+
+    this.modal.confirm({
+      title: 'Заменить получателя',
+      message: 'Это заменит текущие данные получателя. Продолжить?',
+      confirmText: 'Заменить',
+      cancelText: 'Отмена',
+      type: 'primary'
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.applyCounterpartyToKp(cp);
+        this.autosave.saveNow(this.kp()!);
+        this.ns.success('Получатель заменён новым snapshot');
+      });
   }
 
   private applyCounterpartyToKp(cp: Counterparty) {
@@ -526,6 +555,36 @@ export class KpBuilderComponent implements OnInit {
     if (!current) return false;
     if (current === targetStatus) return true;
     return current === 'draft' && targetStatus === 'sent';
+  }
+
+  onStatusChange(nextStatus: Kp['status']) {
+    const kp = this.kp();
+    if (!kp || kp.status === nextStatus) return;
+    if (!this.canSelectStatus(nextStatus)) return;
+
+    this.modal.confirm({
+      title: 'Смена статуса КП',
+      message: `Перевести КП из «${this.statusLabel(kp.status)}» в «${this.statusLabel(nextStatus)}»?`,
+      confirmText: 'Подтвердить',
+      cancelText: 'Отмена',
+      type: 'primary'
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.kp.set({ ...kp, status: nextStatus });
+        this.ns.success(`Статус изменён: ${this.statusLabel(nextStatus)}`);
+      });
+  }
+
+  statusLabel(status: Kp['status']): string {
+    const labels: Record<Kp['status'], string> = {
+      draft: 'Черновик',
+      sent: 'Отправлен',
+      accepted: 'Принят',
+      rejected: 'Отклонён'
+    };
+    return labels[status];
   }
 
   normalizeImageUrl(url?: string): string {

@@ -1,0 +1,56 @@
+@use 'tokens' as *;
+
+:root {
+  --ui-control-height: 2.25rem;
+  --ui-control-height-sm: 2rem;
+  --ui-font-size-md: 0.875rem;
+}
+
+.form-group {
+  margin-bottom: var(--ui-spacing-4);
+}
+
+.form-control,
+input.form-control,
+select.form-control,
+textarea.form-control {
+  width: 100%;
+  min-height: var(--ui-control-height);
+  padding: 0.5rem $space-3;
+  border: 1px solid var(--ui-border);
+  border-radius: $radius-md;
+  font-size: var(--ui-font-size-md);
+  font-family: inherit;
+  line-height: 1.35;
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-primary) 20%, transparent);
+  }
+
+  &::placeholder {
+    color: var(--ui-text-muted);
+    opacity: 0.72;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background: var(--ui-bg-soft);
+  }
+}
+
+textarea.form-control {
+  min-height: calc(var(--ui-control-height) * 2);
+  resize: vertical;
+}
+
+.form-control--sm {
+  min-height: var(--ui-control-height-sm);
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}

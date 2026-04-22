@@ -3,12 +3,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { take } from 'rxjs';
 import { ApiService, Product } from '../../core/services/api.service';
 import { ProductFormComponent } from './components/product-form/product-form.component';
 import { ProductCardComponent } from './components/product-card/product-card.component';
-import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent, SearchInputComponent, FilterSelectComponent } from '../../shared/ui/index';
 import { NotificationService } from '../../core/services/notification.service';
+import { ModalService } from '../../core/services/modal.service';
 
 @Component({
   selector: 'app-products',
@@ -19,7 +20,6 @@ import { NotificationService } from '../../core/services/notification.service';
     RouterLink,
     ProductFormComponent,
     ProductCardComponent,
-    ConfirmDialogComponent,
     ButtonComponent,
     SearchInputComponent,
     FilterSelectComponent
@@ -34,6 +34,7 @@ import { NotificationService } from '../../core/services/notification.service';
 export class ProductsComponent implements OnInit {
   private readonly api          = inject(ApiService);
   private readonly destroyRef   = inject(DestroyRef);
+  private readonly modal        = inject(ModalService);
   private readonly notification = inject(NotificationService);
 
   products        = signal<Product[]>([]);
@@ -86,9 +87,24 @@ export class ProductsComponent implements OnInit {
       isEdit ? list.map(p => p._id === product._id ? product : p) : [product, ...list]
     );
     this.closeForm();
+    this.notification.success(isEdit ? 'Товар обновлён' : 'Товар создан');
   }
 
-  confirmDelete(product: Product) { this.deleteTarget.set(product); }
+  confirmDelete(product: Product) {
+    this.modal.confirm({
+      title: 'Удалить товар',
+      message: `Товар «${product.name}» будет удалён без возможности восстановления.`,
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      type: 'danger'
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.deleteTarget.set(product);
+        this.onDeleteConfirmed();
+      });
+  }
 
   onDeleteConfirmed() {
     const p = this.deleteTarget();
@@ -96,7 +112,11 @@ export class ProductsComponent implements OnInit {
     this.api.deleteProduct(p._id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next:  () => { this.products.update(list => list.filter(x => x._id !== p._id)); this.deleteTarget.set(null); },
+        next:  () => {
+          this.products.update(list => list.filter(x => x._id !== p._id));
+          this.deleteTarget.set(null);
+          this.notification.success('Товар удалён');
+        },
         error: () => {
           this.deleteTarget.set(null);
           this.notification.error('Не удалось удалить товар');

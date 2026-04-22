@@ -1,0 +1,17 @@
+@use 'tokens' as *;
+
+:root {
+  --ui-btn-height: 2rem;
+  --ui-btn-height-lg: 2.25rem;
+}
+
+button[ui-btn],
+a[ui-btn] {
+  min-height: var(--ui-btn-height);
+  font-size: var(--ui-font-size-md, 0.875rem);
+}
+
+button[ui-btn].btn--lg,
+a[ui-btn].btn--lg {
+  min-height: var(--ui-btn-height-lg);
+}

@@ -4,6 +4,9 @@
   --kp-left-col: clamp(300px, 30vw, 420px);
   --kp-left-col-collapsed: clamp(240px, 24vw, 320px);
   --kp-right-col: clamp(240px, 24vw, 300px);
+  --kp-preview-scale: clamp(0.7, calc((100vh - 170px) / 100vh), 1);
+  --kp-center-side-gap: 1mm;
+  --kp-center-col: calc((var(--layout-hero-max) * var(--kp-preview-scale)) + (2 * var(--kp-center-side-gap)));
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -85,16 +88,18 @@
 
   &__body {
     display: grid;
-    grid-template-columns: var(--kp-left-col) minmax(520px, 1fr);
+    grid-template-columns: minmax(var(--kp-left-col), 1fr) minmax(0, var(--kp-center-col));
     grid-template-areas: 'left center';
     flex: 1;
-    overflow-y: auto;
-    overflow-x: auto;
+    overflow: hidden;
     align-items: start;
     padding: 0;
 
     &--with-right {
-      grid-template-columns: var(--kp-left-col) minmax(500px, 1fr) var(--kp-right-col);
+      grid-template-columns:
+        minmax(var(--kp-left-col), 1fr)
+        minmax(0, var(--kp-center-col))
+        minmax(var(--kp-right-col), 1fr);
       grid-template-areas: 'left center right';
     }
 
@@ -109,7 +114,8 @@
 
   &__sidebar {
     grid-area: left;
-    overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
     border-right: 1px solid var(--ui-border);
     background: color-mix(in srgb, var(--ui-bg) 92%, var(--ui-bg-soft));
     min-height: 100%;
@@ -119,8 +125,8 @@
   &__preview {
     grid-area: center;
     overflow: visible;
-    background: var(--ui-canvas);
-    padding: $space-2;
+    background: var(--ui-bg);
+    padding: 0 var(--kp-center-side-gap);
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -128,12 +134,16 @@
   }
 
   &__preview-scale {
-    width: min(100%, var(--layout-hero-max));
+    width: var(--layout-hero-max);
+    transform: scale(var(--kp-preview-scale));
+    transform-origin: top center;
+    flex: 0 0 auto;
   }
 
   &__right {
     grid-area: right;
-    overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
     border-left: 1px solid var(--ui-border);
     background: color-mix(in srgb, var(--ui-bg) 92%, var(--ui-bg-soft));
     min-height: 100%;
@@ -215,7 +225,7 @@
     }
 
     &__body--with-right {
-      grid-template-columns: var(--kp-left-col) minmax(420px, 1fr);
+      grid-template-columns: minmax(var(--kp-left-col), 1fr) minmax(0, var(--kp-center-col));
       grid-template-areas:
         'left center'
         'right right';
@@ -255,6 +265,8 @@
         'center'
         'left'
         'right';
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     &__sidebar {

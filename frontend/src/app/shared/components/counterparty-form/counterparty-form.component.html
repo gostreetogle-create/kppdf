@@ -8,7 +8,7 @@
     <!-- Орг. форма + Статус -->
     <div class="form-row">
       <ui-form-field label="Орг. форма" [required]="true">
-        <select [(ngModel)]="form.legalForm">
+        <select [ngModel]="form.legalForm" (ngModelChange)="onLegalFormChanged($event)">
           @for (lf of legalForms; track lf) {
             <option [value]="lf">{{ lf }}</option>
           }
@@ -28,23 +28,28 @@
       <div class="form-checkboxes">
         <label><input type="checkbox" [(ngModel)]="form.roleClient" /> Клиент</label>
         <label><input type="checkbox" [(ngModel)]="form.roleSupplier" /> Поставщик</label>
-        <label><input type="checkbox" [(ngModel)]="form.roleCompany" /> Наша компания</label>
+        @if (!isPersonLike) {
+          <label><input type="checkbox" [(ngModel)]="form.roleCompany" /> Наша компания</label>
+        }
       </div>
+      @if (isPersonLike) {
+        <p class="role-hint">Для физлица роль «Наша компания» скрыта, чтобы избежать ошибочной настройки карточки компании.</p>
+      }
     </div>
 
     <!-- Название -->
-    <ui-form-field label="Полное название" [required]="true">
-      <input type="text" [(ngModel)]="form.name" placeholder='ООО "Название"' />
+    <ui-form-field [label]="nameLabel" [required]="true">
+      <input type="text" [(ngModel)]="form.name" [placeholder]="namePlaceholder" />
     </ui-form-field>
 
-    <ui-form-field label="Краткое название">
-      <input type="text" [(ngModel)]="form.shortName" placeholder="Название" />
+    <ui-form-field [label]="shortNameLabel">
+      <input type="text" [(ngModel)]="form.shortName" [placeholder]="shortNamePlaceholder" />
     </ui-form-field>
 
     <!-- ИНН + поиск -->
     <div class="inn-row">
-      <ui-form-field label="ИНН" [required]="true">
-        <input type="text" [(ngModel)]="form.inn" placeholder="10 или 12 цифр" />
+      <ui-form-field label="ИНН" [required]="!isPersonLike">
+        <input type="text" [(ngModel)]="form.inn" [placeholder]="innPlaceholder" />
       </ui-form-field>
       <button ui-btn size="sm" (click)="lookupByInn()" [disabled]="lookingUp() || !form.inn">
         {{ lookingUp() ? '...' : '🔍 Найти' }}
@@ -52,31 +57,6 @@
     </div>
     @if (lookupError()) {
       <p class="lookup-error">{{ lookupError() }}</p>
-    }
-
-    <!-- КПП + ОГРН -->
-    <div class="form-row">
-      <ui-form-field label="КПП">
-        <input type="text" [(ngModel)]="form.kpp" placeholder="9 цифр" />
-      </ui-form-field>
-      <ui-form-field label="ОГРН / ОГРНИП">
-        <input type="text" [(ngModel)]="form.ogrn" />
-      </ui-form-field>
-    </div>
-
-    <!-- Адреса -->
-    <ui-form-field label="Юридический адрес">
-      <input type="text" [(ngModel)]="form.legalAddress" />
-    </ui-form-field>
-
-    <div class="form-checkbox-row">
-      <label><input type="checkbox" [(ngModel)]="form.sameAddress" /> Фактический адрес совпадает с юридическим</label>
-    </div>
-
-    @if (!form.sameAddress) {
-      <ui-form-field label="Фактический адрес">
-        <input type="text" [(ngModel)]="form.actualAddress" />
-      </ui-form-field>
     }
 
     <!-- Контакты -->
@@ -89,47 +69,74 @@
       </ui-form-field>
     </div>
 
-    <ui-form-field label="Сайт">
-      <input type="text" [(ngModel)]="form.website" placeholder="https://..." />
-    </ui-form-field>
-
-    <!-- Банковские реквизиты -->
-    <div class="section-title">Банковские реквизиты</div>
-    <ui-form-field label="Название банка">
-      <input type="text" [(ngModel)]="form.bankName" />
-    </ui-form-field>
-    <div class="form-row">
-      <ui-form-field label="БИК">
-        <input type="text" [(ngModel)]="form.bik" />
-      </ui-form-field>
-      <ui-form-field label="Расчётный счёт">
-        <input type="text" [(ngModel)]="form.checkingAccount" />
-      </ui-form-field>
-    </div>
-    <ui-form-field label="Корреспондентский счёт">
-      <input type="text" [(ngModel)]="form.correspondentAccount" />
-    </ui-form-field>
-
-    <!-- ИП -->
-    @if (form.legalForm === 'ИП') {
-      <div class="section-title">Данные ИП</div>
-      <div class="form-row">
-        <ui-form-field label="ФИО">
-          <input type="text" [(ngModel)]="form.founderName" placeholder="Иванов Иван Иванович" />
-        </ui-form-field>
-        <ui-form-field label="Краткое ФИО">
-          <input type="text" [(ngModel)]="form.founderNameShort" placeholder="И.И. Иванов" />
-        </ui-form-field>
+    @if (isPersonLike) {
+      <div class="additional-toggle">
+        <button
+          ui-btn
+          size="sm"
+          variant="ghost"
+          type="button"
+          (click)="showAdditional.set(!showAdditional())">
+          {{ showAdditional() ? 'Скрыть дополнительные поля' : 'Показать дополнительные поля' }}
+        </button>
       </div>
     }
 
-    <!-- Заметки + теги -->
-    <ui-form-field label="Заметки">
-      <textarea [(ngModel)]="form.notes" rows="2"></textarea>
-    </ui-form-field>
-    <ui-form-field label="Теги" hint="Через запятую">
-      <input type="text" [(ngModel)]="form.tags" placeholder="тег1, тег2" />
-    </ui-form-field>
+    @if (!isPersonLike || showAdditional()) {
+      <!-- КПП + ОГРН -->
+      <div class="form-row">
+        <ui-form-field label="КПП">
+          <input type="text" [(ngModel)]="form.kpp" placeholder="9 цифр" />
+        </ui-form-field>
+        <ui-form-field label="ОГРН / ОГРНИП">
+          <input type="text" [(ngModel)]="form.ogrn" />
+        </ui-form-field>
+      </div>
+
+      <!-- Адреса -->
+      <ui-form-field label="Юридический адрес">
+        <input type="text" [(ngModel)]="form.legalAddress" />
+      </ui-form-field>
+
+      <div class="form-checkbox-row">
+        <label><input type="checkbox" [(ngModel)]="form.sameAddress" /> Фактический адрес совпадает с юридическим</label>
+      </div>
+
+      @if (!form.sameAddress) {
+        <ui-form-field label="Фактический адрес">
+          <input type="text" [(ngModel)]="form.actualAddress" />
+        </ui-form-field>
+      }
+
+      <ui-form-field label="Сайт">
+        <input type="text" [(ngModel)]="form.website" placeholder="https://..." />
+      </ui-form-field>
+
+      <!-- Банковские реквизиты -->
+      <div class="section-title">Банковские реквизиты</div>
+      <ui-form-field label="Название банка">
+        <input type="text" [(ngModel)]="form.bankName" />
+      </ui-form-field>
+      <div class="form-row">
+        <ui-form-field label="БИК">
+          <input type="text" [(ngModel)]="form.bik" />
+        </ui-form-field>
+        <ui-form-field label="Расчётный счёт">
+          <input type="text" [(ngModel)]="form.checkingAccount" />
+        </ui-form-field>
+      </div>
+      <ui-form-field label="Корреспондентский счёт">
+        <input type="text" [(ngModel)]="form.correspondentAccount" />
+      </ui-form-field>
+
+      <!-- Заметки + теги -->
+      <ui-form-field label="Заметки">
+        <textarea [(ngModel)]="form.notes" rows="2"></textarea>
+      </ui-form-field>
+      <ui-form-field label="Теги" hint="Через запятую">
+        <input type="text" [(ngModel)]="form.tags" placeholder="тег1, тег2" />
+      </ui-form-field>
+    }
   </div>
 
   <ng-container modal-footer>

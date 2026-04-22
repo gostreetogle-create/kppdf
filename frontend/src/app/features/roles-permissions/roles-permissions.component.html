@@ -1,0 +1,141 @@
+<div class="page roles-page">
+  <div class="page-header roles-page__header">
+    <div>
+      <h1>Роли и полномочия</h1>
+      <p>Управление ролями и назначением прав доступа.</p>
+    </div>
+    <div class="roles-page__header-actions">
+      <button ui-btn variant="ghost" (click)="openCreateRoleModal()">+ Создать роль</button>
+      <button
+        ui-btn
+        variant="primary"
+        [class.btn-dirty]="hasDirtyChanges()"
+        (click)="savePermissionChanges()"
+        [disabled]="!hasDirtyChanges() || saving()"
+      >
+        {{ saving() ? 'Сохраняю...' : 'Сохранить изменения' }}
+      </button>
+      <button ui-btn variant="ghost" (click)="cancelPermissionChanges()" [disabled]="!hasDirtyChanges()">Отменить</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">Загрузка ролей и полномочий...</div>
+  } @else {
+    <section class="roles-layout">
+      <div class="roles-table-card">
+        <table class="data-table roles-table">
+          <thead>
+            <tr>
+              <th>Название роли</th>
+              <th>Тип</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (role of roles(); track role._id) {
+              <tr
+                class="roles-table__row"
+                [class.roles-table__row--active]="selectedRoleId() === role._id"
+                (click)="selectRole(role._id)"
+              >
+                <td>
+                  <div class="roles-table__name-cell">
+                    @if (editingRoleId() === role._id) {
+                      <input
+                        class="form-control form-control--sm"
+                        [ngModel]="editingRoleName()"
+                        (ngModelChange)="editingRoleName.set($event)"
+                        (click)="$event.stopPropagation()"
+                        (keydown.enter)="commitRename(role)"
+                        (blur)="commitRename(role)"
+                        autofocus
+                      />
+                    } @else {
+                      <span class="roles-table__name">{{ role.name }}</span>
+                    }
+                    <button
+                      ui-btn
+                      icon
+                      title="Редактировать название"
+                      (click)="$event.stopPropagation(); startRename(role)"
+                    >
+                      ✎
+                    </button>
+                    @if (roleIsDirty(role._id)) {
+                      <span class="roles-table__dirty-dot" title="Есть несохранённые изменения"></span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="role-type-badge" [class.role-type-badge--system]="role.isSystem">
+                    {{ role.isSystem ? 'Системная' : 'Кастомная' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="roles-table__actions">
+                    @if (!role.isSystem) {
+                      <button
+                        ui-btn
+                        icon
+                        title="Копировать роль"
+                        (click)="$event.stopPropagation(); openCreateRoleModal(role._id)"
+                      >
+                        ⎘
+                      </button>
+                      <button
+                        ui-btn
+                        icon
+                        title="Удалить роль"
+                        class="roles-table__delete-btn"
+                        (click)="$event.stopPropagation(); deleteRole(role)"
+                      >
+                        🗑
+                      </button>
+                    } @else {
+                      <span class="roles-table__actions-empty">—</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="roles-permissions-card">
+        @if (selectedRole(); as role) {
+          <div class="roles-permissions-card__head">
+            <h2>Права для роли "{{ role.name }}"</h2>
+            @if (!canEditSelectedRolePermissions()) {
+              <p>Права системной роли нельзя изменить</p>
+            }
+          </div>
+
+          <div class="roles-permissions-card__groups">
+            @for (group of permissionsByModule(); track group.module) {
+              <app-permission-group
+                [title]="group.title"
+                [permissions]="group.items"
+                [selected]="selectedPermissions()"
+                [disabled]="!canEditSelectedRolePermissions()"
+                (toggle)="togglePermission($event.key, $event.checked)"
+              />
+            }
+          </div>
+        } @else {
+          <div class="empty-state">Выберите роль в таблице слева.</div>
+        }
+      </div>
+    </section>
+  }
+
+  <app-create-role-modal
+    [open]="createRoleModalOpen()"
+    [roles]="roles()"
+    [submitting]="creatingRole()"
+    [initialCopyFromRoleId]="createRoleCopyFromId()"
+    (close)="closeCreateRoleModal()"
+    (submitRole)="createRole($event)"
+  />
+</div>

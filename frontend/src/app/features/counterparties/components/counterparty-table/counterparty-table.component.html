@@ -22,16 +22,14 @@
           <td class="col-inn">{{ cp.inn }}</td>
           <td class="col-role">
             @for (role of cp.role; track role) {
-              <ui-badge [color]="roleColor(role)">{{ roleLabel(role) }}</ui-badge>
+              <ui-status-badge [variant]="roleVariant(role)" [label]="roleLabel(role)"></ui-status-badge>
             }
             @if (cp.isOurCompany) {
-              <ui-badge color="green">Наша компания</ui-badge>
+              <ui-status-badge variant="company" label="Наша компания"></ui-status-badge>
             }
           </td>
           <td class="col-status">
-            <ui-badge [color]="cp.status === 'active' ? 'green' : 'default'">
-              {{ cp.status === 'active' ? 'Активен' : 'Неактивен' }}
-            </ui-badge>
+            <ui-status-badge [variant]="cp.status === 'active' ? 'active' : 'inactive'"></ui-status-badge>
           </td>
           <td class="col-form">{{ cp.legalForm }}</td>
           <td class="col-actions ui-table-actions">

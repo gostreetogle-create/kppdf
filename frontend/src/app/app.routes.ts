@@ -47,6 +47,12 @@ export const routes: Routes = [
         data: { permission: 'users.manage' }
       },
       {
+        path: 'roles-permissions',
+        loadComponent: () => import('./features/roles-permissions/roles-permissions.component').then(m => m.RolesPermissionsComponent),
+        canActivate: [permissionGuard],
+        data: { permission: 'users.manage' }
+      },
+      {
         path: 'kp/:id',
         loadComponent: () => import('./features/kp/kp-builder/kp-builder.component').then(m => m.KpBuilderComponent),
         canDeactivate: [canDeactivateBuilder]

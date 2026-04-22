@@ -1,5 +1,3 @@
-export type UserRole = 'owner' | 'admin' | 'manager' | 'viewer';
-
 export type Permission =
   | 'kp.create'
   | 'kp.edit'
@@ -16,7 +14,10 @@ export interface IUser {
   _id: string;
   username: string;
   name: string;
-  role: UserRole;
+  roleId: string | null;
+  roleKey: string;
+  roleName: string;
+  permissions: Permission[];
   isActive: boolean;
   mustChangePassword: boolean;
   createdAt?: string;

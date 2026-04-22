@@ -1,0 +1,128 @@
+.roles-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+
+  p {
+    margin: 0.25rem 0 0;
+    color: var(--ui-text-muted);
+  }
+}
+
+.roles-page__header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+
+  .btn-dirty {
+    background: color-mix(in srgb, var(--ui-warning) 22%, var(--ui-bg));
+    border-color: color-mix(in srgb, var(--ui-warning) 36%, var(--ui-border));
+  }
+}
+
+.roles-layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 40%) minmax(520px, 60%);
+  gap: 1rem;
+}
+
+.roles-table-card,
+.roles-permissions-card {
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+}
+
+.roles-table__row {
+  cursor: pointer;
+}
+
+.roles-table__row--active {
+  background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-bg));
+}
+
+.roles-table__name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.roles-table__name {
+  font-weight: 600;
+}
+
+.roles-table__dirty-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--ui-warning);
+  display: inline-flex;
+}
+
+.role-type-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--ui-border);
+  padding: 0.1rem 0.55rem;
+  font-size: 0.72rem;
+  color: var(--ui-text-muted);
+}
+
+.role-type-badge--system {
+  background: color-mix(in srgb, var(--ui-primary) 10%, var(--ui-bg));
+  color: color-mix(in srgb, var(--ui-primary) 70%, var(--ui-text));
+}
+
+.roles-table__actions {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.roles-table__actions-empty {
+  color: var(--ui-text-muted);
+}
+
+.roles-table__delete-btn {
+  color: var(--ui-danger) !important;
+}
+
+.roles-permissions-card__head {
+  margin-bottom: 0.7rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: var(--ui-warning);
+    font-size: 0.82rem;
+  }
+}
+
+.roles-permissions-card__groups {
+  display: grid;
+  gap: 0.6rem;
+}
+
+@media (max-width: 1200px) {
+  .roles-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .roles-page__header {
+    flex-direction: column;
+  }
+
+  .roles-page__header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

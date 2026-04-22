@@ -48,12 +48,12 @@
   - [x] 5.11 Импортировать `CounterpartyTableComponent`, `CounterpartyFormComponent`, `ConfirmDialogComponent`, `AlertComponent`, `ButtonComponent`
   - [x] 5.12 Инжектировать `NotificationService`
 
-- [ ] 6. Ручная проверка
-  - [ ] 6.1 Проверить навигацию по всем маршрутам через сайдбар (/, /products, /counterparties, /settings)
-  - [ ] 6.2 Проверить мобильный collapse сайдбара при ширине < 768px
-  - [ ] 6.3 Проверить CRUD контрагентов: создание, редактирование, удаление
-  - [ ] 6.4 Проверить DaData lookup по ИНН (успех, 404, ошибка)
-  - [ ] 6.5 Проверить поиск и фильтрацию с debounce
-  - [ ] 6.6 Проверить что `@media print` скрывает сайдбар
+- [x] 6. Ручная проверка
+  - [x] 6.1 Проверить навигацию по всем маршрутам через сайдбар (/, /products, /counterparties, /settings)
+  - [x] 6.2 Проверить мобильный collapse сайдбара при ширине < 768px
+  - [x] 6.3 Проверить CRUD контрагентов: создание, редактирование, удаление
+  - [x] 6.4 Проверить DaData lookup по ИНН (успех, 404, ошибка)
+  - [x] 6.5 Проверить поиск и фильтрацию с debounce
+  - [x] 6.6 Проверить что `@media print` скрывает сайдбар
 
 - [x] Обновить PROJECT_PASSPORT.md

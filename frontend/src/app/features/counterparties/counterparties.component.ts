@@ -2,12 +2,12 @@ import { Component, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { combineLatest, debounceTime, switchMap, catchError, of } from 'rxjs';
+import { combineLatest, debounceTime, switchMap, catchError, of, take } from 'rxjs';
 import { ApiService, Counterparty, CpRole } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ModalService } from '../../core/services/modal.service';
 import { CounterpartyTableComponent } from './components/counterparty-table/counterparty-table.component';
 import { CounterpartyFormComponent } from '../../shared/components/counterparty-form/counterparty-form.component';
-import { ConfirmDialogComponent } from '../products/components/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { SearchInputComponent } from '../../shared/ui/search-input/search-input.component';
@@ -18,7 +18,7 @@ import { FilterSelectComponent } from '../../shared/ui/filter-select/filter-sele
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    CounterpartyTableComponent, CounterpartyFormComponent, ConfirmDialogComponent,
+    CounterpartyTableComponent, CounterpartyFormComponent,
     ButtonComponent, AlertComponent, SearchInputComponent, FilterSelectComponent
   ],
   templateUrl: './counterparties.component.html',
@@ -30,6 +30,7 @@ import { FilterSelectComponent } from '../../shared/ui/filter-select/filter-sele
 export class CounterpartiesComponent {
   private readonly api        = inject(ApiService);
   private readonly ns         = inject(NotificationService);
+  private readonly modal      = inject(ModalService);
   private readonly destroyRef = inject(DestroyRef);
 
   counterparties = signal<Counterparty[]>([]);
@@ -87,7 +88,21 @@ export class CounterpartiesComponent {
     this.ns.success(isEdit ? 'Контрагент обновлён' : 'Контрагент создан');
   }
 
-  confirmDelete(cp: Counterparty) { this.deleteTarget.set(cp); }
+  confirmDelete(cp: Counterparty) {
+    this.modal.confirm({
+      title: 'Удалить контрагента',
+      message: `Контрагент «${cp.name}» будет удалён без возможности восстановления.`,
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      type: 'danger'
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.deleteTarget.set(cp);
+        this.onDeleteConfirmed();
+      });
+  }
 
   onDeleteConfirmed() {
     const cp = this.deleteTarget();

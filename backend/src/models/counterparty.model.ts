@@ -1,6 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 
-export type LegalForm    = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'Физлицо' | 'Другое';
+export type LegalForm    = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'МКУ' | 'Физлицо' | 'Другое';
 export type CpRole       = 'client' | 'supplier';
 export type CpStatus     = 'active' | 'inactive';
 export type ImageContext  = 'product' | 'kp-page1' | 'kp-page2' | 'passport';
@@ -66,13 +66,28 @@ const ImageSchema = new Schema<IImage>({
 const CounterpartySchema = new Schema<ICounterparty>({
   legalForm: {
     type: String,
-    enum: { values: ['ООО', 'ИП', 'АО', 'ПАО', 'Физлицо', 'Другое'], message: 'Некорректная организационно-правовая форма' },
+    enum: { values: ['ООО', 'ИП', 'АО', 'ПАО', 'МКУ', 'Физлицо', 'Другое'], message: 'Некорректная организационно-правовая форма' },
     required: [true, 'Орг. форма обязательна']
   },
   role: { type: [String], enum: { values: ['client', 'supplier', 'company'], message: 'Некорректная роль контрагента' }, default: ['client'] },
   name:      { type: String, required: [true, 'Полное название обязательно'], trim: true },
   shortName: { type: String, required: [true, 'Краткое название обязательно'], trim: true },
-  inn:       { type: String, required: [true, 'ИНН обязателен'], trim: true, match: [/^\d{10}(\d{2})?$/, 'ИНН должен содержать 10 или 12 цифр'] },
+  inn: {
+    type: String,
+    trim: true,
+    required: [
+      function(this: ICounterparty) { return this.legalForm !== 'Физлицо'; },
+      'ИНН обязателен'
+    ],
+    validate: {
+      validator(this: ICounterparty, value: string) {
+        const inn = (value ?? '').trim();
+        if (!inn) return this.legalForm === 'Физлицо';
+        return /^\d{10}(\d{2})?$/.test(inn);
+      },
+      message: 'ИНН должен содержать 10 или 12 цифр'
+    }
+  },
   kpp:       { type: String, trim: true, match: [/^\d{9}$/, 'КПП должен содержать 9 цифр'] },
   ogrn:      { type: String, trim: true },
 

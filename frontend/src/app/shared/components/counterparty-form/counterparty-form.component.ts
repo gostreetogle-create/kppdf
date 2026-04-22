@@ -69,10 +69,17 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
   lookingUp  = signal(false);
   formError  = signal('');
   lookupError = signal('');
+  showAdditional = signal(false);
 
-  readonly legalForms: LegalForm[] = ['ООО', 'ИП', 'АО', 'ПАО', 'Физлицо', 'Другое'];
+  readonly legalForms: LegalForm[] = ['ООО', 'ИП', 'АО', 'ПАО', 'МКУ', 'Физлицо', 'Другое'];
 
   get isEdit(): boolean { return !!this.counterparty(); }
+  get isPersonLike(): boolean { return this.form.legalForm === 'Физлицо'; }
+  get nameLabel(): string { return this.isPersonLike ? 'ФИО' : 'Полное название'; }
+  get namePlaceholder(): string { return this.isPersonLike ? 'Иванов Иван Иванович' : 'ООО "Название"'; }
+  get shortNameLabel(): string { return this.isPersonLike ? 'Короткое имя' : 'Краткое название'; }
+  get shortNamePlaceholder(): string { return this.isPersonLike ? 'Иванов И.И.' : 'Название'; }
+  get innPlaceholder(): string { return this.isPersonLike ? '12 цифр' : '10 или 12 цифр'; }
   get title(): string {
     const h = this.formHeading()?.trim();
     if (h) return h;
@@ -116,13 +123,19 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
   validate(): boolean {
     const errs: string[] = [];
     if (!this.form.legalForm)       errs.push('Выберите организационно-правовую форму');
-    if (!this.form.name.trim())     errs.push('Введите полное название');
-    if (!this.form.inn.trim())      errs.push('Введите ИНН');
+    if (!this.form.name.trim())     errs.push(this.isPersonLike ? 'Введите ФИО' : 'Введите полное название');
+    if (!this.isPersonLike && !this.form.inn.trim()) errs.push('Введите ИНН');
     if (!this.form.status)          errs.push('Выберите статус');
     if (!this.form.roleClient && !this.form.roleSupplier && !this.form.roleCompany) errs.push('Выберите хотя бы одну роль');
     if (errs.length) { this.formError.set(errs.join('. ')); return false; }
     this.formError.set('');
     return true;
+  }
+
+  private normalizedShortName(): string {
+    const short = this.form.shortName.trim();
+    if (short) return short;
+    return this.form.name.trim();
   }
 
   buildPayload(): Omit<Counterparty, '_id' | 'createdAt' | 'updatedAt'> {
@@ -134,7 +147,7 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
       legalForm:            this.form.legalForm,
       role,
       name:                 this.form.name.trim(),
-      shortName:            this.form.shortName.trim(),
+      shortName:            this.normalizedShortName(),
       inn:                  this.form.inn.trim(),
       kpp:                  this.form.kpp.trim(),
       ogrn:                 this.form.ogrn.trim(),
@@ -205,5 +218,15 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
           );
         }
       });
+  }
+
+  onLegalFormChanged(legalForm: LegalForm) {
+    this.form.legalForm = legalForm;
+    if (!this.isPersonLike) {
+      this.showAdditional.set(false);
+    }
+    if (this.isPersonLike && this.form.roleCompany) {
+      this.form.roleCompany = false;
+    }
   }
 }

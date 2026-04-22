@@ -45,6 +45,11 @@
            (click)="closeSidebar()">
           <span class="sidebar__icon">👤</span> Пользователи
         </a>
+        <a routerLink="/roles-permissions"
+           routerLinkActive="active"
+           (click)="closeSidebar()">
+          <span class="sidebar__icon">🛡️</span> Роли и полномочия
+        </a>
       </ng-container>
       <ng-container *appCan="'settings.write'">
         <a routerLink="/dictionaries"

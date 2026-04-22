@@ -143,6 +143,46 @@
   }
 }
 
+.recipient-snapshot-note {
+  display: flex;
+  gap: $space-2;
+  align-items: flex-start;
+  margin-bottom: $space-2;
+  padding: $space-2;
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 26%, var(--ui-border));
+  border-radius: $radius-md;
+  background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-bg));
+  color: var(--ui-text-muted);
+  font-size: $font-xs;
+  line-height: 1.35;
+}
+
+.recipient-snapshot-note__icon {
+  line-height: 1;
+}
+
+.recipient-snapshot-fields {
+  display: grid;
+  gap: $space-2;
+
+  > label {
+    display: grid;
+    gap: $space-1;
+    margin: 0;
+  }
+
+  span {
+    font-size: $font-xs;
+    color: var(--ui-text-muted);
+  }
+}
+
+.recipient-readonly-hint {
+  margin: $space-2 0 0;
+  font-size: $font-xs;
+  color: var(--ui-text-muted);
+}
+
 .inn-lookup {
   display: flex;
   gap: $space-2;

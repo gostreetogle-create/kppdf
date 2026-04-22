@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { User } from '../models/user.model';
-import type { UserRole } from '../auth/permissions';
+import { Role } from '../models/role.model';
+import { SYSTEM_ROLE_KEYS } from '../auth/permissions';
 
 let legacyEmailIndexChecked = false;
 
@@ -21,7 +22,7 @@ async function ensureLegacyUserIndexes() {
 export interface CreateUserInput {
   username: string;
   name: string;
-  role: UserRole;
+  roleId: string;
   password: string;
   actorUserId?: string;
 }
@@ -29,18 +30,31 @@ export interface CreateUserInput {
 export interface UpdateUserInput {
   username?: string;
   name?: string;
-  role?: UserRole;
+  roleId?: string;
   isActive?: boolean;
   mustChangePassword?: boolean;
   actorUserId?: string;
-  actorRole?: UserRole;
+  actorRoleKey?: string;
 }
 
 export class UsersService {
   async list() {
-    return User.find()
+    const users = await User.find()
       .select('-passwordHash -refreshTokenHash')
+      .populate('roleId', 'name key isSystem permissions')
       .sort({ createdAt: -1 });
+    return users.map((user: any) => ({
+      _id: user._id,
+      username: user.username,
+      name: user.name,
+      roleId: user.roleId?._id?.toString() ?? null,
+      roleKey: user.roleId?.key ?? user.role ?? 'manager',
+      roleName: user.roleId?.name ?? user.role ?? 'manager',
+      isSystemRole: Boolean(user.roleId?.isSystem),
+      isActive: user.isActive,
+      mustChangePassword: user.mustChangePassword,
+      createdAt: user.createdAt
+    }));
   }
 
   async create(input: CreateUserInput) {
@@ -51,12 +65,15 @@ export class UsersService {
     if (exists) {
       throw new Error('Пользователь с таким логином уже существует');
     }
+    const role = await Role.findById(input.roleId).select('_id key');
+    if (!role) throw new Error('Роль не найдена');
     const passwordHash = await bcrypt.hash(input.password, 10);
     const user = await User.create({
       username: normalizedUsername,
       passwordHash,
       name: input.name.trim(),
-      role: input.role,
+      roleId: role._id,
+      role: role.key,
       isActive: true,
       mustChangePassword: true,
       createdBy: input.actorUserId ?? null,
@@ -66,7 +83,9 @@ export class UsersService {
   }
 
   async update(userId: string, patch: UpdateUserInput) {
-    if (typeof patch.username === 'string' && patch.actorRole === 'owner' && patch.actorUserId === userId) {
+    const actor = patch.actorUserId ? await User.findById(patch.actorUserId).select('role roleId').populate('roleId', 'key') : null;
+    const actorRoleKey = (actor as any)?.roleId?.key ?? actor?.role ?? patch.actorRoleKey;
+    if (typeof patch.username === 'string' && actorRoleKey === 'owner' && patch.actorUserId === userId) {
       throw new Error('Владелец не может менять свой логин');
     }
 
@@ -85,14 +104,34 @@ export class UsersService {
     const updateDoc: Record<string, unknown> = { updatedBy: patch.actorUserId ?? null };
     if (typeof patch.username === 'string') updateDoc['username'] = patch.username;
     if (typeof patch.name === 'string') updateDoc['name'] = patch.name.trim();
-    if (patch.role) updateDoc['role'] = patch.role;
+    if (typeof patch.roleId === 'string' && patch.roleId) {
+      const role = await Role.findById(patch.roleId).select('_id key');
+      if (!role) throw new Error('Роль не найдена');
+      updateDoc['roleId'] = role._id;
+      updateDoc['role'] = role.key;
+    }
     if (typeof patch.isActive === 'boolean') updateDoc['isActive'] = patch.isActive;
     if (typeof patch.mustChangePassword === 'boolean') updateDoc['mustChangePassword'] = patch.mustChangePassword;
 
     const updated = await User.findByIdAndUpdate(userId, updateDoc, { new: true })
       .select('-passwordHash -refreshTokenHash');
     if (!updated) throw new Error('Пользователь не найден');
-    return updated;
+    const populated = await User.findById(updated._id)
+      .select('-passwordHash -refreshTokenHash')
+      .populate('roleId', 'name key isSystem permissions');
+    if (!populated) throw new Error('Пользователь не найден');
+    return {
+      _id: populated._id,
+      username: populated.username,
+      name: populated.name,
+      roleId: (populated as any).roleId?._id?.toString() ?? null,
+      roleKey: (populated as any).roleId?.key ?? populated.role ?? 'manager',
+      roleName: (populated as any).roleId?.name ?? populated.role ?? 'manager',
+      isSystemRole: Boolean((populated as any).roleId?.isSystem),
+      isActive: populated.isActive,
+      mustChangePassword: populated.mustChangePassword,
+      createdAt: populated.createdAt
+    };
   }
 
   async resetPassword(userId: string, newPassword: string, actorUserId?: string) {
@@ -121,6 +160,15 @@ export class UsersService {
 
     await User.findByIdAndDelete(userId);
     return { message: 'Пользователь удалён' };
+  }
+
+  async reassignUsersFromRole(roleId: string, fallbackRoleKey: (typeof SYSTEM_ROLE_KEYS)[number] = 'manager') {
+    const fallbackRole = await Role.findOne({ key: fallbackRoleKey }).select('_id key');
+    if (!fallbackRole) throw new Error('Системная роль manager не найдена');
+    await User.updateMany(
+      { roleId },
+      { $set: { roleId: fallbackRole._id, role: fallbackRole.key } }
+    );
   }
 }
 

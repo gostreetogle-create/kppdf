@@ -1,12 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model';
-import { can, type Permission, type UserRole } from '../auth/permissions';
+import { Role } from '../models/role.model';
+import { type Permission } from '../auth/permissions';
 
 export interface AuthPayload {
   userId: string;
   username: string;
-  role: UserRole;
+  roleId: string;
+  roleKey: string;
+  permissions: Permission[];
   type?: 'access' | 'refresh';
 }
 
@@ -40,9 +43,9 @@ export function authGuard(req: Request, res: Response, next: NextFunction): void
   }
 }
 
-export function requireRole(...allowed: AuthPayload['role'][]) {
+export function requireRole(...allowed: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const role = req.user?.role;
+    const role = req.user?.roleKey as any;
     if (!role) {
       res.status(401).json({ message: 'Не авторизован' });
       return;
@@ -57,17 +60,30 @@ export function requireRole(...allowed: AuthPayload['role'][]) {
 
 export function requirePermission(permission: Permission) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const userId = req.user?.userId;
+    const authUser = req.user;
+    const userId = authUser?.userId;
     if (!userId) {
       res.status(401).json({ message: 'Не авторизован' });
       return;
     }
-    const user = await User.findById(userId).select('role isActive mustChangePassword').lean();
+    const user = await User.findById(userId).select('roleId isActive').lean();
     if (!user || user.isActive === false) {
       res.status(401).json({ message: 'Пользователь деактивирован или не найден' });
       return;
     }
-    if (!can({ role: user.role, isActive: user.isActive }, permission)) {
+
+    let permissions = authUser?.permissions;
+    if (!permissions?.length) {
+      const role = user.roleId ? await Role.findById(user.roleId).select('permissions key').lean() : null;
+      permissions = (role?.permissions ?? []) as Permission[];
+      if (req.user) {
+        req.user.permissions = permissions;
+        req.user.roleId = user.roleId?.toString() ?? '';
+        req.user.roleKey = role?.key ?? 'manager';
+      }
+    }
+
+    if (!permissions.includes(permission)) {
       res.status(403).json({ message: 'Недостаточно прав' });
       return;
     }

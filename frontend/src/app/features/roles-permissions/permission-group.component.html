@@ -1,0 +1,17 @@
+<section class="permission-group">
+  <h3>{{ title() }}</h3>
+  <div class="permission-group__list">
+    @for (item of permissions(); track item.key) {
+      <label class="permission-group__item" [class.permission-group__item--disabled]="disabled()">
+        <input
+          type="checkbox"
+          [checked]="isChecked(item.key)"
+          [disabled]="disabled()"
+          (change)="onToggle(item.key, $event)"
+        />
+        <span class="permission-group__label">{{ item.label }}</span>
+        <small class="permission-group__hint">{{ item.description }}</small>
+      </label>
+    }
+  </div>
+</section>

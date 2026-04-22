@@ -24,14 +24,14 @@
               <label class="setting-row__label">{{ setting.label }}</label>
               @if (isNumberValue(values[setting.key])) {
                 <input
-                  class="setting-row__input"
+                  class="setting-row__input form-control"
                   type="number"
                   [(ngModel)]="values[setting.key]"
                   min="0"
                 />
               } @else {
                 <input
-                  class="setting-row__input"
+                  class="setting-row__input form-control"
                   type="text"
                   [(ngModel)]="values[setting.key]"
                 />
@@ -117,7 +117,7 @@
         <div class="backups-cleanup">
           <label class="backups-cleanup__label">
             Удалить архивы старше
-            <input class="backups-cleanup__days" type="number" min="1" [(ngModel)]="cleanupDays" />
+            <input class="backups-cleanup__days form-control" type="number" min="1" [(ngModel)]="cleanupDays" />
             дней
           </label>
           <button ui-btn variant="danger" size="sm" (click)="runCleanup()" [disabled]="backupBusy()">Очистить</button>

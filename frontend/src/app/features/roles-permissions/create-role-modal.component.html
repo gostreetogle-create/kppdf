@@ -1,0 +1,37 @@
+@if (open()) {
+  <ui-modal title="Создать роль" maxWidth="480px" (closed)="onClose()">
+    <div modal-body class="create-role-modal">
+      <label class="create-role-modal__field">
+        <span>Название роли</span>
+        <input
+          class="form-control"
+          type="text"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          placeholder="Например, Руководитель продаж"
+        />
+      </label>
+
+      <label class="create-role-modal__field">
+        <span>Копировать права из роли (необязательно)</span>
+        <select
+          class="form-control"
+          [ngModel]="copyFromRoleId()"
+          (ngModelChange)="copyFromRoleId.set($event)"
+          (click)="syncInitial()"
+        >
+          <option value="">Не копировать</option>
+          @for (role of roles(); track role._id) {
+            <option [value]="role._id">{{ role.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <ng-container modal-footer>
+      <button ui-btn variant="ghost" (click)="onClose()">Отмена</button>
+      <button ui-btn variant="primary" (click)="onSubmit()" [disabled]="!canSubmit()">
+        {{ submitting() ? 'Создаю...' : 'Создать роль' }}
+      </button>
+    </ng-container>
+  </ui-modal>
+}

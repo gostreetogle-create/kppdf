@@ -1,0 +1,14 @@
+.create-role-modal {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.create-role-modal__field {
+  display: grid;
+  gap: 0.35rem;
+
+  span {
+    font-size: 0.78rem;
+    color: var(--ui-text-muted);
+  }
+}

@@ -3,27 +3,6 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthService } from './auth.service';
 import type { AuthUser, Permission } from '../../../../../shared/types/User';
 
-const ROLE_PERMISSIONS: Record<AuthUser['role'], Permission[]> = {
-  owner: [
-    'kp.create', 'kp.edit', 'kp.delete', 'kp.view',
-    'products.write', 'products.view',
-    'counterparties.crud',
-    'settings.write',
-    'backups.manage',
-    'users.manage'
-  ],
-  admin: [
-    'kp.create', 'kp.edit', 'kp.delete', 'kp.view',
-    'products.write', 'products.view',
-    'counterparties.crud',
-    'settings.write',
-    'backups.manage',
-    'users.manage'
-  ],
-  manager: ['kp.create', 'kp.edit', 'kp.view', 'products.view', 'counterparties.crud'],
-  viewer: ['kp.view', 'products.view']
-};
-
 @Injectable({ providedIn: 'root' })
 export class PermissionsService {
   private readonly auth = inject(AuthService);
@@ -32,7 +11,7 @@ export class PermissionsService {
   readonly permissions = computed(() => {
     const user = this.currentUser();
     if (!user || !user.isActive) return [] as Permission[];
-    return ROLE_PERMISSIONS[user.role] ?? [];
+    return user.permissions ?? [];
   });
 
   can(permission: Permission): boolean {

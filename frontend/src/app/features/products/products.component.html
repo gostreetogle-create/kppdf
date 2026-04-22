@@ -106,11 +106,3 @@
   </app-product-form>
 }
 
-@if (deleteTarget()) {
-  <app-confirm-dialog
-    title="Удалить товар?"
-    [message]="'Товар «' + deleteTarget()!.name + '» будет удалён без возможности восстановления.'"
-    (confirmed)="onDeleteConfirmed()"
-    (cancelled)="deleteTarget.set(null)">
-  </app-confirm-dialog>
-}

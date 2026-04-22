@@ -26,6 +26,7 @@ export class KpCatalogComponent {
   showPhotoColumn = input(true);
   showCodeColumn = input(true);
   showDescriptionColumn = input(true);
+  vatPercent = input(20);
   displayOffset = input(0); // Смещение для нумерации строк
   photoScalePercent = input(150);
 

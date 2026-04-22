@@ -59,11 +59,3 @@
   </app-counterparty-form>
 }
 
-@if (deleteTarget()) {
-  <app-confirm-dialog
-    title="Удалить контрагента?"
-    [message]="'Контрагент «' + deleteTarget()!.name + '» будет удалён без возможности восстановления.'"
-    (confirmed)="onDeleteConfirmed()"
-    (cancelled)="deleteTarget.set(null)">
-  </app-confirm-dialog>
-}

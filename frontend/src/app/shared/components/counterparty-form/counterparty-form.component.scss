@@ -33,6 +33,12 @@
   }
 }
 
+.role-hint {
+  margin: $space-2 0 0;
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
 .form-checkbox-row {
   margin-bottom: $space-4;
 
@@ -43,6 +49,10 @@
     font-size: $font-sm;
     cursor: pointer;
   }
+}
+
+.additional-toggle {
+  margin: 0 0 $space-4;
 }
 
 .inn-row {

@@ -12,25 +12,24 @@
       <p>Выдайте логин, роль и временный пароль. Пользователь сменит пароль при первом входе.</p>
     </div>
     <div class="users-create__grid">
-      <input class="users-field"
+      <input class="users-field form-control"
         type="text"
         placeholder="Логин"
         [ngModel]="createModel().username"
         (ngModelChange)="createModel.set({ ...createModel(), username: $event })" />
-      <input class="users-field"
+      <input class="users-field form-control"
         type="text"
         placeholder="Имя"
         [ngModel]="createModel().name"
         (ngModelChange)="createModel.set({ ...createModel(), name: $event })" />
-      <select class="users-field"
-        [ngModel]="createModel().role"
-        (ngModelChange)="createModel.set({ ...createModel(), role: $event })">
-        <option value="owner">Owner</option>
-        <option value="admin">Admin</option>
-        <option value="manager">Manager</option>
-        <option value="viewer">Viewer</option>
+      <select class="users-field form-control"
+        [ngModel]="createModel().roleId"
+        (ngModelChange)="createModel.set({ ...createModel(), roleId: $event })">
+        @for (role of roles(); track role._id) {
+          <option [value]="role._id">{{ role.name }}</option>
+        }
       </select>
-      <input class="users-field"
+      <input class="users-field form-control"
         type="password"
         placeholder="Временный пароль"
         [ngModel]="createModel().password"
@@ -85,14 +84,13 @@
               </td>
               <td>
                 <select
-                  class="users-field users-field--sm"
-                  [ngModel]="editDraft()[user._id]?.role || user.role"
-                  (ngModelChange)="setEditDraft(user._id, { role: $event })"
+                  class="users-field users-field--sm form-control form-control--sm"
+                  [ngModel]="editDraft()[user._id]?.roleId || user.roleId"
+                  (ngModelChange)="setEditDraft(user._id, { roleId: $event })"
                 >
-                  <option value="owner">Owner</option>
-                  <option value="admin">Admin</option>
-                  <option value="manager">Manager</option>
-                  <option value="viewer">Viewer</option>
+                  @for (role of roles(); track role._id) {
+                    <option [value]="role._id">{{ role.name }}</option>
+                  }
                 </select>
               </td>
               <td>
@@ -101,7 +99,9 @@
                     type="checkbox"
                     [checked]="editDraft()[user._id]?.isActive ?? user.isActive"
                     (change)="setEditDraft(user._id, { isActive: $any($event.target).checked })" />
-                  <span class="users-status__label">{{ (editDraft()[user._id]?.isActive ?? user.isActive) ? 'active' : 'inactive' }}</span>
+                  <ui-status-badge
+                    [variant]="(editDraft()[user._id]?.isActive ?? user.isActive) ? 'active' : 'inactive'">
+                  </ui-status-badge>
                 </label>
               </td>
               <td>
@@ -147,7 +147,7 @@
     <div modal-body class="users-reset-modal">
       <p>Укажите новый пароль для пользователя <strong>{{ resettingUser()!.username }}</strong>.</p>
       <input
-        class="users-field"
+        class="users-field form-control"
         type="password"
         placeholder="Новый пароль"
         [ngModel]="resetPasswordValue()"
