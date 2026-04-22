@@ -10,7 +10,7 @@
 | Backend | Node.js 20, Express, TypeScript |
 | БД | MongoDB 7 (Mongoose) |
 | Auth | JWT 7d + bcryptjs |
-| Прод | Nginx + Docker Compose |
+| Прод | Nginx + systemd (без Docker) |
 
 ## Быстрый старт
 
@@ -51,8 +51,8 @@ cd frontend && npx ng test --no-watch --browsers=ChromeHeadless
 ## Деплой
 
 ```bash
-cp deploy/.env.example deploy/.env  # заполнить CORS_ORIGIN
-bash deploy/deploy.sh
+cp deploy/.env.example deploy/.env  # заполнить DOMAIN/CORS_ORIGIN/JWT_SECRET
+sudo bash deploy/deploy.sh
 ```
 
 ## Документация
@@ -63,6 +63,6 @@ bash deploy/deploy.sh
 | `docs/api.md` | Все REST эндпоинты |
 | `docs/business-rules.md` | Бизнес-правила, статусы, расчёты |
 | `docs/ui-kit.md` | UI компоненты, токены, Toast |
-| `docs/deploy.md` | Деплой, Docker, nginx |
+| `docs/deploy.md` | Деплой без Docker (systemd + nginx) |
 | `docs/architecture.md` | Структура, паттерны, тесты |
 | `shared/types/` | Общие TypeScript типы (бэк + фронт) |

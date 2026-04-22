@@ -62,6 +62,8 @@
 </ui-modal>
 ```
 
+Подтверждения, влияющие на UX (уход со страницы, разрушительные действия): предпочтительно `ui-modal` + кнопки kit, не `window.confirm` / нативные диалоги браузера (см. `KpBuilderComponent` + `canDeactivateBuilder`).
+
 ---
 
 ## FormFieldComponent

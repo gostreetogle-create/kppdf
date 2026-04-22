@@ -120,7 +120,7 @@ router.post('/bulk', async (req: Request, res: Response) => {
         results.created++;
       }
     } catch (e: any) {
-      results.errors.push(`Ошибка для ИНН "${payload.inn}": ${e.message}`);
+      results.errors.push(`Ошибка для ИНН "${payload.inn}": ${formatCounterpartyError(e)}`);
     }
   }
 
@@ -144,7 +144,7 @@ router.post('/', async (req: Request, res: Response) => {
     const cp = await Counterparty.create(req.body);
     res.status(201).json(cp);
   } catch (e: any) {
-    res.status(400).json({ message: e.message });
+    res.status(400).json({ message: formatCounterpartyError(e) });
   }
 });
 
@@ -155,7 +155,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (!cp) { res.status(404).json({ message: 'Контрагент не найден' }); return; }
     res.json(cp);
   } catch (e: any) {
-    res.status(400).json({ message: e.message });
+    res.status(400).json({ message: formatCounterpartyError(e) });
   }
 });
 
@@ -215,4 +215,22 @@ function buildPayload(body: any) {
     images:                Array.isArray(body.images) ? body.images : [],
     footerText:            body.footerText ?? ''
   };
+}
+
+function formatCounterpartyError(error: any): string {
+  if (!error) return 'Ошибка валидации контрагента';
+  if (error.name === 'ValidationError' && error.errors) {
+    const messages = Object.values(error.errors)
+      .map((e: any) => e?.message)
+      .filter(Boolean) as string[];
+    if (messages.length) return messages.join('. ');
+    return 'Ошибка валидации контрагента';
+  }
+  if (error.code === 11000 && error.keyPattern?.inn) {
+    return 'Контрагент с таким ИНН уже существует';
+  }
+  if (typeof error.message === 'string' && error.message.trim()) {
+    return error.message;
+  }
+  return 'Ошибка валидации контрагента';
 }

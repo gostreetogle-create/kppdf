@@ -1,145 +1,120 @@
-# Деплой
+# Деплой (без Docker)
 
 ## Структура
 
 ```
 deploy/
-├── docker-compose.prod.yml   # Продакшн: mongodb + backend + web (nginx)
-├── Dockerfile.backend        # Сборка Express (multi-stage)
-├── Dockerfile.web            # Сборка Angular → nginx
-├── nginx.conf                # SPA routing + proxy /api/ и /media/ → backend
-├── .env.example              # Шаблон переменных окружения
-└── deploy.sh                 # Скрипт деплоя (одна команда)
+├── .env.example      # шаблон переменных для deploy.sh
+└── deploy.sh         # нативный деплой: npm + systemd + nginx
 ```
 
-`docker-compose.yml` в корне — только для локальной разработки (MongoDB).
+Прод-схема:
+- backend: `systemd` сервис `kppdf-backend`
+- frontend: статика в `/var/www/kppdf`
+- reverse proxy: `nginx` (`/api`, `/media`, `/products`, `/kp`)
+- БД: локальный `mongod` на сервере
 
 ---
 
-## Первый деплой на сервер
+## Требования на сервере
 
-### Требования
-- Docker + Docker Compose v2
-- bash
+- Ubuntu 22.04/24.04
+- Node.js 20 + npm
+- MongoDB
+- nginx
 - git
 
-### Шаги
+---
+
+## Первый деплой
 
 ```bash
-# 1. Клонировать репозиторий
+# 1) Клонировать проект
 git clone <repo-url> /opt/kppdf
 cd /opt/kppdf
 
-# 2. Создать .env
+# 2) Создать и заполнить env
 cp deploy/.env.example deploy/.env
-nano deploy/.env   # заполнить CORS_ORIGIN и JWT_SECRET
+nano deploy/.env
 
-# 3. Запустить
-bash deploy/deploy.sh
+# 3) Запустить деплой
+sudo bash deploy/deploy.sh
 ```
 
-Приложение будет доступно на `http://<IP>:8080`
+---
+
+## Переменные окружения (`deploy/.env`)
+
+| Переменная | По умолчанию | Описание |
+|-----------|---------------|----------|
+| `DOMAIN` | `go.tiit` | `server_name` в nginx (можно несколько доменов через пробел) |
+| `WEB_PORT` | `80` | Порт nginx |
+| `BACKEND_PORT` | `3000` | Порт backend |
+| `MONGO_DB` | `kp-app` | Имя базы |
+| `MONGO_URI` | — | Полный URI MongoDB (если пусто, собирается из `MONGO_DB`) |
+| `CORS_ORIGIN` | — | **Обязательно.** Origin фронтенда |
+| `JWT_SECRET` | — | **Обязательно.** Секрет JWT (минимум 32 символа) |
+| `DADATA_TOKEN` | — | Токен DaData |
+| `MEDIA_ROOT` | `/opt/kppdf/media` | Папка медиафайлов |
+
+`CORS_ORIGIN='*'` запрещен, короткий `JWT_SECRET` тоже блокирует деплой.
 
 ---
 
-## Переменные окружения (deploy/.env)
+## Что делает `deploy.sh`
 
-| Переменная      | По умолчанию            | Описание                                      |
-|-----------------|-------------------------|-----------------------------------------------|
-| `WEB_PORT`      | `8080`                  | Внешний порт nginx                            |
-| `BACKEND_PORT`  | `3000`                  | Внешний порт API (для health check)           |
-| `MONGO_DB`      | `kp-app`                | Имя базы данных MongoDB                       |
-| `CORS_ORIGIN`   | —                       | **Обязательно.** Origin фронтенда для CORS    |
-| `JWT_SECRET`    | —                       | **Обязательно.** Секрет JWT (минимум 32 символа) |
-| `MONGO_PORT`    | `27017`                 | Внешний порт MongoDB (если нужен доступ с хоста) |
-
-**Примеры CORS_ORIGIN:**
-```env
-# Локальный compose
-CORS_ORIGIN=http://localhost:8080
-
-# Продакшн с доменом
-CORS_ORIGIN=https://kp.example.com
-
-# Продакшн по IP
-CORS_ORIGIN=http://192.168.1.100:8080
-```
-
-`'*'` запрещён — скрипт завершится с ошибкой.
-Пустой или короткий `JWT_SECRET` тоже приведёт к ошибке деплоя.
+1. Валидирует `deploy/.env`
+2. Делает `git pull --ff-only`
+3. Выполняет `npm ci` + `npm run build` в `backend` и `frontend`
+4. Генерирует `backend/.env`
+5. Создает/обновляет `kppdf-backend.service` и перезапускает сервис
+6. Копирует фронт-статику в `/var/www/kppdf`
+7. Создает/обновляет nginx site, проверяет `nginx -t`, reload
+8. Проверяет `GET /health` и доступность веба
 
 ---
 
-## Что делает deploy.sh
-
-1. Проверяет наличие `deploy/.env` и обязательных полей
-2. `git pull --ff-only` (если это git-репозиторий)
-3. `docker compose build` — пересобирает образы backend и web
-4. `docker compose up -d --remove-orphans` — поднимает контейнеры
-5. Health check: ждёт ответа `GET /health` до 60 сек
-6. Проверяет доступность nginx
-7. Выводит итоговые URL
-
----
-
-## Повторный деплой (обновление)
+## Повторный деплой
 
 ```bash
-bash deploy/deploy.sh
+cd /opt/kppdf
+sudo bash deploy/deploy.sh
 ```
 
-Данные MongoDB сохраняются в Docker volume `mongo_data` — не удаляются при пересборке.
-Медиафайлы (фото товаров/фон КП) берутся из папки `../media` на хосте, примонтированной в backend как `/app/media`.
-
----
-
-## Контейнеры
-
-| Контейнер    | Образ           | Порт (внутри сети) | Описание              |
-|--------------|-----------------|--------------------|-----------------------|
-| `kp-mongo`   | `mongo:7`       | `27017`            | MongoDB               |
-| `kp-backend` | build           | `3000`             | Express API           |
-| `kp-web`     | build + nginx   | `80`               | Angular SPA + proxy   |
-
-Все контейнеры в сети `kp-net`. Backend обращается к MongoDB по имени `mongodb:27017`.
-
----
-
-## Nginx
-
-Конфиг: `deploy/nginx.conf`
-
-| Location     | Действие                                      |
-|--------------|-----------------------------------------------|
-| `/api/`      | Proxy → `http://backend:3000/api/`            |
-| `/media/`    | Proxy → `http://backend:3000/media/`          |
-| `/products/` | Proxy → `http://backend:3000/products/` (legacy alias) |
-| `/kp/`       | Proxy → `http://backend:3000/kp/` (legacy alias) |
-| `client_max_body_size` | Лимит тела запроса `100m` (для bulk import) |
-| `*.js, *.css`| Статика с кэшем 1 год (`immutable`)           |
-| `/index.html`| Без кэша (`no-store`)                         |
-| `/*`         | SPA fallback → `/index.html`                  |
-
----
-
-## Полный сброс данных
+Опционально:
 
 ```bash
-# Остановить и удалить контейнеры + volume с данными
-docker compose -f deploy/docker-compose.prod.yml down -v
+# без git pull (если код уже обновили вручную)
+sudo bash deploy/deploy.sh --skip-pull
+
+# разрешить деплой при локальных изменениях в репозитории
+sudo bash deploy/deploy.sh --allow-dirty
 ```
 
 ---
 
-## Просмотр логов
+## Безопасность данных
+
+- `deploy.sh` **не трогает** `MEDIA_ROOT` (фото и фоны), только создаёт папку при отсутствии.
+- Веб-статика обновляется через `rsync --delete` только в `WEB_ROOT` (`/var/www/kppdf`).
+- Добавлена защита от опасного удаления: скрипт остановится, если `WEB_ROOT` похож на критический путь (`/`, `/var`, `/root`, пустой путь).
+- По умолчанию `git pull` блокируется при dirty-дереве, чтобы не потерять локальные незакоммиченные правки.
+- Для осознанного обхода проверки используйте `--allow-dirty`.
+
+---
+
+## Полезные команды
 
 ```bash
-# Все контейнеры
-docker compose -f deploy/docker-compose.prod.yml logs -f
+# backend логи
+journalctl -u kppdf-backend -f
 
-# Только backend
-docker compose -f deploy/docker-compose.prod.yml logs -f backend
+# статус backend
+systemctl status kppdf-backend --no-pager
 
-# Только nginx
-docker compose -f deploy/docker-compose.prod.yml logs -f web
+# проверка nginx конфига
+nginx -t
+
+# reload nginx
+systemctl reload nginx
 ```

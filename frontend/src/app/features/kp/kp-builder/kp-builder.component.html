@@ -60,6 +60,16 @@
                 </option>
               }
             </select>
+            <button
+              type="button"
+              ui-btn
+              size="sm"
+              class="recipient-select-row__add"
+              [disabled]="isReadOnly()"
+              (click)="openCreateRecipientForm()"
+              title="Новый получатель">
+              +
+            </button>
           </div>
           }
         </div>
@@ -333,4 +343,27 @@
 
     </div>
   </div>
+
+  @if (recipientFormOpen()) {
+    <app-counterparty-form
+      [counterparty]="null"
+      [formHeading]="'Новый получатель'"
+      (saved)="onRecipientFormSaved($event)"
+      (cancelled)="closeRecipientForm()" />
+  }
+
+  @if (showLeaveConfirm()) {
+    <ui-modal
+      title="Несохранённые изменения"
+      maxWidth="440px"
+      (closed)="resolveLeaveConfirm(false)">
+      <div modal-body>
+        <p class="leave-confirm-text">Есть несохранённые изменения в КП. Уйти со страницы?</p>
+      </div>
+      <ng-container modal-footer>
+        <button ui-btn (click)="resolveLeaveConfirm(false)">Остаться</button>
+        <button ui-btn variant="primary" (click)="resolveLeaveConfirm(true)">Уйти</button>
+      </ng-container>
+    </ui-modal>
+  }
 }

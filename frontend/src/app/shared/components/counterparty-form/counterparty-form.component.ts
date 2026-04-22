@@ -2,11 +2,11 @@ import { Component, OnInit, OnDestroy, input, output, signal, inject } from '@an
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
-import { ApiService, Counterparty, LegalForm, CpRole } from '../../../../core/services/api.service';
-import { ModalComponent } from '../../../../shared/ui/modal/modal.component';
-import { FormFieldComponent } from '../../../../shared/ui/form-field/form-field.component';
-import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
-import { ButtonComponent } from '../../../../shared/ui/button/button.component';
+import { ApiService, Counterparty, LegalForm, CpRole } from '../../../core/services/api.service';
+import { ModalComponent } from '../../ui/modal/modal.component';
+import { FormFieldComponent } from '../../ui/form-field/form-field.component';
+import { AlertComponent } from '../../ui/alert/alert.component';
+import { ButtonComponent } from '../../ui/button/button.component';
 
 interface CpFormModel {
   legalForm:            LegalForm;
@@ -32,7 +32,7 @@ interface CpFormModel {
   founderNameShort:     string;
   status:               'active' | 'inactive';
   notes:                string;
-  tags:                 string; // comma-separated
+  tags:                 string;
 }
 
 function emptyForm(): CpFormModel {
@@ -59,6 +59,8 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   counterparty = input<Counterparty | null>(null);
+  /** Заголовок модалки (например «Новый получатель» в контексте КП) */
+  formHeading  = input<string | undefined>(undefined);
   saved        = output<Counterparty>();
   cancelled    = output<void>();
 
@@ -71,7 +73,11 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
   readonly legalForms: LegalForm[] = ['ООО', 'ИП', 'АО', 'ПАО', 'Физлицо', 'Другое'];
 
   get isEdit(): boolean { return !!this.counterparty(); }
-  get title(): string   { return this.isEdit ? 'Редактировать контрагента' : 'Новый контрагент'; }
+  get title(): string {
+    const h = this.formHeading()?.trim();
+    if (h) return h;
+    return this.isEdit ? 'Редактировать контрагента' : 'Новый контрагент';
+  }
 
   ngOnInit() {
     const cp = this.counterparty();

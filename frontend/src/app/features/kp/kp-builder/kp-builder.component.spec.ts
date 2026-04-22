@@ -6,6 +6,7 @@ import { KpBuilderComponent } from './kp-builder.component';
 import { ApiService, Kp } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AutosaveService } from './autosave.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 const mockKp: Kp = {
   _id: 'kp1',
@@ -44,8 +45,14 @@ describe('KpBuilderComponent', () => {
         { provide: ApiService, useValue: apiSpy },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: { get: () => 'kp1' } } }
+          useValue: {
+            snapshot: {
+              paramMap: { get: (k: string) => (k === 'id' ? 'kp1' : null) },
+              queryParamMap: { get: () => null as string | null }
+            }
+          }
         },
+        { provide: NotificationService, useValue: { success: () => {}, error: () => {} } },
         { provide: Router, useValue: { navigate: () => {} } },
         {
           provide: AuthService,

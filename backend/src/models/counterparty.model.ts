@@ -66,13 +66,13 @@ const ImageSchema = new Schema<IImage>({
 const CounterpartySchema = new Schema<ICounterparty>({
   legalForm: {
     type: String,
-    enum: ['ООО', 'ИП', 'АО', 'ПАО', 'Физлицо', 'Другое'],
-    required: true
+    enum: { values: ['ООО', 'ИП', 'АО', 'ПАО', 'Физлицо', 'Другое'], message: 'Некорректная организационно-правовая форма' },
+    required: [true, 'Орг. форма обязательна']
   },
-  role: { type: [String], enum: ['client', 'supplier', 'company'], default: ['client'] },
-  name:      { type: String, required: true, trim: true },
-  shortName: { type: String, required: true, trim: true },
-  inn:       { type: String, required: true, trim: true, match: [/^\d{10}(\d{2})?$/, 'ИНН должен содержать 10 или 12 цифр'] },
+  role: { type: [String], enum: { values: ['client', 'supplier', 'company'], message: 'Некорректная роль контрагента' }, default: ['client'] },
+  name:      { type: String, required: [true, 'Полное название обязательно'], trim: true },
+  shortName: { type: String, required: [true, 'Краткое название обязательно'], trim: true },
+  inn:       { type: String, required: [true, 'ИНН обязателен'], trim: true, match: [/^\d{10}(\d{2})?$/, 'ИНН должен содержать 10 или 12 цифр'] },
   kpp:       { type: String, trim: true, match: [/^\d{9}$/, 'КПП должен содержать 9 цифр'] },
   ogrn:      { type: String, trim: true },
 
@@ -93,7 +93,7 @@ const CounterpartySchema = new Schema<ICounterparty>({
   founderName:      String,
   founderNameShort: String,
 
-  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  status: { type: String, enum: { values: ['active', 'inactive'], message: 'Некорректный статус контрагента' }, required: [true, 'Статус обязателен'], default: 'active' },
   notes:  String,
   tags:   { type: [String], default: [] },
 

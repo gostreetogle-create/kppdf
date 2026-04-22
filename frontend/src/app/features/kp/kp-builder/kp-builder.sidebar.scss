@@ -93,7 +93,12 @@
 
   .sidebar-section__select {
     flex: 1;
+    min-width: 0;
     margin-bottom: 0;
+  }
+
+  &__add {
+    flex-shrink: 0;
   }
 }
 

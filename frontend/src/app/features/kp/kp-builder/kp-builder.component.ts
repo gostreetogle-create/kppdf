@@ -1,19 +1,22 @@
 import { Component, OnInit, signal, computed, inject, DestroyRef, effect } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin, map, Observable, Subject, take } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService, Kp, Product, KpItem, Counterparty } from '../../../core/services/api.service';
 import { KpDocumentComponent } from '../components/kp-document/kp-document.component';
 import { type KpCatalogItem } from '../components/kp-catalog/kp-catalog.component';
 import { FormsModule } from '@angular/forms';
-import { ButtonComponent } from '../../../shared/ui/index';
+import { ButtonComponent, ModalComponent } from '../../../shared/ui/index';
+import { CounterpartyFormComponent } from '../../../shared/components/counterparty-form/counterparty-form.component';
 import { AutosaveService } from './autosave.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-kp-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, KpDocumentComponent, ButtonComponent],
+  imports: [CommonModule, FormsModule, KpDocumentComponent, ButtonComponent, ModalComponent, CounterpartyFormComponent],
   providers: [AutosaveService],   // scope — только этот компонент
   templateUrl: './kp-builder.component.html',
   styleUrls: [
@@ -29,6 +32,7 @@ export class KpBuilderComponent implements OnInit {
   private readonly router      = inject(Router);
   private readonly api         = inject(ApiService);
   private readonly auth        = inject(AuthService);
+  private readonly ns          = inject(NotificationService);
   readonly autosave            = inject(AutosaveService);
 
   kp             = signal<Kp | null>(null);
@@ -44,6 +48,10 @@ export class KpBuilderComponent implements OnInit {
   paramsCollapsed = signal(false);
   itemsCollapsed = signal(false);
   conditionsCollapsed = signal(false);
+  /** Модалка создания контрагента без ухода со страницы КП */
+  recipientFormOpen = signal(false);
+  /** Подтверждение ухода со страницы (ui-modal, не window.confirm) */
+  showLeaveConfirm = signal(false);
   lastRemovedItem = signal<KpItem | null>(null);
   manualItemDraft = {
     name: '',
@@ -105,45 +113,111 @@ export class KpBuilderComponent implements OnInit {
 
   /** Флаг: данные уже загружены (чтобы effect не триггерил autosave при первой загрузке) */
   private initialized = false;
+  /** Первый проход effect после init пропускаем как baseline */
+  private autosavePrimed = false;
+  /** Автосохранение включаем только после первой позиции товара */
+  private autosaveEnabled = false;
+  private leaveChoice?: Subject<boolean>;
 
   constructor() {
     effect(() => {
       const kp = this.kp();
       if (!kp || !this.initialized) return;
+      if (!this.autosavePrimed) {
+        this.autosavePrimed = true;
+        this.autosaveEnabled = kp.items.length > 0;
+        return;
+      }
+      if (!this.autosaveEnabled) {
+        if (kp.items.length === 0) return;
+        this.autosaveEnabled = true;
+      }
       this.autosave.schedule(kp);
     });
   }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id')!;
+    const selectCpId = this.route.snapshot.queryParamMap.get('selectCp');
 
-    this.api.getKp(id)
+    const counterparties$ = this.api.getCounterparties({ status: 'active' }).pipe(
+      map(list => list.filter(c => c.role.includes('client') || c.role.includes('company')))
+    );
+
+    forkJoin({ kp: this.api.getKp(id), counterparties: counterparties$ })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(kp => {
+      .subscribe(({ kp, counterparties }) => {
+        this.counterparties.set(counterparties);
         this.kp.set(kp);
         this.loading.set(false);
-        // Откладываем на следующий макротаск — effect уже отработал с начальным значением
-        Promise.resolve().then(() => { this.initialized = true; });
+        Promise.resolve().then(() => {
+          if (selectCpId) {
+            this.fillFromCounterparty(selectCpId);
+            void this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { selectCp: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+            });
+          }
+          this.initialized = true;
+        });
       });
 
     this.api.getProducts()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(p => this.products.set(p));
+  }
 
-    this.api.getCounterparties({ status: 'active' })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(list => this.counterparties.set(
-        list.filter(c => c.role.includes('client') || c.role.includes('company'))
-      ));
+  /** Модалка нового контрагента на месте (без смены маршрута) */
+  openCreateRecipientForm() {
+    if (this.isReadOnly()) return;
+    this.recipientFormOpen.set(true);
+  }
+
+  closeRecipientForm() {
+    this.recipientFormOpen.set(false);
+  }
+
+  onRecipientFormSaved(cp: Counterparty) {
+    this.counterparties.update(list =>
+      list.some(c => c._id === cp._id) ? list : [cp, ...list]
+    );
+    this.applyCounterpartyToKp(cp);
+    this.recipientFormOpen.set(false);
+    this.ns.success('Получатель создан и выбран');
+  }
+
+  /** CanDeactivate: без `window.confirm`, ответ через ui-modal */
+  confirmDeactivate(): boolean | Observable<boolean> {
+    if (!this.isDirty()) return true;
+    this.leaveChoice = new Subject<boolean>();
+    this.showLeaveConfirm.set(true);
+    return this.leaveChoice.pipe(take(1));
+  }
+
+  resolveLeaveConfirm(leave: boolean) {
+    this.showLeaveConfirm.set(false);
+    const s = this.leaveChoice;
+    this.leaveChoice = undefined;
+    if (s) {
+      s.next(leave);
+      s.complete();
+    }
   }
 
   /** Заполнить получателя из справочника контрагентов */
   fillFromCounterparty(id: string) {
     if (this.isReadOnly()) return;
     if (!id) return;
-    const cp  = this.counterparties().find(c => c._id === id);
-    const kp  = this.kp();
-    if (!cp || !kp) return;
+    const cp = this.counterparties().find(c => c._id === id);
+    if (!cp) return;
+    this.applyCounterpartyToKp(cp);
+  }
+
+  private applyCounterpartyToKp(cp: Counterparty) {
+    const kp = this.kp();
+    if (!kp) return;
     this.kp.set({
       ...kp,
       counterpartyId: cp._id,

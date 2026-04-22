@@ -1,45 +1,71 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ─── Запуск: bash deploy/deploy.sh (из корня репозитория) ─────────────────────
+SKIP_PULL=0
+ALLOW_DIRTY=0
+SHOW_HELP=0
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-pull)
+      SKIP_PULL=1
+      shift
+      ;;
+    --allow-dirty)
+      ALLOW_DIRTY=1
+      shift
+      ;;
+    -h|--help)
+      SHOW_HELP=1
+      shift
+      ;;
+    *)
+      echo "[deploy] ОШИБКА: неизвестный аргумент: $1. Используйте --help." >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ "${SHOW_HELP}" -eq 1 ]]; then
   cat <<'EOF'
 Usage:
-  bash deploy/deploy.sh          # полный деплой
-  bash deploy/deploy.sh --help   # эта справка
+  sudo bash deploy/deploy.sh [--skip-pull] [--allow-dirty]
+  sudo bash deploy/deploy.sh --help
+
+Опции:
+  --skip-pull    не выполнять git pull
+  --allow-dirty  разрешить деплой при незакоммиченных изменениях в репозитории
 
 Что делает:
-  1. Проверяет наличие deploy/.env
-  2. Обновляет код через git pull (если это git-репозиторий)
-  3. Собирает Docker-образы (backend + web)
-  4. Поднимает контейнеры (mongodb + backend + web)
-  5. Проверяет health backend и доступность web
-
-Требования на сервере:
-  - Docker + Docker Compose v2
-  - bash
-  - git (опционально, для auto-pull)
-
-Переменные окружения (deploy/.env):
-  BACKEND_PORT   — порт API (default: 3000)
-  WEB_PORT       — порт nginx (default: 8080)
-  MONGO_DB       — имя базы MongoDB (default: kp-app)
-  CORS_ORIGIN    — origin фронтенда (обязательно в production)
-  JWT_SECRET     — секрет подписи JWT (обязательно, минимум 32 символа)
+  1. Проверяет deploy/.env и обязательные переменные
+  2. Безопасно обновляет код через git pull (если не --skip-pull)
+  3. Собирает backend (TypeScript) и frontend (Angular)
+  4. Генерирует backend/.env из deploy/.env
+  5. Настраивает/обновляет systemd-сервис backend
+  6. Настраивает/обновляет nginx site + деплоит frontend-статику
+  7. Проверяет health backend и доступность web
 EOF
   exit 0
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.prod.yml"
 ENV_FILE="${SCRIPT_DIR}/.env"
+BACKEND_SERVICE_FILE="/etc/systemd/system/kppdf-backend.service"
+NGINX_SITE_FILE="/etc/nginx/sites-available/kppdf.conf"
+NGINX_SITE_LINK="/etc/nginx/sites-enabled/kppdf.conf"
+WEB_ROOT="/var/www/kppdf"
 
 log() { echo "[deploy] $*"; }
 err() { echo "[deploy] ОШИБКА: $*" >&2; exit 1; }
+require_cmd() { command -v "$1" >/dev/null 2>&1 || err "Команда '$1' не найдена."; }
+is_dangerous_path() {
+  local p="$1"
+  [[ -z "${p}" || "${p}" == "/" || "${p}" == "." || "${p}" == "/root" || "${p}" == "/var" ]]
+}
 
-# ─── 1. .env ──────────────────────────────────────────────────────────────────
+[[ "$(id -u)" -eq 0 ]] || err "Скрипт нужно запускать от root: sudo bash deploy/deploy.sh"
+
 if [[ ! -f "${ENV_FILE}" ]]; then
   log "Файл deploy/.env не найден — копирую из .env.example"
   cp "${SCRIPT_DIR}/.env.example" "${ENV_FILE}"
@@ -50,83 +76,185 @@ fi
 # shellcheck source=/dev/null
 source "${ENV_FILE}"
 
+DOMAIN="${DOMAIN:-_}"
+WEB_PORT="${WEB_PORT:-80}"
+BACKEND_PORT="${BACKEND_PORT:-3000}"
+MONGO_DB="${MONGO_DB:-kp-app}"
+MONGO_URI="${MONGO_URI:-mongodb://127.0.0.1:27017/${MONGO_DB}}"
+MEDIA_ROOT="${MEDIA_ROOT:-${REPO_ROOT}/media}"
+DADATA_TOKEN="${DADATA_TOKEN:-}"
+
 [[ -n "${CORS_ORIGIN:-}" ]] || err "CORS_ORIGIN не задан в deploy/.env"
-[[ "${CORS_ORIGIN}" != "*" ]] || err "CORS_ORIGIN='*' запрещён в production. Укажите точный origin."
+[[ "${CORS_ORIGIN}" != "*" ]] || err "CORS_ORIGIN='*' запрещён в production."
 [[ -n "${JWT_SECRET:-}" ]] || err "JWT_SECRET не задан в deploy/.env"
 [[ "${#JWT_SECRET}" -ge 32 ]] || err "JWT_SECRET слишком короткий (минимум 32 символа)."
 
+require_cmd git
+require_cmd node
+require_cmd npm
+require_cmd systemctl
+require_cmd nginx
+require_cmd curl
+require_cmd rsync
+
 log "Конфигурация:"
-log "  WEB_PORT     = ${WEB_PORT:-8080}"
-log "  BACKEND_PORT = ${BACKEND_PORT:-3000}"
-log "  MONGO_DB     = ${MONGO_DB:-kp-app}"
+log "  DOMAIN       = ${DOMAIN}"
+log "  WEB_PORT     = ${WEB_PORT}"
+log "  BACKEND_PORT = ${BACKEND_PORT}"
+log "  MONGO_URI    = ${MONGO_URI}"
 log "  CORS_ORIGIN  = ${CORS_ORIGIN}"
 log "  JWT_SECRET   = [set]"
 
-# ─── 2. git pull ──────────────────────────────────────────────────────────────
 if git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  log "Обновляю код из git..."
-  git -C "${REPO_ROOT}" fetch origin
-  if ! git -C "${REPO_ROOT}" pull --ff-only; then
-    log "pull --ff-only не удался. Пробую stash + pull..."
-    git -C "${REPO_ROOT}" stash push -m "kp-deploy auto $(date -Iseconds 2>/dev/null || date)" -- deploy/ 2>/dev/null || true
-    git -C "${REPO_ROOT}" pull --ff-only || err "Не удалось обновить репозиторий. Выполните вручную: git fetch origin && git reset --hard origin/main"
+  if [[ "${SKIP_PULL}" -eq 1 ]]; then
+    log "git pull пропущен (--skip-pull)."
+  else
+    if [[ "${ALLOW_DIRTY}" -ne 1 ]]; then
+      if [[ -n "$(git -C "${REPO_ROOT}" status --porcelain)" ]]; then
+        err "В репозитории есть незакоммиченные изменения. Чтобы защитить локальные данные, pull остановлен. Сделайте commit/stash или запустите с --allow-dirty."
+      fi
+    fi
+    log "Обновляю код из git (безопасный ff-only)..."
+    git -C "${REPO_ROOT}" fetch origin
+    git -C "${REPO_ROOT}" pull --ff-only || err "Не удалось выполнить git pull --ff-only. Разрешите конфликт вручную."
+    log "Код обновлён: $(git -C "${REPO_ROOT}" rev-parse --short HEAD)"
   fi
-  log "Код обновлён: $(git -C "${REPO_ROOT}" rev-parse --short HEAD)"
 else
   log "Не git-репозиторий — пропускаю git pull."
 fi
 
-# ─── 3. Сборка образов ────────────────────────────────────────────────────────
-dc() { docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" "$@"; }
+log "Собираю backend..."
+npm --prefix "${REPO_ROOT}/backend" ci
+npm --prefix "${REPO_ROOT}/backend" run build
 
-log "Собираю образы..."
-dc build --no-cache backend
-dc build --no-cache web
+log "Собираю frontend..."
+npm --prefix "${REPO_ROOT}/frontend" ci
+npm --prefix "${REPO_ROOT}/frontend" run build
 
-# ─── 4. Запуск контейнеров ────────────────────────────────────────────────────
-log "Запускаю контейнеры..."
-dc up -d --remove-orphans
+mkdir -p "${MEDIA_ROOT}"
+if [[ "${MEDIA_ROOT}" == "${REPO_ROOT}"* ]]; then
+  log "ВНИМАНИЕ: MEDIA_ROOT находится внутри репозитория (${MEDIA_ROOT}). Рекомендуется вынести его вне git-дерева."
+fi
 
-# ─── 5. Health check backend ──────────────────────────────────────────────────
-BACKEND_URL="http://127.0.0.1:${BACKEND_PORT:-3000}/health"
+cat > "${REPO_ROOT}/backend/.env" <<EOF
+NODE_ENV=production
+PORT=${BACKEND_PORT}
+MONGO_URI=${MONGO_URI}
+CORS_ORIGIN=${CORS_ORIGIN}
+JWT_SECRET=${JWT_SECRET}
+DADATA_TOKEN=${DADATA_TOKEN}
+MEDIA_ROOT=${MEDIA_ROOT}
+EOF
+chmod 600 "${REPO_ROOT}/backend/.env"
+
+cat > "${BACKEND_SERVICE_FILE}" <<EOF
+[Unit]
+Description=KPPDF Backend
+After=network.target mongod.service
+Wants=mongod.service
+
+[Service]
+Type=simple
+WorkingDirectory=${REPO_ROOT}/backend
+ExecStart=$(command -v node) ${REPO_ROOT}/backend/dist/app.js
+Restart=always
+RestartSec=5
+EnvironmentFile=${REPO_ROOT}/backend/.env
+Environment=NODE_ENV=production
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+log "Перезапускаю backend service..."
+systemctl daemon-reload
+systemctl enable --now kppdf-backend
+systemctl restart kppdf-backend
+
+is_dangerous_path "${WEB_ROOT}" && err "WEB_ROOT имеет опасный путь: '${WEB_ROOT}'. Останавливаю деплой."
+mkdir -p "${WEB_ROOT}"
+rsync -a --delete "${REPO_ROOT}/frontend/dist/kppdf-frontend/browser/" "${WEB_ROOT}/"
+
+cat > "${NGINX_SITE_FILE}" <<EOF
+server {
+  listen ${WEB_PORT};
+  server_name ${DOMAIN};
+  client_max_body_size 100m;
+
+  root ${WEB_ROOT};
+  index index.html;
+  charset utf-8;
+
+  location /api/ {
+    proxy_pass http://127.0.0.1:${BACKEND_PORT}/api/;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location /media/ {
+    proxy_pass http://127.0.0.1:${BACKEND_PORT}/media/;
+  }
+
+  location /products/ {
+    proxy_pass http://127.0.0.1:${BACKEND_PORT}/products/;
+  }
+
+  location /kp/ {
+    proxy_pass http://127.0.0.1:${BACKEND_PORT}/kp/;
+  }
+
+  location ~* \.(?:js|mjs|css|map|woff2?|ico|png|jpg|jpeg|gif|svg|webp)$ {
+    try_files \$uri =404;
+    expires 1y;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+  }
+
+  location = /index.html {
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+    try_files \$uri =404;
+  }
+
+  location / {
+    try_files \$uri \$uri/ /index.html;
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+  }
+}
+EOF
+
+[[ -L "${NGINX_SITE_LINK}" ]] || ln -s "${NGINX_SITE_FILE}" "${NGINX_SITE_LINK}"
+[[ -f /etc/nginx/sites-enabled/default ]] && rm -f /etc/nginx/sites-enabled/default
+nginx -t
+systemctl reload nginx
+
+BACKEND_URL="http://127.0.0.1:${BACKEND_PORT}/health"
+WEB_URL="http://127.0.0.1:${WEB_PORT}/"
+
 log "Жду готовности backend (${BACKEND_URL})..."
-
 for i in $(seq 1 30); do
   if curl -fsS --connect-timeout 3 --max-time 8 "${BACKEND_URL}" >/dev/null 2>&1; then
     log "Backend готов."
     break
   fi
   if [[ "${i}" -eq 30 ]]; then
-    log "Backend не ответил за 60 сек. Последние логи:"
-    dc logs backend --tail 50
-    err "Деплой завершился с ошибкой."
+    journalctl -u kppdf-backend --no-pager -n 100 || true
+    err "Backend не ответил за 60 секунд."
   fi
   sleep 2
 done
 
-# ─── 6. Проверка web ──────────────────────────────────────────────────────────
-WEB_URL="http://127.0.0.1:${WEB_PORT:-8080}/"
-log "Проверяю nginx (${WEB_URL})..."
-
-web_ok=0
-for i in $(seq 1 15); do
-  if curl -fsS --connect-timeout 3 --max-time 8 "${WEB_URL}" >/dev/null 2>&1; then
-    web_ok=1
-    break
-  fi
-  sleep 2
-done
-
-if [[ "${web_ok}" -eq 1 ]]; then
-  log "Web (nginx) отвечает."
+log "Проверяю web (${WEB_URL})..."
+if curl -fsS --connect-timeout 3 --max-time 8 "${WEB_URL}" >/dev/null 2>&1; then
+  log "Web отвечает."
 else
-  log "ПРЕДУПРЕЖДЕНИЕ: nginx не ответил. Проверьте логи:"
-  dc logs web --tail 30
+  log "ПРЕДУПРЕЖДЕНИЕ: web не ответил."
 fi
 
-# ─── Итог ─────────────────────────────────────────────────────────────────────
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 log "Деплой выполнен успешно!"
-log "  Приложение: http://<IP-сервера>:${WEB_PORT:-8080}"
-log "  API:        http://<IP-сервера>:${BACKEND_PORT:-3000}/api"
+log "  Web: http://<IP-сервера>:${WEB_PORT}"
+log "  API: http://<IP-сервера>:${WEB_PORT}/api"
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

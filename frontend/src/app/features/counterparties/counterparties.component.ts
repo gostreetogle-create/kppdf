@@ -6,7 +6,7 @@ import { combineLatest, debounceTime, switchMap, catchError, of } from 'rxjs';
 import { ApiService, Counterparty, CpRole } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CounterpartyTableComponent } from './components/counterparty-table/counterparty-table.component';
-import { CounterpartyFormComponent } from './components/counterparty-form/counterparty-form.component';
+import { CounterpartyFormComponent } from '../../shared/components/counterparty-form/counterparty-form.component';
 import { ConfirmDialogComponent } from '../products/components/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
@@ -71,7 +71,10 @@ export class CounterpartiesComponent {
 
   openCreate() { this.editTarget.set(null); this.formOpen.set(true); }
   openEdit(cp: Counterparty) { this.editTarget.set(cp); this.formOpen.set(true); }
-  closeForm() { this.formOpen.set(false); this.editTarget.set(null); }
+  closeForm() {
+    this.formOpen.set(false);
+    this.editTarget.set(null);
+  }
 
   onSaved(cp: Counterparty) {
     const isEdit = !!this.editTarget();
