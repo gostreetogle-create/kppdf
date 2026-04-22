@@ -279,3 +279,4 @@ KpBuilderComponent: forkJoin(GET kp + GET counterparties), отдельно GET 
 | 2026-04-22 | Counterparty API: локализованы ошибки валидации (required/enum/match/duplicate INN) — в ответах только русские сообщения без `Counterparty validation failed` |
 | 2026-04-22 | Деплой переведен на сценарий без Docker: `deploy/deploy.sh` (npm build + systemd + nginx), обновлены `deploy/.env.example`, `docs/deploy.md`, `README.md` |
 | 2026-04-22 | Безопасность деплоя усилена: защита фото/медиа (`MEDIA_ROOT` не очищается), безопасное обновление статики через `rsync`, блокировка `git pull` при dirty-дереве (с флагом `--allow-dirty` для осознанного обхода) |
+| 2026-04-22 | Исправлен nginx-шаблон в `deploy/deploy.sh`: для `/api`, `/media`, `/products`, `/kp` используется `location ^~` + единые proxy headers, чтобы медиа не ломались после очередного деплоя |

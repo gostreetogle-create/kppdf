@@ -72,6 +72,9 @@ sudo bash deploy/deploy.sh
 7. Создает/обновляет nginx site, проверяет `nginx -t`, reload
 8. Проверяет `GET /health` и доступность веба
 
+Важно: в nginx для `/api`, `/media`, `/products`, `/kp` используются `location ^~ ...`,
+чтобы запросы к медиа не перехватывались regex-правилом статики (`png/jpg/css/js`).
+
 ---
 
 ## Повторный деплой
