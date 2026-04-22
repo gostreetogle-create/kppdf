@@ -161,7 +161,7 @@
 
       </aside>
 
-      <div class="builder__preview builder__slot builder__slot--center">
+      <div class="builder__preview builder__slot builder__slot--center" [class.builder__preview--scrollable]="previewPageCount() > 1">
         <div class="builder__preview-scale">
           <app-kp-document
             [recipient]="kp()!.recipient"

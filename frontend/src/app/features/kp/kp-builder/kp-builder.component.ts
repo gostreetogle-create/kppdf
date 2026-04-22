@@ -107,6 +107,12 @@ export class KpBuilderComponent implements OnInit {
     return status === 'sent' || status === 'accepted';
   });
   readonly isDraft = computed(() => this.kp()?.status === 'draft');
+  readonly previewPageCount = computed(() => {
+    const kp = this.kp();
+    if (!kp) return 1;
+    const perPage = Math.max(1, Number(kp.metadata?.tablePageBreakAfter) || 6);
+    return Math.max(1, Math.ceil(kp.items.length / perPage));
+  });
 
   /** Есть ли несохранённые изменения — используется в CanDeactivate guard */
   readonly isDirty = computed(() => this.autosave.status() === 'unsaved');
