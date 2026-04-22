@@ -1,0 +1,10 @@
+<label class="ui-search-input" [class.ui-search-input--full]="fullWidth()">
+  <span class="ui-search-input__icon" aria-hidden="true">🔍</span>
+  <input
+    class="ui-search-input__control"
+    type="text"
+    [value]="value()"
+    [placeholder]="placeholder()"
+    (input)="valueChange.emit($any($event.target).value)"
+  />
+</label>

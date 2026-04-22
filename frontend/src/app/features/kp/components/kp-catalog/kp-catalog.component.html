@@ -4,7 +4,7 @@
       <tr>
         <th class="kp-col-num">№</th>
         @if (showPhotoColumn()) {
-          <th class="kp-col-photo">Фото</th>
+          <th class="kp-col-photo" [style.width.px]="photoColWidthPx()">Фото</th>
         }
         @if (showCodeColumn()) {
           <th class="kp-col-code">Арт.</th>
@@ -24,8 +24,16 @@
         <tr class="kp-row">
           <td class="kp-cell-num">{{ displayOffset() + i + 1 }}</td>
           @if (showPhotoColumn()) {
-            <td class="kp-cell-photo">
-              <img [src]="item.imageUrl" [alt]="item.name" class="kp-thumb" loading="lazy" decoding="async" />
+            <td class="kp-cell-photo" [style.width.px]="photoColWidthPx()">
+              <img
+                [src]="item.imageUrl"
+                [alt]="item.name"
+                class="kp-thumb"
+                [style.width.px]="photoSizePx()"
+                [style.height.px]="photoSizePx()"
+                loading="lazy"
+                decoding="async"
+              />
             </td>
           }
           @if (showCodeColumn()) {
@@ -33,7 +41,12 @@
           }
           <td class="kp-cell-name">{{ item.name }}</td>
           @if (showDescriptionColumn()) {
-            <td class="kp-cell-description">{{ item.description }}</td>
+            <td class="kp-cell-description">
+              {{ item.description }}
+              @if (item.adjustmentsLabel) {
+                <div class="kp-cell-adjustments">{{ item.adjustmentsLabel }}</div>
+              }
+            </td>
           }
           <td class="kp-cell-qty">{{ item.qty }}</td>
           <td class="kp-cell-unit">{{ item.unit }}</td>

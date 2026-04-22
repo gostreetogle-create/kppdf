@@ -9,6 +9,8 @@ export interface KpCatalogItem {
   qty:         number;
   unit:        string;
   price:       number;
+  basePrice?:  number;
+  adjustmentsLabel?: string;
   imageUrl:    string;
 }
 
@@ -25,4 +27,19 @@ export class KpCatalogComponent {
   showCodeColumn = input(true);
   showDescriptionColumn = input(true);
   displayOffset = input(0); // Смещение для нумерации строк
+  photoScalePercent = input(150);
+
+  photoSizePx(): number {
+    const scale = this.clampPhotoScale(this.photoScalePercent());
+    return Math.round(46 * scale / 100);
+  }
+
+  photoColWidthPx(): number {
+    return this.photoSizePx() + 14;
+  }
+
+  private clampPhotoScale(value: number): number {
+    const n = Number.isFinite(value) ? value : 150;
+    return Math.min(350, Math.max(150, n));
+  }
 }

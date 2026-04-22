@@ -4,7 +4,8 @@
   min-height: 297mm;
   margin: 0 auto;
   background: white;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid color-mix(in srgb, var(--ui-border) 74%, transparent);
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.14);
   overflow: hidden;
 }
 
@@ -25,7 +26,7 @@
   position: relative;
   z-index: 1;
   height: 100%;
-  padding: 15mm 12mm 20mm;  /* Убираем верхний отступ, он теперь в kp-header */
+  padding: 15mm 5mm 18mm;
 }
 
 /* Для печати - обеспечиваем корректное отображение фона */

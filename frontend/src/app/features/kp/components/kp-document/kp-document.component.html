@@ -13,22 +13,27 @@
 
       <!-- Шапка только на первой странице -->
       @if (chunk.showHeader) {
-        <app-kp-header 
-          [recipient]="recipient()" 
-          [metadata]="metadata()">
-        </app-kp-header>
+        <section class="kp-content__header-block">
+          <app-kp-header 
+            [recipient]="recipient()" 
+            [metadata]="metadata()">
+          </app-kp-header>
+        </section>
       }
 
       <!-- Основной контент -->
       <main class="kp-content" [class.kp-content--continuation]="!chunk.showHeader">
-        <!-- Таблица товаров для текущей страницы -->
-        <app-kp-catalog 
-          [items]="chunk.items"
-          [showPhotoColumn]="hasPhotoColumn()"
-          [showCodeColumn]="hasCodeColumn()"
-          [showDescriptionColumn]="hasDescriptionColumn()"
-          [displayOffset]="chunk.displayOffset">
-        </app-kp-catalog>
+        <section class="kp-content__main-block">
+          <!-- Таблица товаров для текущей страницы -->
+          <app-kp-catalog 
+            [items]="chunk.items"
+            [showPhotoColumn]="hasPhotoColumn()"
+            [showCodeColumn]="hasCodeColumn()"
+            [showDescriptionColumn]="hasDescriptionColumn()"
+            [photoScalePercent]="metadata().photoScalePercent || 150"
+            [displayOffset]="chunk.displayOffset">
+          </app-kp-catalog>
+        </section>
 
         <!-- Подсказка о продолжении на следующей странице -->
         @if (pageIndex < totalPages() - 1) {
@@ -39,10 +44,12 @@
 
         <!-- Итоги и условия только на последней странице -->
         @if (chunk.showTotals) {
-          <app-kp-table 
-            [totals]="totals()"
-            [conditions]="conditions()">
-          </app-kp-table>
+          <section class="kp-content__summary-block">
+            <app-kp-table 
+              [totals]="totals()"
+              [conditions]="conditions()">
+            </app-kp-table>
+          </section>
         }
       </main>
     </app-kp-background>

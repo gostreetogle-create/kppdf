@@ -95,22 +95,23 @@
         </div>
 
         <div class="backups-filters">
-          <input
+          <ui-search-input
             class="backups-filters__search"
-            type="text"
+            [value]="backupQuery()"
             placeholder="Поиск по имени архива..."
-            [ngModel]="backupQuery()"
-            (ngModelChange)="backupQuery.set($event)"
+            [fullWidth]="true"
+            (valueChange)="backupQuery.set($event)"
           />
-          <select
+          <ui-filter-select
             class="backups-filters__select"
-            [ngModel]="backupTypeFilter()"
-            (ngModelChange)="backupTypeFilter.set($event)"
-          >
-            <option value="all">Все типы</option>
-            <option value="mongo">Только MongoDB</option>
-            <option value="media">Только Media</option>
-          </select>
+            [value]="backupTypeFilter()"
+            [options]="[
+              { value: 'all', label: 'Все типы' },
+              { value: 'mongo', label: 'Только MongoDB' },
+              { value: 'media', label: 'Только Media' }
+            ]"
+            (valueChange)="backupTypeFilter.set($any($event))"
+          />
         </div>
 
         <div class="backups-cleanup">
@@ -147,5 +148,32 @@
         }
       </section>
     </div>
+  }
+
+  @if (restoreHelpOpen()) {
+    <ui-modal title="Как восстановить бэкап" maxWidth="760px" (closed)="closeRestoreHelp()">
+      <div modal-body class="restore-help">
+        <p class="restore-help__note">
+          Восстановление выполняется на сервере. Сначала загрузите архивы в <code>/root/restore</code>.
+        </p>
+        <pre class="restore-help__code"><code># 1) Скопировать архивы на сервер, например в /root/restore
+#    mongo-YYYY...archive.gz и media-YYYY...tar.gz
+
+# 2) Восстановить MongoDB (внимание: --drop удаляет текущие коллекции)
+mongorestore --uri="mongodb://127.0.0.1:27017/kp-app" --archive="/root/restore/mongo-YYYY...archive.gz" --gzip --drop
+
+# 3) Восстановить media
+mkdir -p /opt/kppdf/media
+tar -xzf /root/restore/media-YYYY...tar.gz -C /opt/kppdf/media
+
+# 4) Перезапустить backend и проверить
+systemctl restart kppdf-backend
+curl -I http://127.0.0.1:3000/health</code></pre>
+      </div>
+      <ng-container modal-footer>
+        <button ui-btn variant="ghost" (click)="copyRestoreCommands()">Скопировать команды</button>
+        <button ui-btn variant="primary" (click)="closeRestoreHelp()">Понятно</button>
+      </ng-container>
+    </ui-modal>
   }
 </div>

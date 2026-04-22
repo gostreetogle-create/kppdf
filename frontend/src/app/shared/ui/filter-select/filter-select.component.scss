@@ -1,0 +1,20 @@
+@use '../../../../styles/tokens' as *;
+
+.ui-filter-select {
+  border: 1px solid var(--ui-border);
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-family: inherit;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  min-height: 40px;
+  line-height: 1.25;
+  min-width: min(100%, 180px);
+  padding: 0.5rem $space-3;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 20%, transparent);
+  }
+}

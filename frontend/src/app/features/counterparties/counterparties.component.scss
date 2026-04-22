@@ -1,1 +1,6 @@
 @use '../../../styles/tokens' as *;
+
+.page-toolbar {
+  --search-max-width: 360px;
+  --filter-min-width: 140px;
+}

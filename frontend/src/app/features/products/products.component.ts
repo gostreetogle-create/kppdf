@@ -7,13 +7,23 @@ import { ApiService, Product } from '../../core/services/api.service';
 import { ProductFormComponent } from './components/product-form/product-form.component';
 import { ProductCardComponent } from './components/product-card/product-card.component';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
-import { ButtonComponent } from '../../shared/ui/index';
+import { ButtonComponent, SearchInputComponent, FilterSelectComponent } from '../../shared/ui/index';
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ProductFormComponent, ProductCardComponent, ConfirmDialogComponent, ButtonComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ProductFormComponent,
+    ProductCardComponent,
+    ConfirmDialogComponent,
+    ButtonComponent,
+    SearchInputComponent,
+    FilterSelectComponent
+  ],
   templateUrl: './products.component.html',
   styleUrls: [
     './products.component.scss',

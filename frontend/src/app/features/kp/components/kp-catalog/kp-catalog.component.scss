@@ -4,32 +4,41 @@
 }
 
 .kp-table {
+  --kp-font-table: 0.8rem;
+  --kp-font-cell-sm: 0.73rem;
+  --kp-font-cell-xs: 0.67rem;
+  --kp-font-currency: 0.72rem;
   width: 100%;
   border-collapse: collapse;
-  font-size: 9.5pt;
-  --kp-table-border: rgba(16, 24, 40, 0.13);
+  font-size: var(--kp-font-table);
+  --kp-table-border: color-mix(in srgb, var(--ui-border) 78%, transparent);
 }
 
 .kp-table th,
 .kp-table td {
   border: 1px solid var(--kp-table-border);
-  padding: 6px 8px;
+  padding: 3px 6px;
   vertical-align: middle;
+  border-left-color: color-mix(in srgb, var(--ui-border) 70%, transparent);
+  border-right-color: color-mix(in srgb, var(--ui-border) 70%, transparent);
 }
 
 .kp-table th {
   font-weight: 600;
   text-align: center;
-  background: rgba(248, 250, 252, 0.8);
+  background: transparent;
+  color: color-mix(in srgb, var(--ui-text) 84%, var(--ui-text-muted));
+  letter-spacing: 0.01em;
+  border-bottom-color: color-mix(in srgb, var(--ui-border) 86%, var(--ui-text));
 }
 
 /* Колонки */
 .kp-col-num {
-  width: 32px;
+  width: 24px;
 }
 
 .kp-col-photo {
-  width: 88px;
+  width: 56px;
   text-align: center;
 }
 
@@ -43,80 +52,114 @@
 }
 
 .kp-col-qty {
-  width: 56px;
+  width: 42px;
 }
 
 .kp-col-unit {
-  width: 44px;
+  width: 36px;
 }
 
 .kp-col-price,
 .kp-col-sum {
-  width: 80px;
+  width: 72px;
 }
 
 /* Ячейки */
 .kp-cell-num {
   text-align: center;
   font-variant-numeric: tabular-nums;
+  font-size: var(--kp-font-cell-sm);
+  color: color-mix(in srgb, var(--ui-text-muted) 90%, var(--ui-text));
 }
 
 .kp-cell-photo {
   text-align: center;
-  padding: 4px;
+  padding: 3px;
 }
 
 .kp-thumb {
-  max-width: 72px;
-  max-height: 72px;
-  width: auto;
-  height: auto;
+  width: 46px;
+  height: 46px;
   object-fit: contain;
   border-radius: 4px;
-  border: 1px solid rgba(16, 24, 40, 0.12);
+  border: 1px solid color-mix(in srgb, var(--ui-border) 84%, var(--ui-text));
 }
 
 .kp-cell-name {
   font-weight: 500;
+  color: var(--ui-text);
 }
 
 .kp-cell-description {
-  font-size: 9pt;
-  color: #64748b;
-  line-height: 1.35;
+  font-size: var(--kp-font-cell-sm);
+  color: var(--ui-text-muted);
+  line-height: 1.28;
+}
+
+.kp-cell-adjustments {
+  margin-top: 2px;
+  font-size: var(--kp-font-cell-xs);
+  color: color-mix(in srgb, var(--ui-text) 84%, var(--ui-text-muted));
+  font-weight: 600;
 }
 
 .kp-cell-qty,
 .kp-cell-unit {
   text-align: center;
   font-variant-numeric: tabular-nums;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 .kp-cell-price,
 .kp-cell-sum {
   text-align: right;
+  white-space: nowrap;
 }
 
 .kp-price,
 .kp-sum {
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
+  font-weight: 600;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
 }
 
 .kp-currency {
-  margin-left: 4px;
-  color: #64748b;
+  margin-left: 3px;
+  color: var(--ui-text-muted);
+  font-size: var(--kp-font-currency);
+}
+
+/* Тонкие вертикальные разделители между ключевыми числовыми колонками */
+.kp-table th.kp-col-qty,
+.kp-table td.kp-cell-qty,
+.kp-table th.kp-col-unit,
+.kp-table td.kp-cell-unit,
+.kp-table th.kp-col-price,
+.kp-table td.kp-cell-price,
+.kp-table th.kp-col-sum,
+.kp-table td.kp-cell-sum {
+  border-left-color: color-mix(in srgb, var(--ui-border) 84%, var(--ui-text));
+}
+
+.kp-table th.kp-col-sum,
+.kp-table td.kp-cell-sum {
+  border-right-color: color-mix(in srgb, var(--ui-border) 84%, var(--ui-text));
 }
 
 /* === Печать === */
 @media print {
   .kp-table {
-    font-size: 9pt;
+    --kp-font-table: 9.5pt;
+    --kp-font-cell-sm: 8.8pt;
+    --kp-font-cell-xs: 8pt;
+    --kp-font-currency: 8.6pt;
+    font-size: 8.6pt;
   }
   
   .kp-table th,
   .kp-table td {
-    border-color: rgba(16, 24, 40, 0.16) !important;
+    border-color: color-mix(in srgb, var(--ui-border) 88%, var(--ui-text)) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

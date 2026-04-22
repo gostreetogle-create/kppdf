@@ -2,21 +2,13 @@
   <div class="kp-header__recipient">
     <div class="kp-recipient__intro">Коммерческое предложение для:</div>
     <div class="kp-recipient__name">
-      @if (recipient().legalForm && recipient().legalForm !== 'Физлицо') {
-        {{ recipient().legalForm }}
-      }
-      "{{ recipient().shortName || recipient().name }}"
+      {{ recipientDisplayName() }}
     </div>
     <div class="kp-recipient__details">
       @if (recipient().inn) {
         <div class="kp-recipient__line">
           <span class="kp-recipient__label">ИНН:</span> {{ recipient().inn }}
           @if (recipient().kpp) { / КПП: {{ recipient().kpp }} }
-        </div>
-      }
-      @if (recipient().ogrn) {
-        <div class="kp-recipient__line">
-          <span class="kp-recipient__label">ОГРН:</span> {{ recipient().ogrn }}
         </div>
       }
       @if (recipient().legalAddress) {
@@ -32,11 +24,6 @@
       @if (recipient().email) {
         <div class="kp-recipient__line">
           <span class="kp-recipient__label">Email:</span> {{ recipient().email }}
-        </div>
-      }
-      @if (recipient().founderName) {
-        <div class="kp-recipient__line">
-          <span class="kp-recipient__label">ИП:</span> {{ recipient().founderName }}
         </div>
       }
     </div>

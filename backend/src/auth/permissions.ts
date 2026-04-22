@@ -50,8 +50,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ]
 };
 
-export function can(user: { role: UserRole; isActive: boolean } | null | undefined, permission: Permission): boolean {
-  if (!user || !user.isActive) return false;
+export function can(user: { role: UserRole; isActive?: boolean } | null | undefined, permission: Permission): boolean {
+  if (!user || user.isActive === false) return false;
   const rolePermissions = ROLE_PERMISSIONS[user.role] ?? [];
   return rolePermissions.includes(permission);
 }

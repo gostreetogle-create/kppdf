@@ -5,11 +5,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService, type AppUser, type AppUserRole } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ButtonComponent } from '../../shared/ui';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, ModalComponent],
   templateUrl: './users.component.html',
   styleUrl: './users.component.scss'
 })
@@ -21,6 +22,7 @@ export class UsersComponent {
   readonly users = signal<AppUser[]>([]);
   readonly loading = signal(true);
   readonly busy = signal(false);
+  readonly savingUserId = signal<string | null>(null);
 
   readonly createModel = signal({
     username: '',
@@ -29,7 +31,11 @@ export class UsersComponent {
     password: ''
   });
 
-  readonly resetPasswordDraft = signal<Record<string, string>>({});
+  readonly editDraft = signal<Record<string, { username: string; name: string; role: AppUserRole; isActive: boolean }>>({});
+  readonly deletingUser = signal<AppUser | null>(null);
+  readonly openActionsForUserId = signal<string | null>(null);
+  readonly resettingUser = signal<AppUser | null>(null);
+  readonly resetPasswordValue = signal('');
 
   constructor() {
     this.loadUsers();
@@ -42,6 +48,14 @@ export class UsersComponent {
       .subscribe({
         next: users => {
           this.users.set(users);
+          this.editDraft.set(
+            Object.fromEntries(
+              users.map(user => [
+                user._id,
+                { username: user.username, name: user.name, role: user.role, isActive: user.isActive }
+              ])
+            )
+          );
           this.loading.set(false);
         },
         error: () => {
@@ -53,12 +67,35 @@ export class UsersComponent {
 
   createUser() {
     const model = this.createModel();
-    if (!model.username || !model.name || !model.password) {
+    const username = model.username.trim().toLowerCase();
+    const name = model.name.trim();
+    const password = model.password.trim();
+
+    if (!username || !name || !password) {
       this.ns.error('Заполните логин, имя и пароль');
       return;
     }
+    if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
+      this.ns.error('Логин: 3-32 символа, только латиница/цифры/._-');
+      return;
+    }
+    if (password.length < 8) {
+      this.ns.error('Пароль должен быть не короче 8 символов');
+      return;
+    }
+    const alreadyExists = this.users().some(user => String(user.username ?? '').toLowerCase() === username);
+    if (alreadyExists) {
+      this.ns.error(`Пользователь с логином "${username}" уже существует`);
+      return;
+    }
+
     this.busy.set(true);
-    this.api.createUser(model)
+    this.api.createUser({
+      username,
+      name,
+      role: model.role,
+      password
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -74,24 +111,69 @@ export class UsersComponent {
       });
   }
 
-  updateUser(user: AppUser, patch: Partial<Pick<AppUser, 'role' | 'isActive'>>) {
-    this.api.updateUser(user._id, patch)
+  setEditDraft(userId: string, patch: Partial<{ username: string; name: string; role: AppUserRole; isActive: boolean }>) {
+    this.editDraft.update(state => ({
+      ...state,
+      [userId]: { ...state[userId], ...patch }
+    }));
+  }
+
+  saveUser(user: AppUser) {
+    const draft = this.editDraft()[user._id];
+    const username = draft?.username?.trim().toLowerCase() ?? '';
+    if (!username) {
+      this.ns.error('Логин пользователя не может быть пустым');
+      return;
+    }
+    if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
+      this.ns.error('Логин: 3-32 символа, только латиница/цифры/._-');
+      return;
+    }
+    const duplicate = this.users().some(item => item._id !== user._id && String(item.username ?? '').toLowerCase() === username);
+    if (duplicate) {
+      this.ns.error(`Пользователь с логином "${username}" уже существует`);
+      return;
+    }
+    if (!draft?.name?.trim()) {
+      this.ns.error('Имя пользователя не может быть пустым');
+      return;
+    }
+    this.savingUserId.set(user._id);
+    this.api.updateUser(user._id, {
+      username,
+      name: draft.name.trim(),
+      role: draft.role,
+      isActive: draft.isActive
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: updated => {
           this.users.update(list => list.map(u => (u._id === updated._id ? updated : u)));
+          this.savingUserId.set(null);
           this.ns.success('Пользователь обновлён');
         },
-        error: err => this.ns.error(err.error?.message ?? 'Ошибка обновления пользователя')
+        error: err => {
+          this.savingUserId.set(null);
+          this.ns.error(err.error?.message ?? 'Ошибка обновления пользователя');
+        }
       });
   }
 
-  setResetPasswordDraft(userId: string, password: string) {
-    this.resetPasswordDraft.update(state => ({ ...state, [userId]: password }));
+  openResetPassword(user: AppUser) {
+    this.closeActionsMenu();
+    this.resettingUser.set(user);
+    this.resetPasswordValue.set('');
   }
 
-  resetPassword(user: AppUser) {
-    const password = this.resetPasswordDraft()[user._id];
+  closeResetPasswordModal() {
+    this.resettingUser.set(null);
+    this.resetPasswordValue.set('');
+  }
+
+  resetPassword() {
+    const user = this.resettingUser();
+    if (!user) return;
+    const password = this.resetPasswordValue().trim();
     if (!password) {
       this.ns.error('Введите новый пароль');
       return;
@@ -100,12 +182,44 @@ export class UsersComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.setResetPasswordDraft(user._id, '');
+          this.closeResetPasswordModal();
           this.ns.success('Пароль сброшен');
           this.loadUsers();
         },
         error: err => this.ns.error(err.error?.message ?? 'Ошибка сброса пароля')
       });
+  }
+
+  confirmDelete(user: AppUser) {
+    this.closeActionsMenu();
+    this.deletingUser.set(user);
+  }
+
+  closeDeleteModal() {
+    this.deletingUser.set(null);
+  }
+
+  deleteUser() {
+    const user = this.deletingUser();
+    if (!user) return;
+    this.api.deleteUser(user._id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.closeDeleteModal();
+          this.users.update(list => list.filter(item => item._id !== user._id));
+          this.ns.success('Пользователь удалён');
+        },
+        error: err => this.ns.error(err.error?.message ?? 'Ошибка удаления пользователя')
+      });
+  }
+
+  toggleActionsMenu(userId: string) {
+    this.openActionsForUserId.update(current => (current === userId ? null : userId));
+  }
+
+  closeActionsMenu() {
+    this.openActionsForUserId.set(null);
   }
 }
 

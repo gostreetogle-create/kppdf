@@ -1,12 +1,16 @@
 /* === Итоги === */
 .kp-totals {
+  --kp-total-main: 0.875rem;
+  --kp-total-vat: 0.8rem;
+  --kp-total-final: 0.95rem;
+  --kp-conditions-size: 0.73rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   column-gap: 12px;
-  row-gap: 4px;
-  margin-top: 16px;
-  margin-bottom: 20px;
+  row-gap: 3px;
+  margin-top: 10px;
+  margin-bottom: 12px;
 }
 
 .kp-total-line {
@@ -28,32 +32,32 @@
 
 .kp-total-line--main .kp-total-label,
 .kp-total-line--main .kp-total-amount {
-  font-size: 11pt;
-  color: #1e2937;
+  font-size: var(--kp-total-main);
+  color: var(--ui-text);
 }
 
 .kp-total-line--vat .kp-total-label,
 .kp-total-line--vat .kp-total-amount {
-  font-size: 10pt;
-  color: #64748b;
+  font-size: var(--kp-total-vat);
+  color: var(--ui-text-muted);
 }
 
 .kp-total-line--final .kp-total-label,
 .kp-total-line--final .kp-total-amount {
-  font-size: 12pt;
+  font-size: var(--kp-total-final);
   font-weight: 700;
-  color: #1e2937;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(16, 24, 40, 0.18);
+  color: var(--ui-text);
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--ui-border) 86%, var(--ui-text));
 }
 
 /* === Дополнительные условия === */
 .kp-conditions {
-  margin-top: 24px;
-  font-size: 9pt;
-  line-height: 1.4;
-  color: #64748b;
+  margin-top: 12px;
+  font-size: var(--kp-conditions-size);
+  line-height: 1.35;
+  color: var(--ui-text-muted);
 }
 
 .kp-conditions p {
@@ -67,6 +71,10 @@
 /* === Печать === */
 @media print {
   .kp-totals {
+    --kp-total-main: 10.5pt;
+    --kp-total-vat: 9.4pt;
+    --kp-total-final: 11.4pt;
+    --kp-conditions-size: 8.8pt;
     margin-top: 12px;
   }
   

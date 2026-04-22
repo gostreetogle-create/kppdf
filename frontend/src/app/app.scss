@@ -7,7 +7,7 @@
   justify-content: center;
   height: 100vh;
   gap: $space-4;
-  color: $color-text-muted;
+  color: var(--ui-text-muted);
 
   p { margin: 0; font-size: $font-sm; }
 }
@@ -15,8 +15,8 @@
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid $color-border;
-  border-top-color: $color-primary;
+  border: 3px solid var(--ui-border);
+  border-top-color: var(--ui-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }

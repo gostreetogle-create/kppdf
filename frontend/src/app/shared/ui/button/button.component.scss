@@ -5,48 +5,63 @@
   align-items: center;
   justify-content: center;
   gap: $space-2;
-  padding: 0.45rem $space-4;
-  border: 1px solid $color-border;
+  padding: 0.5rem $space-4;
+  border: 1px solid var(--ui-border);
   border-radius: $radius-md;
-  background: $color-bg;
-  color: $color-text;
-  font-size: $font-base;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-size: 0.84rem;
   font-family: inherit;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
-  transition: background $transition-fast, box-shadow $transition-fast, opacity $transition-fast;
+  transition: background $transition-fast, box-shadow $transition-fast, border-color $transition-fast, opacity $transition-fast;
   line-height: 1.4;
+  letter-spacing: 0.01em;
 
-  &:hover { background: $color-bg-muted; }
-  &:active { opacity: 0.85; }
+  &:hover {
+    background: color-mix(in srgb, var(--ui-bg-soft) 82%, var(--ui-bg));
+    border-color: color-mix(in srgb, var(--ui-border) 78%, var(--ui-primary));
+  }
+  &:active { opacity: 0.92; transform: translateY(0.5px); }
   &[disabled] { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 22%, transparent);
+  }
 
   // ─── Variants ─────────────────────────────────────────
   &.btn--primary {
-    background: $color-primary;
+    background: var(--ui-primary);
     color: #fff;
-    border-color: $color-primary;
-    &:hover { background: $color-primary-dark; border-color: $color-primary-dark; }
+    border-color: var(--ui-primary);
+    box-shadow: 0 3px 10px color-mix(in srgb, var(--ui-primary) 24%, transparent);
+    &:hover {
+      background: color-mix(in srgb, var(--ui-primary) 82%, black 18%);
+      border-color: color-mix(in srgb, var(--ui-primary) 82%, black 18%);
+    }
   }
 
   &.btn--danger {
-    background: $color-danger;
+    background: var(--ui-danger);
     color: #fff;
-    border-color: $color-danger;
-    &:hover { background: $color-danger-dark; border-color: $color-danger-dark; }
+    border-color: var(--ui-danger);
+    &:hover {
+      background: color-mix(in srgb, var(--ui-danger) 84%, black 16%);
+      border-color: color-mix(in srgb, var(--ui-danger) 84%, black 16%);
+    }
   }
 
   &.btn--ghost {
     background: transparent;
     border-color: transparent;
-    color: $color-text-muted;
-    &:hover { background: $color-bg-muted; color: $color-text; }
+    color: var(--ui-text-muted);
+    &:hover { background: var(--ui-bg-soft); color: var(--ui-text); }
   }
 
   // ─── Sizes ────────────────────────────────────────────
-  &.btn--sm { padding: 0.25rem $space-3; font-size: $font-sm; border-radius: $radius-sm; }
+  &.btn--sm { padding: 0.3rem $space-3; font-size: 0.8rem; border-radius: $radius-sm; }
   &.btn--lg { padding: 0.6rem $space-6; font-size: $font-md; }
 
   // ─── Icon ─────────────────────────────────────────────
@@ -54,7 +69,7 @@
     padding: $space-2;
     border: none;
     background: none;
-    color: $color-text-light;
-    &:hover { background: $color-bg-muted; color: $color-text; }
+    color: var(--ui-text-muted);
+    &:hover { background: var(--ui-bg-muted); color: var(--ui-text); }
   }
 }

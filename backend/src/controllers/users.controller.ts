@@ -43,18 +43,27 @@ export class UsersController {
         createdAt: user.createdAt
       });
     } catch (e: any) {
-      res.status(400).json({ message: e?.message || 'Ошибка создания пользователя' });
+      const duplicateField = e?.keyPattern ? Object.keys(e.keyPattern)[0] : undefined;
+      const details = e?.code === 11000
+        ? `Конфликт уникального поля: ${duplicateField || 'unknown'}`
+        : (typeof e?.message === 'string' ? e.message : 'Unknown error');
+      res.status(400).json({
+        message: e?.message || 'Ошибка создания пользователя',
+        details
+      });
     }
   };
 
   patch = async (req: Request, res: Response) => {
     try {
       const user = await this.usersService.update(req.params.id, {
+        username: req.body?.username,
         name: req.body?.name,
         role: req.body?.role,
         isActive: req.body?.isActive,
         mustChangePassword: req.body?.mustChangePassword,
-        actorUserId: req.user?.userId
+        actorUserId: req.user?.userId,
+        actorRole: req.user?.role
       });
       res.json(user);
     } catch (e: any) {
@@ -73,6 +82,15 @@ export class UsersController {
       res.json(result);
     } catch (e: any) {
       res.status(400).json({ message: e?.message || 'Ошибка сброса пароля' });
+    }
+  };
+
+  remove = async (req: Request, res: Response) => {
+    try {
+      const result = await this.usersService.delete(req.params.id, req.user?.userId);
+      res.json(result);
+    } catch (e: any) {
+      res.status(400).json({ message: e?.message || 'Ошибка удаления пользователя' });
     }
   };
 }

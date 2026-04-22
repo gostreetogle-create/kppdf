@@ -1,43 +1,45 @@
-<table class="cp-table">
-  <thead>
-    <tr>
-      <th>Название</th>
-      <th>ИНН</th>
-      <th>Роль</th>
-      <th>Статус</th>
-      <th>Орг. форма</th>
-      <th class="col-actions"></th>
-    </tr>
-  </thead>
-  <tbody>
-    @for (cp of counterparties(); track cp._id) {
+<div class="table-scroll">
+  <table class="cp-table data-table">
+    <thead>
       <tr>
-        <td class="col-name">
-          <span class="cp-name">{{ cp.shortName || cp.name }}</span>
-          @if (cp.shortName && cp.shortName !== cp.name) {
-            <span class="cp-short">{{ cp.name }}</span>
-          }
-        </td>
-        <td class="col-inn">{{ cp.inn }}</td>
-        <td class="col-role">
-          @for (role of cp.role; track role) {
-            <ui-badge [color]="roleColor(role)">{{ roleLabel(role) }}</ui-badge>
-          }
-          @if (cp.isOurCompany) {
-            <ui-badge color="green">Наша компания</ui-badge>
-          }
-        </td>
-        <td class="col-status">
-          <ui-badge [color]="cp.status === 'active' ? 'green' : 'default'">
-            {{ cp.status === 'active' ? 'Активен' : 'Неактивен' }}
-          </ui-badge>
-        </td>
-        <td class="col-form">{{ cp.legalForm }}</td>
-        <td class="col-actions">
-          <button ui-btn size="sm" (click)="edit.emit(cp)">Изменить</button>
-          <button ui-btn size="sm" variant="danger" (click)="delete.emit(cp)">Удалить</button>
-        </td>
+        <th>Название</th>
+        <th>ИНН</th>
+        <th>Роль</th>
+        <th>Статус</th>
+        <th>Орг. форма</th>
+        <th class="col-actions"></th>
       </tr>
-    }
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      @for (cp of counterparties(); track cp._id) {
+        <tr>
+          <td class="col-name">
+            <span class="cp-name">{{ cp.shortName || cp.name }}</span>
+            @if (cp.shortName && cp.shortName !== cp.name) {
+              <span class="cp-short">{{ cp.name }}</span>
+            }
+          </td>
+          <td class="col-inn">{{ cp.inn }}</td>
+          <td class="col-role">
+            @for (role of cp.role; track role) {
+              <ui-badge [color]="roleColor(role)">{{ roleLabel(role) }}</ui-badge>
+            }
+            @if (cp.isOurCompany) {
+              <ui-badge color="green">Наша компания</ui-badge>
+            }
+          </td>
+          <td class="col-status">
+            <ui-badge [color]="cp.status === 'active' ? 'green' : 'default'">
+              {{ cp.status === 'active' ? 'Активен' : 'Неактивен' }}
+            </ui-badge>
+          </td>
+          <td class="col-form">{{ cp.legalForm }}</td>
+          <td class="col-actions ui-table-actions">
+            <button ui-btn size="sm" (click)="edit.emit(cp)">Изменить</button>
+            <button ui-btn size="sm" variant="danger" (click)="delete.emit(cp)">Удалить</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

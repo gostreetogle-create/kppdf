@@ -28,7 +28,7 @@ async function run() {
     name: NAME,
     role: 'admin',
     isActive: true,
-    mustChangePassword: true
+    mustChangePassword: false
   });
 
   console.log(`✅ Admin создан: ${USERNAME} / ${PASSWORD}`);

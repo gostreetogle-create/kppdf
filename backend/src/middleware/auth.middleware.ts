@@ -63,7 +63,7 @@ export function requirePermission(permission: Permission) {
       return;
     }
     const user = await User.findById(userId).select('role isActive mustChangePassword').lean();
-    if (!user || !user.isActive) {
+    if (!user || user.isActive === false) {
       res.status(401).json({ message: 'Пользователь деактивирован или не найден' });
       return;
     }
@@ -76,9 +76,18 @@ export function requirePermission(permission: Permission) {
 }
 
 export async function enforcePasswordChange(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (process.env.ENFORCE_PASSWORD_CHANGE !== 'true') {
+    next();
+    return;
+  }
   const userId = req.user?.userId;
   if (!userId) {
     res.status(401).json({ message: 'Не авторизован' });
+    return;
+  }
+  // Read-only requests stay available, so user can open app and reach password change flow.
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    next();
     return;
   }
   const user = await User.findById(userId).select('mustChangePassword').lean();

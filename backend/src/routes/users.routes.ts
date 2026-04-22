@@ -10,6 +10,7 @@ router.get('/', usersController.list);
 router.post('/', usersController.create);
 router.patch('/:id', usersController.patch);
 router.post('/:id/reset-password', usersController.resetPassword);
+router.delete('/:id', usersController.remove);
 
 export default router;
 

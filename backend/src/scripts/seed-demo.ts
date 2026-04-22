@@ -128,7 +128,7 @@ async function run() {
       name: 'Администратор',
       role: 'admin',
       isActive: true,
-      mustChangePassword: true
+      mustChangePassword: false
     });
     console.log('✅ Admin создан: admin / admin123');
   }

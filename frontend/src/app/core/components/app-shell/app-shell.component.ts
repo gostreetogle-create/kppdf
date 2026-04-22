@@ -6,11 +6,12 @@ import { ThemeService } from '../../services/theme.service';
 import { ButtonComponent } from '../../../shared/ui/index';
 import { ToastComponent } from '../toast/toast.component';
 import { CanDirective } from '../../../shared/directives/can.directive';
+import { ModalConfirmComponent } from '../modal-confirm/modal-confirm.component';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ButtonComponent, ToastComponent, CanDirective],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ButtonComponent, ToastComponent, CanDirective, ModalConfirmComponent],
   templateUrl: './app-shell.component.html',
   styleUrl: './app-shell.component.scss'
 })

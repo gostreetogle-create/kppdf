@@ -1,27 +1,12 @@
 @use '../../../styles/tokens' as *;
 
-.page {
-  padding: $space-6;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: $space-4;
-}
-
-.toolbar {
-  margin-bottom: $space-4;
-
-  &__select {
-    min-width: 240px;
-  }
+.page-toolbar {
+  --filter-min-width: 240px;
 }
 
 .card {
-  background: $color-bg;
-  border: 1px solid $color-border;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
   border-radius: $radius-lg;
   padding: $space-4;
   margin-bottom: $space-4;
@@ -35,24 +20,11 @@
 }
 
 .dict-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: $color-bg;
-  border: 1px solid $color-border;
-  border-radius: $radius-lg;
-  overflow: hidden;
-
-  th, td {
-    padding: $space-2 $space-3;
-    border-bottom: 1px solid $color-border-light;
-    text-align: left;
-    vertical-align: middle;
-  }
+  th, td { padding: $space-2 $space-3; }
 }
 
 .col-actions {
-  display: flex;
-  gap: $space-2;
+  min-width: 190px;
 }
 
 .checkbox {
@@ -61,11 +33,19 @@
   gap: $space-1;
 }
 
-input, select {
-  width: 100%;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
-  padding: 0.4rem $space-2;
-  font: inherit;
-  box-sizing: border-box;
+@media (max-width: 1024px) {
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .col-actions {
+    flex-wrap: wrap;
+  }
+}
+

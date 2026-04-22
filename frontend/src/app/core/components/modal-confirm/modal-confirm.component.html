@@ -1,0 +1,12 @@
+@if (modal.confirmState(); as state) {
+  <ui-modal [title]="state.config.title" maxWidth="440px" (closed)="cancel()">
+    <div modal-body class="confirm-body">
+      <p class="confirm-body__message">{{ state.config.message }}</p>
+    </div>
+
+    <ng-container modal-footer>
+      <button ui-btn variant="ghost" (click)="cancel()">{{ state.config.cancelText }}</button>
+      <button ui-btn [variant]="state.config.type ?? 'primary'" (click)="confirm()">{{ state.config.confirmText }}</button>
+    </ng-container>
+  </ui-modal>
+}

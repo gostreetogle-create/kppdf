@@ -10,6 +10,8 @@ import { CounterpartyFormComponent } from '../../shared/components/counterparty-
 import { ConfirmDialogComponent } from '../products/components/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { SearchInputComponent } from '../../shared/ui/search-input/search-input.component';
+import { FilterSelectComponent } from '../../shared/ui/filter-select/filter-select.component';
 
 @Component({
   selector: 'app-counterparties',
@@ -17,7 +19,7 @@ import { AlertComponent } from '../../shared/ui/alert/alert.component';
   imports: [
     CommonModule, FormsModule,
     CounterpartyTableComponent, CounterpartyFormComponent, ConfirmDialogComponent,
-    ButtonComponent, AlertComponent
+    ButtonComponent, AlertComponent, SearchInputComponent, FilterSelectComponent
   ],
   templateUrl: './counterparties.component.html',
   styleUrls: [

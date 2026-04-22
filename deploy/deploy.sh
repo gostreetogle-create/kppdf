@@ -204,7 +204,9 @@ server {
     proxy_set_header X-Forwarded-Proto \$scheme;
   }
 
-  location ^~ /products/ {
+  # Legacy media aliases for old DB links.
+  # IMPORTANT: match only file-like URLs to avoid intercepting SPA routes /products and /kp/:id.
+  location ~* ^/products/.+\.(?:png|jpg|jpeg|gif|svg|webp)$ {
     proxy_pass http://127.0.0.1:${BACKEND_PORT}/products/;
     proxy_http_version 1.1;
     proxy_set_header Host \$host;
@@ -213,7 +215,7 @@ server {
     proxy_set_header X-Forwarded-Proto \$scheme;
   }
 
-  location ^~ /kp/ {
+  location ~* ^/kp/.+\.(?:png|jpg|jpeg|gif|svg|webp)$ {
     proxy_pass http://127.0.0.1:${BACKEND_PORT}/kp/;
     proxy_http_version 1.1;
     proxy_set_header Host \$host;

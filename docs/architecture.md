@@ -114,6 +114,14 @@ kp.items[0].qty = 5;
 this.kp.set(kp);
 ```
 
+### Angular standalone checklist (DoD)
+
+Перед завершением UI-задач:
+- каждый компонент/директива/pipe из шаблона добавлен в `@Component.imports` (для standalone);
+- не используются нативные браузерные диалоги для прод-UX (`alert/confirm/prompt`);
+- `npx tsc --noEmit` в `frontend` проходит без ошибок;
+- если добавлен новый диалог — предпочтительно `ui-modal` из `shared/ui`.
+
 ---
 
 ## ApiService (`core/services/api.service.ts`)

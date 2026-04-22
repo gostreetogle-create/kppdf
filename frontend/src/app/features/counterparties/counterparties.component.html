@@ -5,24 +5,30 @@
   </div>
 
   <div class="page-toolbar">
-    <input
-      class="search-input"
-      type="text"
-      placeholder="Поиск по названию или ИНН..."
+    <ui-search-input
       [value]="search()"
-      (input)="search.set($any($event.target).value)"
+      placeholder="Поиск по названию или ИНН..."
+      (valueChange)="search.set($event)"
     />
-    <select class="filter-select" [value]="filterRole()" (change)="filterRole.set($any($event.target).value)">
-      <option value="">Все роли</option>
-      <option value="client">Клиент</option>
-      <option value="supplier">Поставщик</option>
-      <option value="company">Наша компания</option>
-    </select>
-    <select class="filter-select" [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)">
-      <option value="">Все статусы</option>
-      <option value="active">Активен</option>
-      <option value="inactive">Неактивен</option>
-    </select>
+    <ui-filter-select
+      [value]="filterRole()"
+      [options]="[
+        { value: '', label: 'Все роли' },
+        { value: 'client', label: 'Клиент' },
+        { value: 'supplier', label: 'Поставщик' },
+        { value: 'company', label: 'Наша компания' }
+      ]"
+      (valueChange)="filterRole.set($any($event))"
+    />
+    <ui-filter-select
+      [value]="filterStatus()"
+      [options]="[
+        { value: '', label: 'Все статусы' },
+        { value: 'active', label: 'Активен' },
+        { value: 'inactive', label: 'Неактивен' }
+      ]"
+      (valueChange)="filterStatus.set($any($event))"
+    />
   </div>
 
   @if (error()) {

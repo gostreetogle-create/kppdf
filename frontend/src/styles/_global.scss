@@ -4,18 +4,99 @@
   box-sizing: border-box;
 }
 
+:root {
+  --ui-bg: #{$color-bg};
+  --ui-bg-soft: #f8fafc;
+  --ui-bg-muted: #f2f5f9;
+  --ui-canvas: #e9edf3;
+  --ui-text: #{$color-text};
+  --ui-text-muted: #{$color-text-muted};
+  --ui-border: #{$color-border};
+  --ui-border-light: #{$color-border-light};
+  --ui-primary: #{$color-primary};
+  --ui-success: #{$color-success};
+  --ui-warning: #{$color-warning};
+  --ui-danger: #{$color-danger};
+  --ui-code-bg: #0f172a;
+  --ui-code-fg: #e2e8f0;
+  --ui-spacing-1: #{$space-1};
+  --ui-spacing-2: #{$space-2};
+  --ui-spacing-3: #{$space-3};
+  --ui-spacing-4: #{$space-4};
+  --ui-spacing-5: #{$space-5};
+  --ui-spacing-6: #{$space-6};
+  --ui-spacing-8: #{$space-8};
+
+  /* Layout system */
+  --layout-shell-sidebar: 220px;
+  --layout-page-max: 1440px;
+  --layout-page-padding: 1.5rem;
+  --layout-content-gap: 1rem;
+  --layout-hero-max: 920px;
+}
+
+:root[data-theme='dark'] {
+  --ui-bg: #0f172a;
+  --ui-bg-soft: #121b2c;
+  --ui-bg-muted: #0a1222;
+  --ui-canvas: #0b1222;
+  --ui-text: #e2e8f0;
+  --ui-text-muted: #94a3b8;
+  --ui-border: #334155;
+  --ui-border-light: #1e293b;
+  --ui-primary: #60a5fa;
+  --ui-success: #34d399;
+  --ui-warning: #f59e0b;
+  --ui-danger: #f87171;
+  --ui-code-bg: #020617;
+  --ui-code-fg: #cbd5e1;
+}
+
+@media (max-width: 1440px) {
+  :root {
+    --layout-page-max: 1280px;
+    --layout-page-padding: 1rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --layout-shell-sidebar: 220px;
+    --layout-page-max: 100%;
+    --layout-page-padding: 0.875rem;
+    --layout-content-gap: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --layout-shell-sidebar: 220px;
+    --layout-page-padding: 0.625rem;
+    --layout-content-gap: 0.625rem;
+  }
+}
+
+@media (max-width: 390px) {
+  :root {
+    --layout-page-padding: 0.5rem;
+    --layout-content-gap: 0.5rem;
+  }
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: $font-base;
-  color: $color-text;
-  background: $color-bg-muted;
+  color: var(--ui-text);
+  background: var(--ui-bg-muted);
   -webkit-font-smoothing: antialiased;
+  line-height: 1.45;
 }
 
 h1, h2, h3, h4 {
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
 a {
@@ -30,37 +111,153 @@ button {
 
 input, textarea, select {
   font-family: inherit;
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+
+  &:focus {
+    outline: none;
+    border-color: var(--ui-primary);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--ui-bg-soft);
+  }
 }
 
 // ─── Utilities ────────────────────────────────────────────
 .page {
-  max-width: 1400px;
+  max-width: var(--layout-page-max);
   margin: 0 auto;
-  padding: $space-8;
+  padding: var(--layout-page-padding);
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: $space-8;
+  margin-bottom: 2.25rem;
 
-  h1 { font-size: $font-3xl; }
+  h1 {
+    font-size: $font-3xl;
+    font-weight: 650;
+    letter-spacing: -0.016em;
+    line-height: 1.18;
+  }
 }
 
 .page-toolbar {
   display: flex;
-  gap: $space-4;
+  gap: var(--layout-content-gap);
   align-items: center;
-  margin-bottom: $space-6;
+  margin-bottom: 1.35rem;
+  flex-wrap: wrap;
+}
+
+.search-input,
+.filter-select {
+  border: 1px solid var(--ui-border);
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-family: inherit;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  min-height: 40px;
+  line-height: 1.25;
+}
+
+.search-input {
+  flex: 1;
+  max-width: var(--search-max-width, 400px);
+  padding: 0.5rem $space-3;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 22%, transparent);
+  }
+}
+
+.filter-select {
+  min-width: var(--filter-min-width, 160px);
+  padding: 0.5rem $space-3;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ui-primary);
+  }
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--ui-bg);
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+
+  th {
+    padding: 0.8rem $space-4;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ui-text-muted);
+    background: var(--ui-bg-soft);
+    border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 85%, transparent);
+  }
+
+  td {
+    padding: 0.95rem $space-4;
+    border-bottom: 1px solid color-mix(in srgb, var(--ui-border-light) 88%, transparent);
+    font-size: 0.84rem;
+    line-height: 1.4;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: color-mix(in srgb, var(--ui-bg-soft) 88%, var(--ui-bg)); }
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.ui-table-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+
+  button[ui-btn]:not(.btn--primary):not(.btn--danger) {
+    color: var(--ui-text-muted);
+    border-color: color-mix(in srgb, var(--ui-border) 82%, transparent);
+  }
+
+  button[ui-btn].btn--danger {
+    background: color-mix(in srgb, var(--ui-danger) 10%, var(--ui-bg));
+    color: var(--ui-danger);
+    border-color: color-mix(in srgb, var(--ui-danger) 28%, var(--ui-border));
+  }
+
+  button + button {
+    margin-left: $space-2;
+  }
 }
 
 .empty-state {
   text-align: center;
   padding: 4rem $space-8;
-  color: $color-text-muted;
+  color: var(--ui-text-muted);
 
-  p { margin-bottom: $space-4; }
+  p {
+    margin-bottom: $space-4;
+    font-size: $font-md;
+  }
 }
 
 .loading-state {
@@ -68,15 +265,15 @@ input, textarea, select {
   align-items: center;
   justify-content: center;
   padding: 4rem;
-  color: $color-text-muted;
+  color: var(--ui-text-muted);
   gap: $space-3;
 
   &::before {
     content: '';
     width: 20px;
     height: 20px;
-    border: 2px solid $color-border;
-    border-top-color: $color-primary;
+    border: 2px solid var(--ui-border);
+    border-top-color: var(--ui-primary);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }

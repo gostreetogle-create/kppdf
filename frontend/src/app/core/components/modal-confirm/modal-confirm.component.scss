@@ -1,0 +1,11 @@
+@use '../../../../styles/tokens' as *;
+
+.confirm-body {
+  padding: $space-2 0;
+}
+
+.confirm-body__message {
+  margin: 0;
+  color: var(--ui-text);
+  line-height: 1.45;
+}

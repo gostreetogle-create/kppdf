@@ -328,12 +328,16 @@ export class ApiService {
     return this.http.post<AppUser>(`${BASE}/users`, data);
   }
 
-  updateUser(id: string, data: Partial<Pick<AppUser, 'name' | 'role' | 'isActive' | 'mustChangePassword'>>): Observable<AppUser> {
+  updateUser(id: string, data: Partial<Pick<AppUser, 'username' | 'name' | 'role' | 'isActive' | 'mustChangePassword'>>): Observable<AppUser> {
     return this.http.patch<AppUser>(`${BASE}/users/${id}`, data);
   }
 
   resetUserPassword(id: string, password: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${BASE}/users/${id}/reset-password`, { password });
+  }
+
+  deleteUser(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${BASE}/users/${id}`);
   }
 
   // ─── Counterparties ───────────────────────────────────

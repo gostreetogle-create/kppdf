@@ -5,12 +5,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $color-bg-muted;
+  background: var(--ui-bg-muted);
   padding: $space-4;
 }
 
 .login-card {
-  background: $color-bg;
+  background: var(--ui-bg);
   border-radius: $radius-2xl;
   padding: $space-8;
   width: 100%;
@@ -20,7 +20,7 @@
   &__logo {
     width: 52px;
     height: 52px;
-    background: $color-primary;
+    background: var(--ui-primary);
     color: white;
     border-radius: $radius-lg;
     display: flex;
@@ -35,7 +35,7 @@
     text-align: center;
     font-size: $font-xl;
     margin-bottom: $space-6;
-    color: $color-text;
+    color: var(--ui-text);
   }
 
   &__submit {

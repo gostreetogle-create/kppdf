@@ -1,0 +1,40 @@
+@use '../../../../styles/tokens' as *;
+
+.ui-search-input {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 40px;
+  padding: 0.45rem $space-3;
+  border: 1px solid var(--ui-border);
+  border-radius: $radius-md;
+  background: var(--ui-bg);
+  min-width: min(100%, 280px);
+}
+
+.ui-search-input--full {
+  width: 100%;
+}
+
+.ui-search-input__icon {
+  font-size: $font-sm;
+  opacity: 0.72;
+}
+
+.ui-search-input__control {
+  border: 0;
+  background: transparent;
+  width: 100%;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: $font-base;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.ui-search-input:focus-within {
+  border-color: var(--ui-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 22%, transparent);
+}

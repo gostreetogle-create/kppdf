@@ -1,8 +1,8 @@
 @use '../../../../../styles/tokens' as *;
 
 .card {
-  background: $color-bg;
-  border: 1px solid $color-border;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
   border-radius: $radius-xl;
   overflow: hidden;
   display: flex;
@@ -17,7 +17,7 @@
   &__image {
     height: 180px;
     overflow: hidden;
-    background: $color-bg-muted;
+    background: var(--ui-bg-muted);
     position: relative;
 
     img { width: 100%; height: 100%; object-fit: cover; }
@@ -30,22 +30,22 @@
     padding: 2px 6px;
     border-radius: $radius-sm;
 
-    &--archive { top: $space-2; left: $space-2; background: #555; color: white; }
-    &--kind    { top: $space-2; right: $space-2; background: rgba(0,0,0,0.45); color: white; }
+    &--archive { top: $space-2; left: $space-2; background: var(--ui-text-muted); color: var(--ui-bg); }
+    &--kind    { top: $space-2; right: $space-2; background: color-mix(in srgb, var(--ui-text) 45%, transparent); color: var(--ui-bg); }
   }
 
   &--inactive { opacity: 0.65; }
 
   &__code {
     font-size: $font-xs;
-    color: $color-text-light;
+    color: var(--ui-text-muted);
     margin: 0 0 $space-1;
     font-family: monospace;
   }
 
   &__category {
     font-size: $font-xs;
-    color: $color-primary;
+    color: var(--ui-primary);
     margin: 0 0 $space-1;
   }
 
@@ -63,7 +63,7 @@
 
   &__desc {
     font-size: $font-sm;
-    color: $color-text-muted;
+    color: var(--ui-text-muted);
     line-height: 1.4;
     margin-bottom: $space-3;
     display: -webkit-box;
@@ -81,18 +81,18 @@
   &__price {
     font-size: $font-lg;
     font-weight: 700;
-    color: $color-primary;
+    color: var(--ui-primary);
   }
 
   &__unit {
     font-size: $font-xs;
-    color: $color-text-light;
+    color: var(--ui-text-muted);
   }
 
   &__actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    border-top: 1px solid $color-border-light;
+    border-top: 1px solid var(--ui-border-light);
   }
 }
 
@@ -105,14 +105,19 @@
   font-family: inherit;
   transition: background $transition-fast;
 
+  &:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ui-primary) 45%, transparent);
+    outline-offset: -2px;
+  }
+
   &--edit {
-    color: $color-primary;
-    border-right: 1px solid $color-border-light;
-    &:hover { background: $color-primary-light; }
+    color: var(--ui-primary);
+    border-right: 1px solid var(--ui-border-light);
+    &:hover { background: color-mix(in srgb, var(--ui-primary) 14%, transparent); }
   }
 
   &--delete {
-    color: $color-danger;
-    &:hover { background: $color-danger-light; }
+    color: var(--ui-danger);
+    &:hover { background: color-mix(in srgb, var(--ui-danger) 12%, transparent); }
   }
 }

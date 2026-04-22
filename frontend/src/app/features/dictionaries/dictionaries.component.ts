@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { take } from 'rxjs';
 import { ApiService, Dictionary, DictionaryType } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ButtonComponent } from '../../shared/ui/index';
+import { ModalService } from '../../core/services/modal.service';
+import { ButtonComponent, FilterSelectComponent } from '../../shared/ui/index';
 
 type DictionaryForm = {
   type: DictionaryType;
@@ -17,13 +19,14 @@ type DictionaryForm = {
 @Component({
   selector: 'app-dictionaries',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent, FilterSelectComponent],
   templateUrl: './dictionaries.component.html',
   styleUrl: './dictionaries.component.scss'
 })
 export class DictionariesComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly ns = inject(NotificationService);
+  private readonly modal = inject(ModalService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(true);
@@ -138,16 +141,25 @@ export class DictionariesComponent implements OnInit {
   }
 
   deleteItem(item: Dictionary) {
-    if (!window.confirm(`Удалить "${item.value}"?`)) return;
-
-    this.api.deleteDictionaryItem(item._id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.items.update(list => list.filter(x => x._id !== item._id));
-          this.ns.success('Запись удалена');
-        },
-        error: () => this.ns.error('Не удалось удалить запись')
+    this.modal.confirm({
+      title: 'Удаление записи',
+      message: `Вы уверены, что хотите удалить "${item.value}"?`,
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      type: 'danger'
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.api.deleteDictionaryItem(item._id)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.items.update(list => list.filter(x => x._id !== item._id));
+              this.ns.success('Запись удалена');
+            },
+            error: () => this.ns.error('Не удалось удалить запись')
+          });
       });
   }
 

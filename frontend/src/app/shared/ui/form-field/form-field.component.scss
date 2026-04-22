@@ -5,36 +5,38 @@
 .field {
   &__label {
     display: block;
-    font-size: $font-sm;
-    font-weight: 500;
-    color: $color-text;
-    margin-bottom: $space-1;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ui-text);
+    margin-bottom: 0.35rem;
   }
 
-  &__required { color: $color-danger; margin-left: 2px; }
+  &__required { color: var(--ui-danger); margin-left: 2px; }
 
   &__control {
     ::ng-deep input,
     ::ng-deep textarea,
     ::ng-deep select {
       width: 100%;
-      padding: 0.45rem $space-3;
-      border: 1px solid $color-border;
+      padding: 0.5rem $space-3;
+      border: 1px solid var(--ui-border);
       border-radius: $radius-md;
-      font-size: $font-base;
+      font-size: 0.84rem;
       font-family: inherit;
-      color: $color-text;
-      background: $color-bg;
+      line-height: 1.3;
+      color: var(--ui-text);
+      background: var(--ui-bg);
       transition: border-color $transition-fast, box-shadow $transition-fast;
       box-sizing: border-box;
 
       &:focus {
         outline: none;
-        border-color: $color-primary;
-        box-shadow: 0 0 0 3px rgba($color-primary, 0.12);
+        border-color: var(--ui-primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-primary) 20%, transparent);
       }
 
-      &::placeholder { color: $color-text-light; }
+      &::placeholder { color: var(--ui-text-muted); opacity: 0.72; }
     }
 
     ::ng-deep textarea { resize: vertical; }
@@ -43,12 +45,12 @@
   &__error {
     margin: $space-1 0 0;
     font-size: $font-xs;
-    color: $color-danger;
+    color: var(--ui-danger);
   }
 
   &__hint {
     margin: $space-1 0 0;
     font-size: $font-xs;
-    color: $color-text-muted;
+    color: var(--ui-text-muted);
   }
 }

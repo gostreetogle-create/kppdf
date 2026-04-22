@@ -166,5 +166,6 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 |-------|------|------|----------|
 | GET | `/api/users` | — | Список пользователей |
 | POST | `/api/users` | `{ username, name, role, password }` | Создать пользователя (с `mustChangePassword=true`) |
-| PATCH | `/api/users/:id` | `{ name?, role?, isActive?, mustChangePassword? }` | Обновить профиль/роль/статус |
+| PATCH | `/api/users/:id` | `{ username?, name?, role?, isActive?, mustChangePassword? }` | Обновить логин/профиль/роль/статус |
 | POST | `/api/users/:id/reset-password` | `{ password }` | Сбросить пароль и потребовать смену на первом входе |
+| DELETE | `/api/users/:id` | — | Удалить пользователя (запрещено удалять самого себя) |

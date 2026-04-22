@@ -3,22 +3,25 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, take } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Setting, SettingsMap, Product, Counterparty, BackupItem } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ButtonComponent } from '../../shared/ui/index';
+import { ModalService } from '../../core/services/modal.service';
+import { ButtonComponent, SearchInputComponent, FilterSelectComponent } from '../../shared/ui/index';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent, SearchInputComponent, FilterSelectComponent, ModalComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })
 export class SettingsComponent implements OnInit {
   private readonly api        = inject(ApiService);
   private readonly ns         = inject(NotificationService);
+  private readonly modal      = inject(ModalService);
   private readonly destroyRef = inject(DestroyRef);
 
   settings = signal<Setting[]>([]);
@@ -31,6 +34,7 @@ export class SettingsComponent implements OnInit {
   backupQuery = signal('');
   backupTypeFilter = signal<'all' | 'mongo' | 'media'>('all');
   cleanupDays = 30;
+  restoreHelpOpen = signal(false);
 
   @ViewChild('productsFileInput') productsFileInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('counterpartiesFileInput') counterpartiesFileInputRef!: ElementRef<HTMLInputElement>;
@@ -344,22 +348,30 @@ export class SettingsComponent implements OnInit {
   }
 
   deleteBackup(item: BackupItem) {
-    const ok = window.confirm(`Удалить ${item.filename}?`);
-    if (!ok) return;
-
-    this.backupBusy.set(true);
-    this.api.deleteBackup(item.type, item.filename)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.backupBusy.set(false);
-          this.ns.success('Бэкап удалён');
-          this.loadBackups();
-        },
-        error: () => {
-          this.backupBusy.set(false);
-          this.ns.error('Не удалось удалить бэкап');
-        }
+    this.modal.confirm({
+      title: 'Удаление бэкапа',
+      message: `Удалить ${item.filename}?`,
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      type: 'danger'
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.backupBusy.set(true);
+        this.api.deleteBackup(item.type, item.filename)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.backupBusy.set(false);
+              this.ns.success('Бэкап удалён');
+              this.loadBackups();
+            },
+            error: () => {
+              this.backupBusy.set(false);
+              this.ns.error('Не удалось удалить бэкап');
+            }
+          });
       });
   }
 
@@ -418,45 +430,63 @@ export class SettingsComponent implements OnInit {
     }
 
     const type = this.backupTypeFilter();
-    const ok = window.confirm(`Удалить архивы типа "${type}" старше ${days} дней?`);
-    if (!ok) return;
-
-    this.backupBusy.set(true);
-    this.api.cleanupBackups(days, type)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ({ deleted }) => {
-          this.backupBusy.set(false);
-          this.ns.success(`Удалено архивов: ${deleted.total}`);
-          this.loadBackups();
-        },
-        error: () => {
-          this.backupBusy.set(false);
-          this.ns.error('Не удалось очистить старые бэкапы');
-        }
+    this.modal.confirm({
+      title: 'Очистка архивов',
+      message: `Удалить архивы типа "${type}" старше ${days} дней?`,
+      confirmText: 'Очистить',
+      cancelText: 'Отмена',
+      type: 'danger'
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.backupBusy.set(true);
+        this.api.cleanupBackups(days, type)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: ({ deleted }) => {
+              this.backupBusy.set(false);
+              this.ns.success(`Удалено архивов: ${deleted.total}`);
+              this.loadBackups();
+            },
+            error: () => {
+              this.backupBusy.set(false);
+              this.ns.error('Не удалось очистить старые бэкапы');
+            }
+          });
       });
   }
 
   showRestoreHelp() {
-    const text = [
-      'Как восстановить бэкап через сервер:',
+    this.restoreHelpOpen.set(true);
+  }
+
+  closeRestoreHelp() {
+    this.restoreHelpOpen.set(false);
+  }
+
+  async copyRestoreCommands() {
+    const commands = [
+      '# 1) Скопировать архивы на сервер, например в /root/restore',
+      '#    mongo-YYYY...archive.gz и media-YYYY...tar.gz',
       '',
-      '1) Скопировать архивы на сервер, например в /root/restore',
-      '   mongo-YYYY...archive.gz и media-YYYY...tar.gz',
-      '',
-      '2) Восстановить MongoDB (с полной заменой):',
+      '# 2) Восстановить MongoDB (внимание: --drop удаляет текущие коллекции)',
       'mongorestore --uri="mongodb://127.0.0.1:27017/kp-app" --archive="/root/restore/mongo-YYYY...archive.gz" --gzip --drop',
       '',
-      '3) Восстановить media:',
+      '# 3) Восстановить media',
       'mkdir -p /opt/kppdf/media',
       'tar -xzf /root/restore/media-YYYY...tar.gz -C /opt/kppdf/media',
       '',
-      '4) Перезапустить backend:',
+      '# 4) Перезапустить backend и проверить',
       'systemctl restart kppdf-backend',
-      '',
-      'Проверьте:',
       'curl -I http://127.0.0.1:3000/health'
     ].join('\n');
-    window.alert(text);
+
+    try {
+      await navigator.clipboard.writeText(commands);
+      this.ns.success('Команды восстановления скопированы');
+    } catch {
+      this.ns.error('Не удалось скопировать команды');
+    }
   }
 }

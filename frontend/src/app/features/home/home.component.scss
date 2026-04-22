@@ -12,8 +12,8 @@
 }
 
 .kp-card {
-  background: $color-bg;
-  border: 1px solid $color-border;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
   border-radius: $radius-lg;
   padding: $space-5;
   cursor: pointer;
@@ -31,7 +31,7 @@
     margin-bottom: $space-2;
   }
 
-  &__number { font-size: $font-xs; color: $color-text-light; }
+  &__number { font-size: $font-xs; color: var(--ui-text-muted); }
 
   &__title {
     font-size: $font-md;
@@ -41,7 +41,7 @@
 
   &__client {
     font-size: $font-sm;
-    color: $color-text-muted;
+    color: var(--ui-text-muted);
     margin-bottom: $space-4;
   }
 
@@ -52,17 +52,24 @@
     font-size: $font-sm;
   }
 
-  &__total { font-weight: 700; flex: 1; color: $color-primary; }
-  &__date  { color: $color-text-light; }
+  &__total {
+    font-weight: 650;
+    flex: 1;
+    color: color-mix(in srgb, var(--ui-primary) 72%, var(--ui-text));
+  }
+  &__date  { color: var(--ui-text-muted); }
 
   &__delete {
-    color: $color-text-light !important;
-    &:hover { color: $color-danger !important; background: $color-danger-light !important; }
+    color: var(--ui-text-muted) !important;
+    &:hover {
+      color: var(--ui-danger) !important;
+      background: color-mix(in srgb, var(--ui-danger) 14%, transparent) !important;
+    }
   }
 
   &__action {
-    color: $color-text-light !important;
-    &:hover { color: $color-primary !important; background: $color-primary-light !important; }
+    color: var(--ui-text-muted) !important;
+    &:hover { color: var(--ui-primary) !important; background: color-mix(in srgb, var(--ui-primary) 14%, transparent) !important; }
     &:disabled { opacity: 0.4; cursor: not-allowed; }
   }
 }

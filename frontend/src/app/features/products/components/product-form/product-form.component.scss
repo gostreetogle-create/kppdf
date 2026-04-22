@@ -16,7 +16,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: $color-text-muted;
+    color: var(--ui-text-muted);
     margin: 0 0 $space-3;
   }
 }
@@ -31,11 +31,11 @@
 .image-item {
   position: relative;
   width: 80px;
-  border: 2px solid $color-border;
+  border: 2px solid var(--ui-border);
   border-radius: $radius-md;
   overflow: hidden;
 
-  &--main { border-color: $color-primary; }
+  &--main { border-color: var(--ui-primary); }
 
   img {
     width: 100%;
@@ -58,7 +58,7 @@
   }
 
   &__main-badge {
-    font-size: 9px;
+    font-size: $font-xs;
     color: $color-primary-light;
     font-weight: 600;
   }
@@ -71,11 +71,13 @@
   input {
     flex: 1;
     padding: 0.4rem $space-3;
-    border: 1px solid $color-border;
+    border: 1px solid var(--ui-border);
     border-radius: $radius-md;
     font-size: $font-sm;
     font-family: inherit;
-    &:focus { outline: none; border-color: $color-primary; }
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    &:focus { outline: none; border-color: var(--ui-primary); }
   }
 }
 

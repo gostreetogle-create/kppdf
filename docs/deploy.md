@@ -72,8 +72,8 @@ sudo bash deploy/deploy.sh
 7. Создает/обновляет nginx site, проверяет `nginx -t`, reload
 8. Проверяет `GET /health` и доступность веба
 
-Важно: в nginx для `/api`, `/media`, `/products`, `/kp` используются `location ^~ ...`,
-чтобы запросы к медиа не перехватывались regex-правилом статики (`png/jpg/css/js`).
+Важно: в nginx для `/api` и `/media` используются префиксные proxy location, чтобы запросы к API/медиа не перехватывались regex-правилом статики (`png/jpg/css/js`).
+Legacy-алиасы `/products/*` и `/kp/*` проксируются только для файловых URL (с расширением изображения), чтобы не ломать SPA роуты `/products` и `/kp/:id`.
 
 ---
 
@@ -120,4 +120,40 @@ nginx -t
 
 # reload nginx
 systemctl reload nginx
+```
+
+---
+
+## Шпаргалка эксплуатации (prod)
+
+```bash
+# 1) Деплой свежего кода
+cd /opt/kppdf && git pull --ff-only && sudo bash deploy/deploy.sh --skip-pull
+
+# 2) Статус ключевых сервисов
+systemctl status mongod nginx kppdf-backend --no-pager
+
+# 3) Live-логи backend
+journalctl -u kppdf-backend -f
+
+# 4) Проверка health backend
+curl -I http://127.0.0.1:3000/health
+
+# 5) Проверка сайта по HTTPS
+curl -I https://kppdf.ru
+
+# 6) Ручной запуск certbot renew dry-run
+certbot renew --dry-run
+
+# 7) Проверка таймера автопродления SSL
+systemctl status certbot.timer --no-pager
+
+# 8) Быстрый backup MongoDB (ручной)
+mongodump --uri="mongodb://127.0.0.1:27017/kp-app" --archive="/root/restore/mongo-$(date +%F-%H%M%S).archive.gz" --gzip
+
+# 9) Восстановление MongoDB из архива (внимание: --drop)
+mongorestore --uri="mongodb://127.0.0.1:27017/kp-app" --archive="/root/restore/mongo-YYYY...archive.gz" --gzip --drop
+
+# 10) Восстановление media + рестарт backend
+tar -xzf /root/restore/media-YYYY...tar.gz -C /opt/kppdf/media && systemctl restart kppdf-backend
 ```

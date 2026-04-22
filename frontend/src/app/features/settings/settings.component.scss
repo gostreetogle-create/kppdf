@@ -3,10 +3,14 @@
 .settings-header {
   position: sticky;
   top: 0;
-  z-index: 5;
-  padding-bottom: $space-3;
+  z-index: 4;
+  padding-bottom: $space-2;
   margin-bottom: $space-2;
-  background: linear-gradient(to bottom, $color-bg-muted 85%, rgba(255, 255, 255, 0));
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--ui-bg-muted) 84%, transparent),
+    transparent
+  );
 
   &__actions {
     display: flex;
@@ -16,14 +20,14 @@
 }
 
 .settings-layout {
-  max-width: 860px;
+  max-width: min(960px, 100%);
   display: grid;
   gap: $space-5;
 }
 
 .settings-card {
-  background: $color-bg;
-  border: 1px solid $color-border;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
   border-radius: $radius-lg;
   box-shadow: $shadow-sm;
   padding: $space-4;
@@ -31,7 +35,7 @@
 
   &:hover {
     box-shadow: $shadow-md;
-    border-color: rgba($color-primary, 0.2);
+    border-color: color-mix(in srgb, var(--ui-primary) 22%, var(--ui-border));
   }
 
   &__head {
@@ -40,13 +44,13 @@
     h2 {
       margin: 0 0 $space-1;
       font-size: $font-lg;
-      color: $color-text;
+      color: var(--ui-text);
     }
 
     p {
       margin: 0;
       font-size: $font-sm;
-      color: $color-text-muted;
+      color: var(--ui-text-muted);
     }
   }
 }
@@ -56,15 +60,15 @@
   gap: $space-4;
 
   &__group {
-    border: 1px solid $color-border;
+    border: 1px solid var(--ui-border);
     border-radius: $radius-md;
     padding: $space-3;
-    background: $color-bg-soft;
+    background: var(--ui-bg-soft);
 
     h3 {
       margin: 0 0 $space-2;
       font-size: $font-md;
-      color: $color-text;
+      color: var(--ui-text);
     }
   }
 
@@ -72,6 +76,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: $space-2;
+
+    button[ui-btn]:not(.btn--primary) {
+      color: var(--ui-text-muted);
+    }
   }
 }
 
@@ -79,6 +87,10 @@
   display: flex;
   gap: $space-2;
   margin-bottom: $space-3;
+
+  button[ui-btn]:not(.btn--primary) {
+    color: var(--ui-text-muted);
+  }
 }
 
 .backups-filters {
@@ -86,15 +98,12 @@
   grid-template-columns: 1fr 220px;
   gap: $space-2;
   margin-bottom: $space-3;
+  --search-max-width: 100%;
+  --filter-min-width: 220px;
 
   &__search,
   &__select {
-    border: 1px solid $color-border;
-    border-radius: $radius-md;
-    padding: 0.5rem $space-2;
-    font-size: $font-sm;
-    font-family: inherit;
-    background: $color-bg;
+    min-width: 0;
   }
 }
 
@@ -105,21 +114,21 @@
   justify-content: space-between;
   margin-bottom: $space-3;
   padding: $space-2;
-  border: 1px solid $color-border;
+  border: 1px solid var(--ui-border);
   border-radius: $radius-md;
-  background: $color-bg-soft;
+  background: var(--ui-bg-soft);
 
   &__label {
     display: flex;
     align-items: center;
     gap: $space-2;
-    color: $color-text;
+    color: var(--ui-text);
     font-size: $font-sm;
   }
 
   &__days {
     width: 90px;
-    border: 1px solid $color-border;
+    border: 1px solid var(--ui-border);
     border-radius: $radius-sm;
     padding: 0.35rem $space-2;
   }
@@ -127,10 +136,10 @@
 
 .empty-state {
   padding: $space-3;
-  border: 1px dashed $color-border;
+  border: 1px dashed var(--ui-border);
   border-radius: $radius-md;
-  color: $color-text-muted;
-  background: $color-bg-soft;
+  color: var(--ui-text-muted);
+  background: var(--ui-bg-soft);
 }
 
 .backup-list {
@@ -143,10 +152,10 @@
   justify-content: space-between;
   gap: $space-3;
   align-items: center;
-  border: 1px solid $color-border;
+  border: 1px solid var(--ui-border);
   border-radius: $radius-md;
   padding: $space-3;
-  background: $color-bg-soft;
+  background: var(--ui-bg-soft);
 
   &__meta {
     min-width: 0;
@@ -154,7 +163,7 @@
 
   &__name {
     font-size: $font-sm;
-    color: $color-text;
+    color: var(--ui-text);
     font-weight: 600;
     word-break: break-all;
   }
@@ -162,13 +171,45 @@
   &__sub {
     margin-top: $space-1;
     font-size: $font-xs;
-    color: $color-text-muted;
+    color: var(--ui-text-muted);
   }
 
   &__actions {
     display: flex;
     gap: $space-2;
     flex-wrap: wrap;
+  }
+}
+
+.restore-help {
+  display: grid;
+  gap: $space-3;
+
+  &__note {
+    margin: 0;
+    color: var(--ui-text);
+    font-size: $font-sm;
+
+    code {
+      background: var(--ui-bg-soft);
+      border: 1px solid var(--ui-border);
+      border-radius: $radius-sm;
+      padding: 0.1rem 0.35rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+      font-size: $font-xs;
+    }
+  }
+
+  &__code {
+    margin: 0;
+    padding: $space-3;
+    border: 1px solid var(--ui-border);
+    border-radius: $radius-md;
+    background: var(--ui-code-bg);
+    color: var(--ui-code-fg);
+    font-size: $font-xs;
+    line-height: 1.55;
+    overflow-x: auto;
   }
 }
 
@@ -184,18 +225,18 @@
   align-items: center;
   gap: $space-4;
   padding: $space-4;
-  background: $color-bg;
-  border: 1px solid $color-border;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
   border-radius: $radius-lg;
 
   &__label {
     font-size: $font-sm;
-    color: $color-text;
+    color: var(--ui-text);
   }
 
   &__input {
     padding: 0.45rem $space-3;
-    border: 1px solid $color-border;
+    border: 1px solid var(--ui-border);
     border-radius: $radius-md;
     font-size: $font-base;
     font-family: inherit;
@@ -203,7 +244,41 @@
     width: 100%;
     box-sizing: border-box;
 
-    &:focus { outline: none; border-color: $color-primary; }
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    &:focus { outline: none; border-color: var(--ui-primary); }
   }
 
+}
+
+@media (max-width: 768px) {
+  .backups-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .backups-filters {
+    grid-template-columns: 1fr;
+    --filter-min-width: 100%;
+  }
+
+  .backups-cleanup {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .backups-cleanup__label {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 390px) {
+  .backup-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .backup-item__actions {
+    width: 100%;
+  }
 }

@@ -1,8 +1,17 @@
 @use '../../../../styles/tokens' as *;
 
 .sidebar-section {
-  padding: $space-4;
-  border-bottom: 1px solid $color-border-light;
+  --section-bg: #f4f7fb;
+  --section-border: rgba(73, 126, 189, 0.25);
+  --section-accent: #3567a8;
+  padding: $space-3;
+  border-bottom: 1px solid var(--ui-border-light);
+  transition: background-color $transition-fast, box-shadow $transition-fast;
+
+  &--open {
+    background: color-mix(in srgb, var(--section-bg) 52%, var(--ui-bg));
+    box-shadow: inset 2px 0 0 color-mix(in srgb, var(--section-accent) 40%, transparent);
+  }
 
   &--expanded {
     min-height: 46vh;
@@ -13,13 +22,13 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: $color-text-light;
+    color: var(--ui-text-muted);
     margin: 0 0 $space-3;
   }
 
   input {
     width: 100%;
-    border: 1px solid $color-border;
+    border: 1px solid var(--ui-border);
     border-radius: $radius-md;
     padding: 0.4rem $space-3;
     font-size: $font-sm;
@@ -27,22 +36,54 @@
     margin-bottom: $space-2;
     box-sizing: border-box;
     transition: border-color $transition-fast;
-    &:focus { outline: none; border-color: $color-primary; }
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    &:focus { outline: none; border-color: var(--ui-primary); }
     &:last-child { margin-bottom: 0; }
   }
 
   &__select {
     width: 100%;
-    border: 1px solid $color-primary;
+    border: 1px solid var(--ui-primary);
     border-radius: $radius-md;
     padding: 0.4rem $space-3;
     font-size: $font-sm;
     font-family: inherit;
     margin-bottom: $space-3;
     box-sizing: border-box;
-    background: $color-primary-light;
-    color: $color-primary;
+    background: color-mix(in srgb, var(--ui-primary) 14%, transparent);
+    color: var(--ui-primary);
     cursor: pointer;
+  }
+
+  &--recipient {
+    --section-bg: #eef7ff;
+    --section-border: rgba(25, 118, 210, 0.32);
+    --section-accent: #1565c0;
+  }
+
+  &--catalog {
+    --section-bg: #f1fff7;
+    --section-border: rgba(39, 174, 96, 0.32);
+    --section-accent: #238b57;
+  }
+
+  &--params {
+    --section-bg: #fff7ec;
+    --section-border: rgba(245, 124, 0, 0.34);
+    --section-accent: #c66900;
+  }
+
+  &--items {
+    --section-bg: #f4f0ff;
+    --section-border: rgba(94, 53, 177, 0.32);
+    --section-accent: #5e35b1;
+  }
+
+  &--conditions {
+    --section-bg: #fff1f4;
+    --section-border: rgba(216, 27, 96, 0.28);
+    --section-accent: #c2185b;
   }
 }
 
@@ -51,35 +92,35 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: $color-bg-soft;
-  border: 1px solid $color-border;
+  background: color-mix(in srgb, var(--section-bg) 66%, var(--ui-bg));
+  border: 1px solid var(--section-border);
   border-radius: $radius-md;
-  padding: $space-2 $space-3;
-  margin: 0 0 $space-3;
+  padding: $space-2;
+  margin: 0 0 $space-2;
   cursor: pointer;
   transition: background-color $transition-fast, border-color $transition-fast, box-shadow $transition-fast;
 
   &:hover {
-    background: $color-primary-light;
-    border-color: rgba($color-primary, 0.35);
+    background: color-mix(in srgb, var(--section-bg) 86%, white 14%);
+    border-color: color-mix(in srgb, var(--section-border) 82%, var(--section-accent) 18%);
   }
 
   &:focus-visible {
     outline: none;
-    border-color: $color-primary;
-    box-shadow: 0 0 0 2px rgba($color-primary, 0.15);
+    border-color: var(--section-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--section-accent) 18%, transparent);
   }
 }
 
 .sidebar-section__chevron {
   display: inline-flex;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.35rem;
+  height: 1.35rem;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba($color-primary, 0.12);
-  color: $color-primary;
+  background: color-mix(in srgb, var(--section-accent) 12%, var(--ui-bg));
+  color: var(--section-accent);
   font-size: $font-sm;
   font-weight: 700;
   line-height: 1;
@@ -89,7 +130,7 @@
   display: flex;
   gap: $space-2;
   align-items: center;
-  margin-bottom: $space-3;
+  margin-bottom: $space-2;
 
   .sidebar-section__select {
     flex: 1;
@@ -109,13 +150,15 @@
 
   &__input {
     flex: 1;
-    border: 1px solid $color-border;
+    border: 1px solid var(--ui-border);
     border-radius: $radius-md;
     padding: 0.4rem $space-3;
     font-size: $font-sm;
     font-family: inherit;
     box-sizing: border-box;
-    &:focus { outline: none; border-color: $color-primary; }
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    &:focus { outline: none; border-color: var(--ui-primary); }
   }
 }
 
@@ -129,15 +172,15 @@
 
 .sidebar-error {
   font-size: $font-xs;
-  color: $color-danger;
+  color: var(--ui-danger);
   margin: 0 0 $space-2;
 }
 
 .sidebar-empty {
   font-size: $font-sm;
-  color: $color-text-light;
+  color: var(--ui-text-muted);
   text-align: center;
-  padding: $space-4 0;
+  padding: $space-3 0;
 }
 
 .sidebar-total {
@@ -146,8 +189,8 @@
   align-items: center;
   margin-top: $space-3;
   padding-top: $space-3;
-  border-top: 1px solid $color-border;
+  border-top: 1px solid var(--ui-border);
   font-size: $font-sm;
 
-  strong { color: $color-primary; font-size: $font-md; }
+  strong { color: color-mix(in srgb, var(--ui-primary) 78%, var(--ui-text)); font-size: $font-md; }
 }

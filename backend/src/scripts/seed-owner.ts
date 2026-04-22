@@ -29,7 +29,7 @@ async function run() {
     name: NAME,
     role: 'owner',
     isActive: true,
-    mustChangePassword: true
+    mustChangePassword: false
   });
 
   console.log(`✅ Owner создан: ${normalizedUsername} / ${PASSWORD}`);

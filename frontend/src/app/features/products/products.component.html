@@ -8,19 +8,16 @@
   </div>
 
   <div class="page-toolbar">
-    <input
-      class="search-input"
-      type="text"
-      placeholder="Поиск по названию, артикулу, описанию..."
+    <ui-search-input
       [value]="search()"
-      (input)="search.set($any($event.target).value)"
+      placeholder="Поиск по названию, артикулу, описанию..."
+      (valueChange)="search.set($event)"
     />
-    <select class="filter-select" [value]="filterCategory()" (change)="filterCategory.set($any($event.target).value)">
-      <option value="">Все категории</option>
-      @for (cat of categories(); track cat) {
-        <option [value]="cat">{{ cat }}</option>
-      }
-    </select>
+    <ui-filter-select
+      [value]="filterCategory()"
+      [options]="[{ value: '', label: 'Все категории' }, ...categories().map(cat => ({ value: cat, label: cat }))]"
+      (valueChange)="filterCategory.set($event)"
+    />
     <div class="view-toggle">
       <button
         class="view-toggle__btn"
@@ -61,41 +58,43 @@
       }
     </div>
   } @else {
-    <table class="products-table">
-      <thead>
-        <tr>
-          <th>Фото</th>
-          <th>Артикул</th>
-          <th>Название</th>
-          <th>Категория</th>
-          <th>Тип</th>
-          <th class="col-right">Цена</th>
-          <th>Ед.</th>
-          <th class="col-actions"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (product of filtered(); track product._id) {
-          <tr [class.row--inactive]="!product.isActive">
-            <td class="col-img">
-              <img
-                [src]="product.images[0]?.url || '/media/kp/kp-1str.png'"
-                [alt]="product.name" />
-            </td>
-            <td class="col-code">{{ product.code }}</td>
-            <td class="col-name">{{ product.name }}</td>
-            <td class="col-cat">{{ product.category || '—' }}</td>
-            <td class="col-kind">{{ kindLabel(product.kind) }}</td>
-            <td class="col-right col-price">{{ product.price | number:'1.0-0' }} ₽</td>
-            <td class="col-unit">{{ product.unit }}</td>
-            <td class="col-actions">
-              <button ui-btn size="sm" (click)="openEdit(product)">Изменить</button>
-              <button ui-btn size="sm" variant="danger" (click)="confirmDelete(product)">Удалить</button>
-            </td>
+    <div class="table-scroll">
+      <table class="products-table data-table">
+        <thead>
+          <tr>
+            <th>Фото</th>
+            <th>Артикул</th>
+            <th>Название</th>
+            <th>Категория</th>
+            <th>Тип</th>
+            <th class="col-right">Цена</th>
+            <th>Ед.</th>
+            <th class="col-actions"></th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (product of filtered(); track product._id) {
+            <tr [class.row--inactive]="!product.isActive">
+              <td class="col-img">
+                <img
+                  [src]="product.images[0]?.url || '/media/kp/kp-1str.png'"
+                  [alt]="product.name" />
+              </td>
+              <td class="col-code">{{ product.code }}</td>
+              <td class="col-name">{{ product.name }}</td>
+              <td class="col-cat">{{ product.category || '—' }}</td>
+              <td class="col-kind">{{ kindLabel(product.kind) }}</td>
+              <td class="col-right col-price">{{ product.price | number:'1.0-0' }} ₽</td>
+              <td class="col-unit">{{ product.unit }}</td>
+              <td class="col-actions ui-table-actions">
+                <button ui-btn size="sm" (click)="openEdit(product)">Изменить</button>
+                <button ui-btn size="sm" variant="danger" (click)="confirmDelete(product)">Удалить</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 </div>
 

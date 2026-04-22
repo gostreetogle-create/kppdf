@@ -8,6 +8,7 @@
     "seed:admin": "ts-node-dev --respawn src/scripts/seed-admin.ts",
     "seed:owner": "ts-node-dev --respawn src/scripts/seed-owner.ts",
     "seed:demo": "ts-node-dev --respawn src/scripts/seed-demo.ts",
+    "users:promote-admin": "ts-node-dev --respawn src/scripts/promote-all-admin.ts",
     "seed:products": "ts-node-dev --respawn src/scripts/seed-products.ts",
     "seed:products:update": "ts-node-dev --respawn src/scripts/seed-products.ts -- --mode=update"
   },
