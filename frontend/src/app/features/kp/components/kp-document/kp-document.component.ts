@@ -101,15 +101,17 @@ export class KpDocumentComponent {
   protected readonly resolvedFirstPageRows = computed(() => {
     const explicit = Number(this.firstPageRows());
     if (Number.isFinite(explicit) && explicit > 0) return Math.max(1, explicit);
-    const legacy = Number(this.itemsPerPage());
-    return Math.max(1, legacy || 6);
+    const metadataValue = Number(this.metadata()?.tablePageBreakFirstPage);
+    if (Number.isFinite(metadataValue) && metadataValue > 0) return Math.max(1, metadataValue);
+    return 5;
   });
 
   protected readonly resolvedNextPagesRows = computed(() => {
     const explicit = Number(this.nextPagesRows());
     if (Number.isFinite(explicit) && explicit > 0) return Math.max(1, explicit);
-    const legacy = Number(this.itemsPerPage());
-    return Math.max(1, legacy || 6);
+    const metadataValue = Number(this.metadata()?.tablePageBreakNextPages);
+    if (Number.isFinite(metadataValue) && metadataValue > 0) return Math.max(1, metadataValue);
+    return 10;
   });
 
   protected readonly pageChunks = computed((): KpPageChunk[] => {
@@ -117,7 +119,6 @@ export class KpDocumentComponent {
     const firstPageLimit = this.resolvedFirstPageRows();
     const nextPagesLimit = this.resolvedNextPagesRows();
     const allItems = this.items();
-    const minLastPageRows = Math.min(3, nextPagesLimit);
 
     if (allItems.length === 0) {
       return [{ items: [], displayOffset: 0, useFirstBackground: true, showHeader: true, showTotals: true }];
@@ -127,12 +128,7 @@ export class KpDocumentComponent {
     let pageIndex = 0;
     while (cursor < allItems.length) {
       const pageLimit = pageIndex === 0 ? firstPageLimit : nextPagesLimit;
-      let chunkSize = Math.min(pageLimit, allItems.length - cursor);
-      const remainingAfterChunk = allItems.length - (cursor + chunkSize);
-      if (remainingAfterChunk > 0 && remainingAfterChunk < minLastPageRows && chunkSize > 1) {
-        const transferToLastPage = minLastPageRows - remainingAfterChunk;
-        chunkSize = Math.max(1, chunkSize - transferToLastPage);
-      }
+      const chunkSize = Math.min(pageLimit, allItems.length - cursor);
       const pageItems = allItems.slice(cursor, cursor + chunkSize);
       const isFirst = pageIndex === 0;
       const isLast = cursor + chunkSize >= allItems.length;
@@ -148,8 +144,8 @@ export class KpDocumentComponent {
     }
 
     if (globalThis && Boolean((globalThis as Record<string, unknown>)['ngDevMode'])) {
-      const details = chunks.map((chunk, index) => `Page ${index + 1}: ${chunk.items.length} rows`).join(', ');
-      console.debug(`[KpDocument] Pagination chunks -> ${details}`);
+      const details = chunks.map((chunk, index) => `Page ${index + 1}: ${chunk.items.length} items`).join(', ');
+      console.debug(`[KP Debug] ${details}. Total items: ${allItems.length}. Limits: first=${firstPageLimit}, next=${nextPagesLimit}.`);
     }
 
     return chunks;

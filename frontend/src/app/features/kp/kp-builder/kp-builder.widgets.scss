@@ -190,52 +190,76 @@
 .item-actions {
   display: flex;
   align-items: center;
-  gap: $space-2;
+  gap: 12px;
   justify-content: flex-end;
-  flex: 0 0 auto;
+  flex: 0 0 160px;
+  min-width: 160px;
+  flex-shrink: 0;
 }
 
 .stepper {
   display: inline-flex;
   align-items: center;
-  width: 76px;
-  background: var(--input-bg, transparent);
-  border-radius: 4px;
+  width: 90px;
+  height: 30px;
+  background: color-mix(in srgb, var(--ui-text-main) 4%, var(--ui-bg-card));
+  border-radius: 6px;
   padding: 0;
   border: 1px solid var(--ui-border, color-mix(in srgb, var(--ui-text-main) 12%, transparent));
   overflow: hidden;
 
-  &__btn[ui-btn].btn--icon {
-    min-width: 22px;
-    width: 22px;
-    height: 24px;
-    min-height: 24px;
+  // Boost specificity to out-prioritize generic [ui-btn].btn--icon styles.
+  & &__btn[ui-btn].btn--icon {
+    min-width: 28px;
+    width: 28px;
+    height: 100%;
+    min-height: 100%;
     border: none;
     border-radius: 0;
     background: transparent;
-    color: var(--ui-text-muted);
-    font-size: 13px;
+    color: var(--ui-text-main);
+    font-size: 14px;
+    font-weight: 600;
     line-height: 1;
     padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color $transition-fast, color $transition-fast;
 
     &:first-child {
-      border-right: 1px solid color-mix(in srgb, var(--ui-text-main) 12%, transparent);
+      border-right: 1px solid var(--ui-border);
     }
 
     &:last-child {
-      border-left: 1px solid color-mix(in srgb, var(--ui-text-main) 12%, transparent);
+      border-left: 1px solid var(--ui-border);
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--ui-text-main) 8%, transparent);
+    }
+
+    &:focus-visible {
+      outline: none;
+      background: color-mix(in srgb, var(--ui-primary) 10%, transparent);
     }
   }
 }
 
 .qty-input {
-  width: 28px;
+  width: 34px;
+  height: 100%;
   border: none;
-  background: transparent;
+  border-left: 1px solid var(--ui-border);
+  border-right: 1px solid var(--ui-border);
+  background: color-mix(in srgb, var(--ui-text-main) 3%, var(--ui-bg-card));
   color: var(--ui-text-main);
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   font-family: inherit;
   padding: 0;
 
@@ -248,12 +272,14 @@
 
 .total-price {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--kp-line-total-color, var(--ui-text-main));
   font-variant-numeric: tabular-nums;
+  flex: 1;
   text-align: right;
   white-space: nowrap;
   min-width: 65px;
+  margin-right: 8px;
 }
 
 .item-remove-slot {
@@ -267,10 +293,10 @@
   opacity: 0;
   background: transparent;
   color: var(--ui-danger);
-  border: 1px solid color-mix(in srgb, var(--ui-danger) 25%, transparent);
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -278,8 +304,8 @@
 }
 
 .remove-btn:hover {
-  background: color-mix(in srgb, var(--ui-danger) 12%, transparent);
-  color: color-mix(in srgb, var(--ui-danger) 88%, var(--ui-text-main));
+  background: color-mix(in srgb, var(--ui-danger) 10%, transparent);
+  color: var(--ui-danger);
 }
 
 .selected-row:hover .remove-btn,
@@ -315,6 +341,7 @@
     margin-left: 56px;
     width: calc(100% - 84px);
     justify-content: space-between;
+    min-width: 0;
   }
 }
 

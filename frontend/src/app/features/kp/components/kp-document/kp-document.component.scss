@@ -6,9 +6,15 @@
 
 /* === Основной контент === */
 .kp-content {
+  --kp-bottom-safe-zone: 40mm;
   --kp-page-mark-size: 0.8125rem;
   --kp-continues-size: 0.75rem;
   margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  padding-bottom: var(--kp-bottom-safe-zone);
 }
 
 .kp-content__header-block {
@@ -36,14 +42,14 @@
 }
 
 .kp-content__main-block {
-  border: 1px solid color-mix(in srgb, var(--ui-border) 62%, transparent);
-  border-radius: 6px;
+  border: none;
+  border-radius: 0;
   background: transparent;
-  padding: 6px 7px 5px;
+  padding: 0;
 }
 
 .kp-content__summary-block {
-  margin-top: 10px;
+  margin-top: auto;
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--ui-border) 66%, transparent);
   border-radius: 6px;
@@ -68,9 +74,21 @@
 }
 
 :host ::ng-deep .kp-sheet {
+  width: 210mm;
+  height: 296mm;
+  min-height: 296mm;
+  max-height: 296mm;
   margin-top: 0 !important;
   box-shadow: var(--shadow-lg);
   border-radius: 2px;
+  overflow: hidden;
+}
+
+:host ::ng-deep .kp-sheet__content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .kp-page--continuation {
@@ -113,7 +131,7 @@
 
 /* Подсказка о продолжении таблицы */
 .kp-table-continues {
-  margin: 8px 0 0;
+  margin: auto 0 0;
   padding: 0;
   text-align: center;
   font-size: var(--kp-continues-size);
@@ -143,6 +161,7 @@
   .kp-content {
     --kp-page-mark-size: 9.75pt;
     --kp-continues-size: 9pt;
+    --kp-bottom-safe-zone: 40mm;
   }
 
   .kp-stack {
@@ -160,7 +179,6 @@
 
   .kp-content__main-block,
   .kp-content__summary-block {
-    border-color: color-mix(in srgb, var(--ui-border) 86%, var(--ui-text));
     background: transparent;
   }
 
