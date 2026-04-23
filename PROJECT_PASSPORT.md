@@ -428,6 +428,7 @@
   - `kp-catalog description alignment`: колонка `Описание` в строках таблицы переведена в center-align по запросу; left-align оставлен только для `Наименование`.
   - `kp-table totals compact spacing`: в блоке итогов (`Итого/НДС/Всего к оплате`) уменьшены межстрочные и межблочные отступы до минимального читаемого уровня (row-gap, margin-top/bottom, line-height, отступ перед финальной строкой).
   - `deploy resiliency`: в `deploy/deploy.sh` фронтовый `npm ci` переведён в safe-режим (`set +e`/capture exit code) с гарантированным fallback `npm ci --legacy-peer-deps`, чтобы one-command deploy не обрывался из-за peer-conflict.
+  - `frontend build budgets`: для production-конфига Angular увеличены лимиты `anyComponentStyle` (`warning: 10kB`, `error: 14kB`), чтобы текущие реальные размеры `kp-builder` стилей не блокировали deploy-пайплайн.
   - `docs/api.md` и `docs/business-rules.md`: синхронизированы правила upload-image (auto-trim для alpha-изображений).
   - `docs/ui-kit.md`: добавлен `Product Form Upload Pattern` с правилами визуального и адаптивного поведения file-upload controls.
 
