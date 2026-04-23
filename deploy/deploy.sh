@@ -142,7 +142,12 @@ npm --prefix "${REPO_ROOT}/backend" ci
 npm --prefix "${REPO_ROOT}/backend" run build
 
 log "Собираю frontend..."
-if npm --prefix "${REPO_ROOT}/frontend" ci; then
+set +e
+npm --prefix "${REPO_ROOT}/frontend" ci
+FRONTEND_CI_EXIT=$?
+set -e
+
+if [[ "${FRONTEND_CI_EXIT}" -eq 0 ]]; then
   log "Frontend dependencies installed via npm ci."
 else
   log "ПРЕДУПРЕЖДЕНИЕ: npm ci для frontend завершился ошибкой (обычно peer dependency conflict)."

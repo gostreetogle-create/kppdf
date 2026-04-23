@@ -427,7 +427,7 @@
   - `kp-builder price edit boundary`: в документной таблице КП (preview) отключено inline-редактирование цены (`editablePrices=false`); изменение цены/пересчёта оставлено только в правой панели `Состав КП`.
   - `kp-catalog description alignment`: колонка `Описание` в строках таблицы переведена в center-align по запросу; left-align оставлен только для `Наименование`.
   - `kp-table totals compact spacing`: в блоке итогов (`Итого/НДС/Всего к оплате`) уменьшены межстрочные и межблочные отступы до минимального читаемого уровня (row-gap, margin-top/bottom, line-height, отступ перед финальной строкой).
-  - `deploy resiliency`: в `deploy/deploy.sh` добавлен автоматический fallback для frontend-зависимостей — при падении `npm ci` (peer conflict) скрипт повторяет установку через `npm ci --legacy-peer-deps`, чтобы one-command deploy не обрывался.
+  - `deploy resiliency`: в `deploy/deploy.sh` фронтовый `npm ci` переведён в safe-режим (`set +e`/capture exit code) с гарантированным fallback `npm ci --legacy-peer-deps`, чтобы one-command deploy не обрывался из-за peer-conflict.
   - `docs/api.md` и `docs/business-rules.md`: синхронизированы правила upload-image (auto-trim для alpha-изображений).
   - `docs/ui-kit.md`: добавлен `Product Form Upload Pattern` с правилами визуального и адаптивного поведения file-upload controls.
 
