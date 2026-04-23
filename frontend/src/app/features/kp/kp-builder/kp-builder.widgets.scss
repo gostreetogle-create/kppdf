@@ -190,36 +190,33 @@
 .item-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: $space-2;
   justify-content: flex-end;
-  flex: 0 0 160px;
-  min-width: 160px;
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 .stepper {
   display: inline-flex;
   align-items: center;
-  width: 90px;
-  height: 30px;
-  background: color-mix(in srgb, var(--ui-text-main) 4%, var(--ui-bg-card));
-  border-radius: 6px;
+  width: 76px;
+  height: 24px;
+  background: color-mix(in srgb, var(--ui-bg-card) 92%, var(--ui-text-main) 2%);
+  border-radius: 4px;
   padding: 0;
-  border: 1px solid var(--ui-border, color-mix(in srgb, var(--ui-text-main) 12%, transparent));
+  border: 1px solid color-mix(in srgb, var(--ui-border) 92%, transparent);
   overflow: hidden;
 
-  // Boost specificity to out-prioritize generic [ui-btn].btn--icon styles.
   & &__btn[ui-btn].btn--icon {
-    min-width: 28px;
-    width: 28px;
+    min-width: 22px;
+    width: 22px;
     height: 100%;
     min-height: 100%;
     border: none;
     border-radius: 0;
     background: transparent;
-    color: var(--ui-text-main);
-    font-size: 14px;
-    font-weight: 600;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+    font-weight: 500;
     line-height: 1;
     padding: 0;
     display: inline-flex;
@@ -230,34 +227,35 @@
     transition: background-color $transition-fast, color $transition-fast;
 
     &:first-child {
-      border-right: 1px solid var(--ui-border);
+      border-right: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
     }
 
     &:last-child {
-      border-left: 1px solid var(--ui-border);
+      border-left: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
     }
 
     &:hover {
-      background: color-mix(in srgb, var(--ui-text-main) 8%, transparent);
+      background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
+      color: var(--ui-primary);
     }
 
     &:focus-visible {
       outline: none;
-      background: color-mix(in srgb, var(--ui-primary) 10%, transparent);
+      background: color-mix(in srgb, var(--ui-primary) 12%, transparent);
     }
   }
 }
 
 .qty-input {
-  width: 34px;
+  width: 30px;
   height: 100%;
   border: none;
-  border-left: 1px solid var(--ui-border);
-  border-right: 1px solid var(--ui-border);
-  background: color-mix(in srgb, var(--ui-text-main) 3%, var(--ui-bg-card));
+  border-left: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
+  background: transparent;
   color: var(--ui-text-main);
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   font-family: inherit;
@@ -275,11 +273,9 @@
   font-weight: 600;
   color: var(--kp-line-total-color, var(--ui-text-main));
   font-variant-numeric: tabular-nums;
-  flex: 1;
   text-align: right;
   white-space: nowrap;
   min-width: 65px;
-  margin-right: 8px;
 }
 
 .item-remove-slot {
@@ -341,7 +337,6 @@
     margin-left: 56px;
     width: calc(100% - 84px);
     justify-content: space-between;
-    min-width: 0;
   }
 }
 

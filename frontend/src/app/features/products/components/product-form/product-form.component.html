@@ -127,6 +127,28 @@
           />
           <button ui-btn size="sm" (click)="addImage()">Добавить</button>
         </div>
+        <div class="image-upload">
+          <span class="image-upload__label">или загрузите файл</span>
+          <div class="image-upload__row">
+            <label
+              class="image-upload__pick-btn"
+              [class.is-disabled]="uploadingImage()"
+              for="product-image-upload">
+              {{ uploadingImage() ? 'Загрузка...' : 'Выбрать файл' }}
+            </label>
+            <span class="image-upload__name" [class.is-empty]="!selectedImageName()">
+              {{ selectedImageName() || 'Файл не выбран' }}
+            </span>
+            <input
+              id="product-image-upload"
+              class="image-upload__input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              (change)="uploadImageFromFile($event)"
+              [disabled]="uploadingImage()"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- Заметки + Активен -->

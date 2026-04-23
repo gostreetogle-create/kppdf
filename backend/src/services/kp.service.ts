@@ -136,7 +136,7 @@ export class KpService {
         tablePageBreakAfter: body.metadata?.tablePageBreakAfter ?? 6,
         tablePageBreakFirstPage: body.metadata?.tablePageBreakFirstPage ?? body.metadata?.tablePageBreakAfter ?? 6,
         tablePageBreakNextPages: body.metadata?.tablePageBreakNextPages ?? body.metadata?.tablePageBreakAfter ?? 6,
-        photoScalePercent: body.metadata?.photoScalePercent ?? 150,
+        photoScalePercent: body.metadata?.photoScalePercent ?? 600,
         defaultMarkupPercent: body.metadata?.defaultMarkupPercent ?? 0,
         defaultDiscountPercent: body.metadata?.defaultDiscountPercent ?? 0,
       };
@@ -150,7 +150,7 @@ export class KpService {
       tablePageBreakAfter: Math.max(1, Number(body.metadata?.tablePageBreakAfter ?? 6) || 6),
       tablePageBreakFirstPage: Math.max(1, Number(body.metadata?.tablePageBreakFirstPage ?? body.metadata?.tablePageBreakAfter ?? 6) || 6),
       tablePageBreakNextPages: Math.max(1, Number(body.metadata?.tablePageBreakNextPages ?? body.metadata?.tablePageBreakAfter ?? 6) || 6),
-      photoScalePercent: body.metadata?.photoScalePercent ?? 150,
+      photoScalePercent: body.metadata?.photoScalePercent ?? 600,
       defaultMarkupPercent: Number(body.metadata?.defaultMarkupPercent ?? 0) || 0,
       defaultDiscountPercent: Number(body.metadata?.defaultDiscountPercent ?? 0) || 0,
     };

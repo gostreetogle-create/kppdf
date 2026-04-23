@@ -35,6 +35,9 @@ import { ModalService } from '../../../core/services/modal.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class KpBuilderComponent implements OnInit {
+  private static readonly PHOTO_SCALE_BASE = 600;
+  private static readonly PHOTO_SCALE_UI_MAX = 400;
+
   private readonly destroyRef  = inject(DestroyRef);
   private readonly route       = inject(ActivatedRoute);
   private readonly router      = inject(Router);
@@ -314,21 +317,10 @@ export class KpBuilderComponent implements OnInit {
     if (!id) return;
     const cp = this.counterparties().find(c => c._id === id);
     if (!cp) return;
-
-    this.modal.confirm({
-      title: 'Заменить получателя',
-      message: 'Это заменит текущие данные получателя. Продолжить?',
-      confirmText: 'Заменить',
-      cancelText: 'Отмена',
-      type: 'primary'
-    })
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe((confirmed) => {
-        if (!confirmed) return;
-        this.applyCounterpartyToKp(cp);
-        this.autosave.saveNow(this.kp()!);
-        this.ns.success('Получатель заменён новым snapshot');
-      });
+    this.applyCounterpartyToKp(cp);
+    const current = this.kp();
+    if (current) this.autosave.saveNow(current);
+    this.ns.success('Получатель обновлён');
   }
 
   private applyCounterpartyToKp(cp: Counterparty) {
@@ -552,7 +544,14 @@ export class KpBuilderComponent implements OnInit {
 
   updatePhotoScalePercent(value: number) {
     if (this.isReadOnly()) return;
-    this.updateMetadata({ photoScalePercent: this.clampPercent(value, 150, 350) });
+    const uiValue = this.clampPercent(value, 0, KpBuilderComponent.PHOTO_SCALE_UI_MAX);
+    const actualScale = KpBuilderComponent.PHOTO_SCALE_BASE + uiValue;
+    this.updateMetadata({ photoScalePercent: this.clampPercent(actualScale, 0, 1000) });
+  }
+
+  photoScaleUiValue(): number {
+    const actual = Number(this.kp()?.metadata?.photoScalePercent ?? KpBuilderComponent.PHOTO_SCALE_BASE);
+    return this.clampPercent(actual - KpBuilderComponent.PHOTO_SCALE_BASE, 0, KpBuilderComponent.PHOTO_SCALE_UI_MAX);
   }
 
   onTitleChange(newTitle: string): void {

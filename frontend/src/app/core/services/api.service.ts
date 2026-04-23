@@ -377,6 +377,12 @@ export class ApiService {
     );
   }
 
+  uploadProductImage(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string }>(`${BASE}/products/upload-image`, formData);
+  }
+
   getProductSpecByProductId(productId: string): Observable<ProductSpec | null> {
     return this.http.get<ProductSpec>(`${BASE}/product-specs/product/${productId}`).pipe(
       catchError((error: HttpErrorResponse) => error.status === 404 ? of(null) : throwError(() => error))

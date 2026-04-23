@@ -25,15 +25,18 @@
           <td class="kp-cell-num">{{ displayOffset() + i + 1 }}</td>
           @if (showPhotoColumn()) {
             <td class="kp-cell-photo" [style.width.px]="photoColWidthPx()">
-              <img
-                [src]="item.imageUrl"
-                [alt]="item.name"
-                class="kp-thumb"
-                [style.width.px]="photoSizePx()"
-                [style.height.px]="photoSizePx()"
-                loading="lazy"
-                decoding="async"
-              />
+              @if (hasRenderableImage(item)) {
+                <img
+                  [src]="item.imageUrl"
+                  alt=""
+                  class="kp-thumb"
+                  [style.width.px]="photoSizePx()"
+                  [style.height.px]="photoSizePx()"
+                  loading="lazy"
+                  decoding="async"
+                  (error)="onImageError(item.id)"
+                />
+              }
             </td>
           }
           @if (showCodeColumn()) {
@@ -52,25 +55,24 @@
           <td class="kp-cell-unit">{{ item.unit }}</td>
           <td class="kp-cell-price">
             @if (editablePrices()) {
-              <input
-                type="number"
-                class="kp-inline-price"
-                min="0"
-                step="1"
-                [value]="item.price"
-                (blur)="onPriceCommit($event, item)"
-                (keydown.enter)="onPriceCommit($event, item)"
-                (keydown.escape)="onPriceCancel($event, item)"
-              />
-              <span class="kp-currency">₽</span>
+              <span class="kp-price-edit">
+                <input
+                  type="number"
+                  class="kp-inline-price"
+                  min="0"
+                  step="1"
+                  [value]="item.price"
+                  (blur)="onPriceCommit($event, item)"
+                  (keydown.enter)="onPriceCommit($event, item)"
+                  (keydown.escape)="onPriceCancel($event, item)"
+                />
+              </span>
             } @else {
-              <span class="kp-price">{{ item.price | number:'1.0-0' }}</span>
-              <span class="kp-currency">₽</span>
+              <span class="kp-price">{{ item.price | number:'1.0-0' }} ₽</span>
             }
           </td>
           <td class="kp-cell-sum">
-            <span class="kp-sum">{{ (item.price * item.qty) | number:'1.0-0' }}</span>
-            <span class="kp-currency">₽</span>
+            <span class="kp-sum">{{ (item.price * item.qty) | number:'1.0-0' }} ₽</span>
           </td>
         </tr>
       }

@@ -69,7 +69,7 @@ export class KpDocumentComponent {
     tablePageBreakAfter: 6,
     tablePageBreakFirstPage: 6,
     tablePageBreakNextPages: 6,
-    photoScalePercent: 150
+    photoScalePercent: 600
   });
 
   items = input<KpCatalogItem[]>([]);

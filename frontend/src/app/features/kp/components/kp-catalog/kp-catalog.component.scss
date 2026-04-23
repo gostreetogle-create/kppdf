@@ -4,10 +4,10 @@
 }
 
 .kp-table {
-  --kp-font-table: 0.8rem;
-  --kp-font-cell-sm: 0.75rem;
-  --kp-font-cell-xs: 0.75rem;
-  --kp-font-currency: 0.75rem;
+  --kp-font-table: 0.74rem;
+  --kp-font-cell-sm: 0.68rem;
+  --kp-font-cell-xs: 0.66rem;
+  --kp-font-currency: 0.66rem;
   --kp-row-divider: #e5e7eb;
   --kp-head-bg: #f9fafb;
   --kp-head-text: #6b7280;
@@ -23,20 +23,20 @@
 .kp-table td {
   border: none;
   border-bottom: 0.5pt solid var(--kp-row-divider);
-  padding: 10px 8px;
+  padding: 3px 4px;
   vertical-align: middle;
 }
 
 .kp-table th {
   font-weight: 600;
-  font-size: 10.5px;
+  font-size: 9px;
   text-align: center;
   text-transform: uppercase;
   background: var(--kp-head-bg);
   color: var(--kp-head-text);
   letter-spacing: 0.05em;
-  padding-top: 9px;
-  padding-bottom: 9px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .kp-table tbody tr:last-child td {
@@ -49,30 +49,32 @@
 }
 
 .kp-col-photo {
-  width: 50px;
+  width: 34px;
   text-align: center;
 }
 
 .kp-col-name {
   min-width: 120px;
+  text-align: center;
 }
 
 .kp-col-description {
   min-width: 100px;
   max-width: 35%;
+  text-align: center;
 }
 
 .kp-col-qty {
-  width: 42px;
+  width: 34px;
 }
 
 .kp-col-unit {
-  width: 36px;
+  width: 30px;
 }
 
 .kp-col-price,
 .kp-col-sum {
-  width: 72px;
+  width: 64px;
 }
 
 /* Ячейки */
@@ -85,31 +87,43 @@
 
 .kp-cell-photo {
   text-align: center;
-  padding-left: 4px;
-  padding-right: 4px;
+  vertical-align: top;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 1px;
+  padding-right: 1px;
 }
 
 .kp-thumb {
-  width: 46px;
-  height: 46px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
+  object-position: center;
   border-radius: 4px;
   border: none;
+  display: block;
+  margin: 0 auto;
+}
+
+.kp-cell-code {
+  text-align: center;
 }
 
 .kp-cell-name {
+  text-align: left;
   font-weight: 500;
   color: var(--kp-main-text);
 }
 
 .kp-cell-description {
+  text-align: center;
   font-size: var(--kp-font-cell-sm);
   color: var(--kp-muted-text);
-  line-height: 1.28;
+  line-height: 1.1;
 }
 
 .kp-cell-adjustments {
-  margin-top: 2px;
+  margin-top: 1px;
   font-size: var(--kp-font-cell-xs);
   color: var(--kp-muted-text);
   font-weight: 600;
@@ -125,22 +139,43 @@
 
 .kp-cell-price,
 .kp-cell-sum {
-  text-align: right;
+  text-align: center;
   white-space: nowrap;
 }
 
 .kp-inline-price {
-  width: 4.5rem;
-  min-height: 1.65rem;
-  padding: 0.1rem 0.35rem;
+  width: 4.8rem;
+  min-width: 4.8rem;
+  min-height: 1.35rem;
+  padding: 0.05rem 0;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  text-align: right;
+  text-align: center;
   font: inherit;
   font-variant-numeric: tabular-nums;
   background: transparent;
   color: var(--kp-main-text);
+  appearance: textfield;
+  -moz-appearance: textfield;
   transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.kp-inline-price::-webkit-outer-spin-button,
+.kp-inline-price::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.kp-price-edit {
+  display: inline-flex;
+  align-items: baseline;
+
+  &::after {
+    content: '₽';
+    margin-left: 2px;
+    color: var(--kp-muted-text);
+    font-size: var(--kp-font-currency);
+  }
 }
 
 .kp-inline-price:hover {
@@ -163,20 +198,14 @@
   color: var(--kp-main-text);
 }
 
-.kp-currency {
-  margin-left: 3px;
-  color: var(--kp-muted-text);
-  font-size: var(--kp-font-currency);
-}
-
 /* === Печать === */
 @media print {
   .kp-table {
-    --kp-font-table: 9.5pt;
-    --kp-font-cell-sm: 8.8pt;
-    --kp-font-cell-xs: 8pt;
-    --kp-font-currency: 8.6pt;
-    font-size: 8.6pt;
+    --kp-font-table: 8.2pt;
+    --kp-font-cell-sm: 7.8pt;
+    --kp-font-cell-xs: 7.4pt;
+    --kp-font-currency: 7.6pt;
+    font-size: 7.8pt;
     --kp-row-divider: #e5e7eb;
     --kp-head-bg: #f9fafb;
     --kp-head-text: #6b7280;
@@ -188,8 +217,10 @@
   .kp-table td {
     border: none !important;
     border-bottom: 0.5pt solid var(--kp-row-divider) !important;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 3px;
+    padding-right: 3px;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

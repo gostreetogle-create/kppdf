@@ -61,9 +61,16 @@ Client-side session persistence:
 | GET | `/api/products/categories` | Уникальные категории (справочник + из товаров) |
 | GET | `/api/products/:id` | Один товар |
 | POST | `/api/products/bulk` | Массовый импорт JSON: `{ items: Product[], mode: "skip" \| "update" }` |
+| POST | `/api/products/upload-image` | Upload фото товара (`multipart/form-data`, поле `file`) |
 | POST | `/api/products` | Создать |
 | PUT | `/api/products/:id` | Обновить |
 | DELETE | `/api/products/:id` | Удалить |
+
+`POST /api/products/upload-image`:
+- для файлов с альфа-каналом (например, PNG с прозрачным фоном) backend автоматически выполняет trim прозрачных полей;
+- для изображений без альфа-канала backend выполняет trim только если фон по краям белый (near-white), чтобы убрать «пустой холст»;
+- пропорции изображения сохраняются (без растягивания);
+- если trim не даёт фактического уменьшения изображения, исходный файл сохраняется без изменений.
 
 **Product schema:**
 ```json

@@ -10,7 +10,8 @@
     "seed:demo": "ts-node-dev --respawn src/scripts/seed-demo.ts",
     "users:promote-admin": "ts-node-dev --respawn src/scripts/promote-all-admin.ts",
     "seed:products": "ts-node-dev --respawn src/scripts/seed-products.ts",
-    "seed:products:update": "ts-node-dev --respawn src/scripts/seed-products.ts -- --mode=update"
+    "seed:products:update": "ts-node-dev --respawn src/scripts/seed-products.ts -- --mode=update",
+    "media:trim-products": "ts-node-dev --respawn src/scripts/trim-product-images.ts"
   },
   "dependencies": {
     "@types/multer": "^2.1.0",
@@ -21,7 +22,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.4.1",
     "multer": "^2.1.1",
-    "puppeteer": "^24.42.0"
+    "puppeteer": "^24.42.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

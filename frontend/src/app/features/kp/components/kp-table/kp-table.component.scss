@@ -17,9 +17,9 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   column-gap: 12px;
-  row-gap: 3px;
-  margin-top: 10px;
-  margin-bottom: 12px;
+  row-gap: 1px;
+  margin-top: 4px;
+  margin-bottom: 6px;
 }
 
 .kp-total-line {
@@ -30,6 +30,7 @@
   justify-self: end;
   text-align: right;
   font-weight: 600;
+  line-height: 1.1;
 }
 
 .kp-total-amount {
@@ -37,6 +38,7 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+  line-height: 1.1;
 }
 
 .kp-total-line--main .kp-total-label,
@@ -56,8 +58,8 @@
   font-size: var(--kp-total-final);
   font-weight: 700;
   color: var(--ui-text);
-  margin-top: 6px;
-  padding-top: 6px;
+  margin-top: 2px;
+  padding-top: 2px;
   border-top: 1px solid color-mix(in srgb, var(--ui-border) 86%, var(--ui-text));
 }
 
@@ -89,7 +91,7 @@
     --kp-total-vat: 9.4pt;
     --kp-total-final: 11.4pt;
     --kp-conditions-size: 8.8pt;
-    margin-top: 12px;
+    margin-top: 6px;
   }
   
   .kp-conditions {

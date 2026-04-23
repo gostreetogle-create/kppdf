@@ -7,8 +7,8 @@
   grid-template-columns: minmax(0, 1fr) minmax(240px, 32%);
   gap: 12px 16px;
   align-items: start;
-  margin-top: 50mm;  /* Отступ сверху 5см */
-  margin-bottom: 20px;
+  margin-top: 45mm;
+  margin-bottom: 2px;
   font-size: var(--kp-font-body);
   line-height: 1.42;
 }
@@ -50,9 +50,9 @@
 
 /* Метаданные КП */
 .kp-meta {
-  border: 1px solid color-mix(in srgb, var(--ui-border) 86%, var(--ui-text));
-  border-radius: 6px;
-  padding: 8px 10px;
+  border: 0.7px solid color-mix(in srgb, var(--ui-border) 82%, var(--ui-text));
+  border-radius: 3px;
+  padding: 3px 5px;
   background: transparent;
   font-size: var(--kp-font-meta);
 }
@@ -61,8 +61,8 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: 4px;
+  margin-bottom: 1px;
 }
 
 .kp-meta__line:last-child {
@@ -87,6 +87,6 @@
     --kp-font-name: 10.5pt;
     --kp-font-meta: 9pt;
     font-size: var(--kp-font-body);
-    margin-top: 50mm;  /* Сохраняем отступ при печати */
+    margin-top: 45mm;
   }
 }

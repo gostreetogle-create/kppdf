@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface KpCatalogItem {
@@ -28,6 +28,9 @@ export interface PriceChangedEvent {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class KpCatalogComponent {
+  private static readonly MIN_PHOTO_SIZE_PX = 20;
+  private static readonly MAX_PHOTO_SIZE_PX = 160;
+
   items = input.required<KpCatalogItem[]>();
   editablePrices = input(false);
   showPhotoColumn = input(true);
@@ -35,16 +38,32 @@ export class KpCatalogComponent {
   showDescriptionColumn = input(true);
   vatPercent = input(20);
   displayOffset = input(0); // Смещение для нумерации строк
-  photoScalePercent = input(150);
+  photoScalePercent = input(600);
   priceChanged = output<PriceChangedEvent>();
+  private readonly brokenImageItemIds = signal(new Set<string>());
 
   photoSizePx(): number {
     const scale = this.clampPhotoScale(this.photoScalePercent());
-    return Math.round(46 * scale / 100);
+    const normalized = scale / 1000; // 0..1
+    const clampedNormalized = Math.max(0, Math.min(1, normalized));
+    const range = KpCatalogComponent.MAX_PHOTO_SIZE_PX - KpCatalogComponent.MIN_PHOTO_SIZE_PX;
+    return Math.round(KpCatalogComponent.MIN_PHOTO_SIZE_PX + range * clampedNormalized);
   }
 
   photoColWidthPx(): number {
-    return this.photoSizePx() + 14;
+    return this.photoSizePx() + 12;
+  }
+
+  hasRenderableImage(item: KpCatalogItem): boolean {
+    const url = (item.imageUrl ?? '').trim();
+    return url.length > 0 && !this.brokenImageItemIds().has(item.id);
+  }
+
+  onImageError(itemId: string): void {
+    if (this.brokenImageItemIds().has(itemId)) return;
+    const next = new Set(this.brokenImageItemIds());
+    next.add(itemId);
+    this.brokenImageItemIds.set(next);
   }
 
   onPriceCommit(event: Event, item: KpCatalogItem): void {
@@ -71,7 +90,7 @@ export class KpCatalogComponent {
   }
 
   private clampPhotoScale(value: number): number {
-    const n = Number.isFinite(value) ? value : 150;
-    return Math.min(350, Math.max(150, n));
+    const n = Number.isFinite(value) ? value : 600;
+    return Math.min(1000, Math.max(0, n));
   }
 }

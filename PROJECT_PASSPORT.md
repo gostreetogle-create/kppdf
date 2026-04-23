@@ -184,6 +184,11 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-04-23 | KP table image mode correction: по итогам UX-уточнения в `kp-catalog` возвращён `object-fit: contain` для фото-ячеек таблицы, чтобы исключить кадрирование/искажение и показывать изображение целиком |
+| 2026-04-23 | KP table photo density tweak: в `kp-catalog` превью в фото-колонке переключено на `object-fit: cover` (`object-position: center`), чтобы поведение визуально совпадало с карточками каталога и уменьшало ощущение «пустых полей» в строках таблицы |
+| 2026-04-23 | Photo scale range update: для КП диапазон `photoScalePercent` смещён на `350..700` (минимум 350 с возможностью увеличения), синхронизирован frontend slider/number-input, документный fallback и backend валидация/дефолты; таблица `kp-catalog` получила обновлённую нормализацию масштаба фото под новый диапазон без искажения пропорций |
+| 2026-04-23 | KP table photo-cell compaction: в `kp-catalog` ограничен размер превью-изображений в строке таблицы (`min/max` clamp), чтобы большие `photoScalePercent` не раздували высоту строк; `object-fit: contain` сохранён для корректных пропорций без растягивания |
+| 2026-04-23 | KP quick UX hotfix: блок `Итого` в документе снова прижат к таблице (`margin-top: 6px` вместо авто-прижима к низу страницы), а stepper количества в правой панели возвращён к компактной SaaS-геометрии (`~76x24`, облегчённые кнопки/границы, аккуратные numerics) для чистого и читаемого вида |
 | 2026-04-23 | KP table minimalist redesign (screen+PDF): `kp-catalog` переведён на инвойсный row-list стиль (без внешней/вертикальных рамок, только горизонтальные разделители `0.5pt`), header облегчён (`#f9fafb`, uppercase, muted slate), а price editor — в ghost-input режим (text-like default + hover/focus affordance); в `kp-document` убрана лишняя рамка вокруг таблицы для чистого минималистичного ритма |
 | 2026-04-23 | KP document summary flow fix: в `kp-document.component.scss` у `kp-content__summary-block` убран `margin-top:auto` и задан фиксированный отступ `margin-top:30px`, а нижний safe-zone контейнера усилен до `--kp-bottom-safe-zone: 40mm` (screen/print), чтобы блок `Итого` шёл сразу за таблицей и не попадал в зону подвала |
 | 2026-04-23 | KP Builder stepper contrast/alignment fix: в `kp-builder.widgets.scss` усилена локальная специфичность `stepper`-кнопок (`.stepper .stepper__btn[ui-btn].btn--icon`) против общих `[ui-btn].btn--icon`, добавлен token-driven контраст `stepper/qty-input` для light/dark, а правая зона строки (`item-actions/total-price/remove-btn`) переведена в фиксированную геометрию (`160px`) без «рваного» правого края |
@@ -398,6 +403,32 @@
   - `counterparty-table`: упрощён список контрагентов до колонок короткое название / ИНН / действия; обновлены `docs/ui-kit.md` (описание таблицы).
   - `frontend/src/app/core/interceptors/auth.interceptor.ts`: при `401` запросы к `/auth/login` и `/auth/logout` пробрасывают ошибку без `tryRefresh`/`logout()`, чтобы не зациклить клиент на `POST /api/auth/logout`.
   - `start.ps1`: после `docker compose up -d` проверяется `$LASTEXITCODE`; при ошибке (например, не запущен Docker Desktop) скрипт выходит с кодом и не печатает ложное «Docker services are up»; подсказка про `-SkipDocker` при внешнем MongoDB.
+  - `products`: добавлен upload endpoint `POST /api/products/upload-image` (multer, PNG/JPG/WEBP, до 8MB, сохранение в `/media/products`), чтобы фото в карточке можно было добавлять с диска.
+  - `products upload`: внедрён backend trim прозрачных полей при загрузке (`sharp`) — применяется только к изображениям с alpha-каналом, без изменения пропорций и без принудительного кадрирования JPEG.
+  - `frontend product-form`: в блоке «Фотографии» добавлена загрузка файла через `<input type="file">` с индикатором `Загрузка...`; успешная загрузка сразу добавляет изображение в `form.images` и поддерживает main/sortOrder.
+  - `frontend product-form UI polish`: upload-control в карточке товара переведён из «сырого» нативного file-input в аккуратный UI-row (кнопка выбора + отображение имени файла + устойчивый loading/disabled state без дёрганий layout).
+  - `kp-catalog photo fallback fix`: для строк без валидного `imageUrl` (или при `img error`) колонка `Фото` теперь остаётся пустой — без broken-icon и без alt-текста в документной таблице КП.
+  - `kp-document continuation note position`: подпись `Продолжение таблицы — на стр. N` в `kp-document` прижата сразу под таблицей (`margin-top: 6px`, без `auto`-прижима к низу страницы), чтобы не выпадать на декоративный фон.
+  - `kp-catalog alignment pass`: выравнивание данных в таблице КП переведено в center для всех колонок, кроме `Наименование` и `Описание` (left); для ценовых ячеек уменьшен отступ перед символом `₽`, чтобы валюта не «отрывалась» от числа.
+  - `kp-builder currency format pass`: в правой панели `Состав КП` (`База` и `line total`) убран `currency`-pipe с префиксом `₽`; формат приведён к постфиксу `число + ₽` для единообразия с таблицей документа.
+  - `kp-catalog currency token pass`: в документной таблице `Цена` и `Сумма` приведены к единому отображению `число₽` в одном текстовом токене, чтобы колонка `Цена` визуально совпадала со столбцом `Сумма` и не рвала число/валюту.
+  - `kp-catalog editable price suffix fix`: в inline-режиме редактирования `Цена` удалён разрыв между числом и `₽` (динамическая ширина input + суффикс валюты через общий токен), чтобы визуально совпадало с колонкой `Сумма`.
+  - `kp-catalog number-input cleanup`: у inline-поля цены отключены нативные steppers (`↑/↓`) во всех браузерах (`appearance` + webkit spin-button reset), чтобы убрать лишние отступы справа и стабилизировать геометрию колонки `Цена`.
+  - `kp-catalog cleanup + currency spacing`: упрощён editable-блок цены (убрана динамическая `ch`-ширина), задана стабильная компактная ширина input, а формат валюты для `Цена/Сумма` приведён к `число ₽` с лёгким визуальным зазором перед `₽`.
+  - `kp-catalog header alignment pass`: заголовки всех колонок таблицы КП центрированы (включая `Наименование` и `Описание`), при этом содержимое соответствующих `td` остаётся left-aligned для удобного чтения текста.
+  - `kp-catalog cell alignment final pass`: выравнивание данных в таблице зафиксировано как center для всех колонок, кроме `Наименование` и `Описание`; inline-input в колонке `Цена` также центрирован для визуальной консистентности.
+  - `kp-document top-density pass`: таблица в документе прижата максимально вверх — убран верхний host-padding и обнулён `margin-top` у `.kp-content--continuation` (screen/print) для 2+ страниц.
+  - `kp-header border density pass`: у правого мета-блока шапки КП уменьшена визуальная тяжесть границы (тоньше stroke), снижены `border-radius` и внутренние отступы для более компактной «рамки» без потери читаемости.
+  - `kp-header meta ultra-compact pass`: рамка правого мета-блока прижата максимально к тексту (минимальные `padding`, уменьшенный `radius`, почти нулевой `margin-bottom` между строками) по запросу на предельно плотную геометрию.
+  - `kp-header/table gap fix`: убран лишний вертикальный зазор между блоком получателя (`Коммерческое предложение для...`) и таблицей — `margin-bottom` у `kp-header` снижен до минимального.
+  - `kp-header top offset tune`: верхний отступ шапки получателя откорректирован до `45mm` (screen/print) по финальной подгонке вертикальной посадки под фирменный заголовок.
+  - `products image trim robustness`: upload-пайплайн `POST /api/products/upload-image` усилен до hybrid-trim (alpha + near-white background), добавлен guard от «пустого trim» и вынесена утилита `backend/src/utils/image-trim.util.ts`; для ретро-очистки уже загруженных фото добавлен скрипт `npm run media:trim-products`.
+  - `kp-builder recipient replace UX`: удалён confirm-диалог «Заменить получателя»; теперь выбор из dropdown применяет snapshot получателя сразу и молча (с autosave), только в статусе `draft`.
+  - `kp-builder price edit boundary`: в документной таблице КП (preview) отключено inline-редактирование цены (`editablePrices=false`); изменение цены/пересчёта оставлено только в правой панели `Состав КП`.
+  - `kp-catalog description alignment`: колонка `Описание` в строках таблицы переведена в center-align по запросу; left-align оставлен только для `Наименование`.
+  - `kp-table totals compact spacing`: в блоке итогов (`Итого/НДС/Всего к оплате`) уменьшены межстрочные и межблочные отступы до минимального читаемого уровня (row-gap, margin-top/bottom, line-height, отступ перед финальной строкой).
+  - `docs/api.md` и `docs/business-rules.md`: синхронизированы правила upload-image (auto-trim для alpha-изображений).
+  - `docs/ui-kit.md`: добавлен `Product Form Upload Pattern` с правилами визуального и адаптивного поведения file-upload controls.
 
 - Дата: 2026-04-22
 - Выполнено:

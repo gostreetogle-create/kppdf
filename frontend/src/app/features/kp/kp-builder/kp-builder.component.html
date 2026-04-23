@@ -213,7 +213,7 @@
             [firstPageRows]="kp()!.metadata.tablePageBreakFirstPage ?? kp()!.metadata.tablePageBreakAfter"
             [nextPagesRows]="kp()!.metadata.tablePageBreakNextPages ?? kp()!.metadata.tablePageBreakAfter"
             [items]="catalogItems()"
-            [editablePrices]="!isReadOnly()"
+            [editablePrices]="false"
             [vatPercent]="kp()!.vatPercent"
             [companySnapshot]="kp()!.companySnapshot"
             [conditions]="kp()!.conditions"
@@ -362,20 +362,20 @@
                 <input
                   class="photo-scale-control__range"
                   type="range"
-                  min="150"
-                  max="350"
+                  min="0"
+                  max="400"
                   step="5"
-                  [value]="kp()!.metadata.photoScalePercent || 150"
+                  [value]="photoScaleUiValue()"
                   [disabled]="isReadOnly()"
                   (input)="updatePhotoScalePercent(+$any($event.target).value)"
                 />
-                <span class="photo-scale-control__value">{{ kp()!.metadata.photoScalePercent || 150 }}%</span>
+                <span class="photo-scale-control__value">{{ photoScaleUiValue() }}%</span>
                 <input
                   class="photo-scale-control__number"
                   type="number"
-                  min="150"
-                  max="350"
-                  [value]="kp()!.metadata.photoScalePercent || 150"
+                  min="0"
+                  max="400"
+                  [value]="photoScaleUiValue()"
                   [disabled]="isReadOnly()"
                   (change)="updatePhotoScalePercent(+$any($event.target).value)"
                 />
@@ -422,7 +422,7 @@
                 <span class="name">{{ item.name }}</span>
                 <span class="meta">
                   Арт: @if (item.code) { {{ item.code }} } @else { — }
-                  · База: {{ item.price | currency:'RUB':'symbol-narrow':'1.0-0' }}
+                  · База: {{ item.price | number:'1.0-0' }} ₽
                 </span>
               </div>
               <div class="item-actions">
@@ -438,7 +438,7 @@
                   />
                   <button ui-btn icon class="stepper__btn" [disabled]="isReadOnly()" (click)="incrementQty(item)">+</button>
                 </div>
-                <span class="total-price">{{ (itemUnitPrice(item) * item.qty) | currency:'RUB':'symbol-narrow':'1.0-0' }}</span>
+                <span class="total-price">{{ (itemUnitPrice(item) * item.qty) | number:'1.0-0' }} ₽</span>
               </div>
               <div class="item-remove-slot">
                 <button

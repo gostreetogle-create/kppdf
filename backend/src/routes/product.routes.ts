@@ -3,8 +3,35 @@ import { Product } from '../models/product.model';
 import { ProductSpec } from '../models/product-spec.model';
 import { Dictionary } from '../models/dictionary.model';
 import { requirePermission } from '../middleware/rbac.guard';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { trimProductImagePadding } from '../utils/image-trim.util';
 
 const router = Router();
+const mediaRoot = process.env.MEDIA_ROOT || path.resolve(process.cwd(), '..', 'media');
+const productsMediaDir = path.join(mediaRoot, 'products');
+if (!fs.existsSync(productsMediaDir)) fs.mkdirSync(productsMediaDir, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, productsMediaDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase() || '.png';
+      const safeExt = ['.png', '.jpg', '.jpeg', '.webp'].includes(ext) ? ext : '.png';
+      cb(null, `product-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`);
+    }
+  }),
+  fileFilter: (_req, file, cb) => {
+    const ok = /^image\/(png|jpe?g|webp)$/i.test(file.mimetype);
+    if (!ok) {
+      cb(new Error('Допустимы только PNG/JPG/WEBP изображения'));
+      return;
+    }
+    cb(null, true);
+  },
+  limits: { fileSize: 8 * 1024 * 1024 }
+});
 
 router.use((req, res, next) => {
   const isRead = req.method === 'GET';
@@ -78,6 +105,27 @@ router.get('/categories', async (_req: Request, res: Response) => {
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
+});
+
+// POST /api/products/upload-image
+router.post('/upload-image', (req: Request, res: Response) => {
+  upload.single('file')(req as any, res as any, async (err: any) => {
+    if (err) {
+      res.status(400).json({ message: err.message || 'Ошибка загрузки файла' });
+      return;
+    }
+    const file = (req as any).file;
+    if (!file?.filename) {
+      res.status(400).json({ message: 'Файл не передан' });
+      return;
+    }
+    try {
+      await trimProductImagePadding(file.path);
+    } catch (trimError) {
+      console.warn('[products/upload-image] trim skipped:', trimError);
+    }
+    res.json({ url: `/media/products/${file.filename}` });
+  });
 });
 
 // GET /api/products/:id

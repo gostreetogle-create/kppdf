@@ -150,6 +150,78 @@
   }
 }
 
+.image-upload {
+  margin-top: $space-2;
+  display: grid;
+  gap: $space-1;
+
+  &__label {
+    font-size: $font-xs;
+    color: var(--ui-text-muted);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    min-width: 0;
+  }
+
+  &__pick-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    padding: 0 $space-3;
+    border: 1px solid var(--ui-border);
+    border-radius: $radius-md;
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    font-size: $font-sm;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+
+    &:hover {
+      border-color: var(--ui-primary);
+      color: var(--ui-primary);
+    }
+
+    &.is-disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  }
+
+  &__name {
+    min-width: 0;
+    flex: 1;
+    font-size: $font-xs;
+    color: var(--ui-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &.is-empty {
+      color: var(--ui-text-muted);
+    }
+  }
+
+  &__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &__status {
+    font-size: $font-xs;
+    color: var(--ui-text-muted);
+  }
+}
+
 .form-checkbox {
   display: flex;
   align-items: flex-end;
@@ -181,5 +253,9 @@
 @media (max-width: 640px) {
   .compact-kp-table__row {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .image-upload__row {
+    flex-wrap: wrap;
   }
 }

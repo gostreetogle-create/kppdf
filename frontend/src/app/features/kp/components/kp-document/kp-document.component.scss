@@ -1,7 +1,7 @@
 :host {
   display: block;
   background: var(--ui-bg-main, var(--ui-bg-muted));
-  padding: 0.5rem 1.25rem 1.25rem;
+  padding: 0 1.25rem 1.25rem;
 }
 
 /* === Основной контент === */
@@ -49,7 +49,7 @@
 }
 
 .kp-content__summary-block {
-  margin-top: auto;
+  margin-top: 6px;
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--ui-border) 66%, transparent);
   border-radius: 6px;
@@ -126,13 +126,14 @@
 
 /* Контент на продолжающихся страницах */
 .kp-content--continuation {
-  margin-top: 6mm; /* На 2+ страницах поднимаем таблицу выше, сохраняя безопасный отступ */
+  margin-top: 0;
 }
 
 /* Подсказка о продолжении таблицы */
 .kp-table-continues {
-  margin: auto 0 0;
+  margin: 6px 0 0;
   padding: 0;
+  align-self: center;
   text-align: center;
   font-size: var(--kp-continues-size);
   line-height: 1.35;
@@ -183,7 +184,7 @@
   }
 
   .kp-content--continuation {
-    margin-top: 6mm;
+    margin-top: 0;
   }
 
   :host ::ng-deep .kp-sheet {

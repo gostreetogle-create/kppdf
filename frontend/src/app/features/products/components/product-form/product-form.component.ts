@@ -47,6 +47,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   };
 
   saving     = signal(false);
+  uploadingImage = signal(false);
+  selectedImageName = signal('');
   errors     = signal<string[]>([]);
   categories = signal<string[]>([]);
   units      = signal<string[]>(['шт.', 'м²', 'м.п.', 'кг', 'т', 'комплект', 'рейс', 'услуга']);
@@ -110,6 +112,35 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       createImage(url, { isMain: isFirst, sortOrder: this.form.images.length, context: 'product' }),
     ];
     this.form.newImageUrl = '';
+  }
+
+  uploadImageFromFile(event: Event) {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    this.selectedImageName.set(file.name);
+    this.uploadingImage.set(true);
+    this.api.uploadProductImage(file).subscribe({
+      next: ({ url }) => {
+        const isFirst = this.form.images.length === 0;
+        this.form.images = [
+          ...this.form.images,
+          createImage(url, { isMain: isFirst, sortOrder: this.form.images.length, context: 'product' }),
+        ];
+        this.uploadingImage.set(false);
+        this.errors.set([]);
+        this.selectedImageName.set('');
+        if (input) input.value = '';
+      },
+      error: (err) => {
+        this.uploadingImage.set(false);
+        const message = err?.error?.message || err?.message || 'Ошибка загрузки изображения';
+        this.errors.set([message]);
+        this.selectedImageName.set(file.name);
+        if (input) input.value = '';
+      }
+    });
   }
 
   removeImage(index: number) {

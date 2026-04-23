@@ -137,7 +137,7 @@ const KpSchema = new Schema<IKp>({
     tablePageBreakAfter: { type: Number, default: 6, min: [1, 'tablePageBreakAfter должен быть >= 1'] },
     tablePageBreakFirstPage: { type: Number, default: 6, min: [1, 'tablePageBreakFirstPage должен быть >= 1'] },
     tablePageBreakNextPages: { type: Number, default: 6, min: [1, 'tablePageBreakNextPages должен быть >= 1'] },
-    photoScalePercent: { type: Number, default: 150, min: [150, 'photoScalePercent должен быть >= 150'], max: [350, 'photoScalePercent должен быть <= 350'] },
+    photoScalePercent: { type: Number, default: 600, min: [0, 'photoScalePercent должен быть >= 0'], max: [1000, 'photoScalePercent должен быть <= 1000'] },
     defaultMarkupPercent: { type: Number, default: 0, min: [0, 'defaultMarkupPercent должен быть >= 0'], max: [500, 'defaultMarkupPercent должен быть <= 500'] },
     defaultDiscountPercent: { type: Number, default: 0, min: [0, 'defaultDiscountPercent должен быть >= 0'], max: [100, 'defaultDiscountPercent должен быть <= 100'] },
   },
