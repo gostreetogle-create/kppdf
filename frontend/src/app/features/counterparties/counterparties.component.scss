@@ -4,3 +4,35 @@
   --search-max-width: 360px;
   --filter-min-width: 140px;
 }
+
+.page {
+  max-width: 1680px;
+}
+
+.counterparties-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.counterparties-grid__column h2 {
+  margin: 0 0 0.75rem;
+  font-size: $font-lg;
+  font-weight: 600;
+}
+
+.column-empty {
+  margin: 0;
+  padding: 0.875rem 1rem;
+  border: 1px dashed var(--ui-border);
+  border-radius: 10px;
+  color: var(--ui-text-muted);
+  background: var(--ui-bg-elevated);
+}
+
+@media (max-width: 1400px) {
+  .counterparties-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -61,6 +61,12 @@ if (-not $SkipDocker) {
   Push-Location $root
   try {
     docker compose up -d
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host ""
+      Write-Host "   Docker Compose failed (exit $LASTEXITCODE). MongoDB will not be available on port 27017." -ForegroundColor Red
+      Write-Host "   Start Docker Desktop and run this script again, or use: .\start.cmd -SkipDocker if MongoDB runs elsewhere." -ForegroundColor Yellow
+      exit $LASTEXITCODE
+    }
     Write-Host "   Docker services are up."
   } finally {
     Pop-Location

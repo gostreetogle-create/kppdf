@@ -1,7 +1,7 @@
 # REST API
 
 Base URL: `http://localhost:3000/api` (dev) / `/api` (prod через nginx)  
-Auth: `Authorization: Bearer <token>` — все роуты кроме `/api/auth/*` и `GET /health`  
+Auth: `Authorization: Bearer <token>` — все роуты кроме `/api/auth/*`, `/api/guest/enter/:token` и `GET /health`  
 Ошибки: `400` неверные данные, `401` не авторизован, `404` не найдено, `500` сервер
 
 ---
@@ -25,6 +25,21 @@ Auth: `Authorization: Bearer <token>` — все роуты кроме `/api/aut
 | GET | `/api/auth/me` | — | `IUser` без `passwordHash` |
 
 Rate limit: 10 попыток / 15 мин с одного IP.
+
+---
+
+## Guest Preview
+
+| Метод | Путь | Тело | Ответ |
+|-------|------|------|-------|
+| POST | `/api/guest/issue` | `{ ttlDays?: number }` | `{ previewUrl, expiresInSeconds }` |
+| POST | `/api/guest/enter/:token` | — | `{ accessToken, user }` |
+
+Правила:
+- `POST /api/guest/issue` доступен только авторизованному пользователю с permission `users.manage`.
+- `ttlDays` ограничен `1..30` (по умолчанию `7`).
+- Гостевая сессия получает read-only доступ: backend блокирует любые write-запросы (`POST/PUT/PATCH/DELETE`) с `403`.
+- `POST /api/guest/enter/:token` возвращает только `accessToken` (без `refreshToken`).
 
 ---
 
@@ -69,8 +84,9 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 |-------|------|----------|
 | GET | `/api/kp` | Список (новые первые) |
 | GET | `/api/kp/:id` | Одно КП |
-| POST | `/api/kp` | Создать черновик (обязательны `companyId`, `kpType`; опц. `templateKey`) |
+| POST | `/api/kp` | Создать черновик (можно без `companyId`/`kpType` — сервер возьмёт default-инициатора и `kpType=standard`; опц. `templateKey`) |
 | PUT | `/api/kp/:id` | Сохранить целиком |
+| PUT | `/api/kp/:id/switch-type` | Переключить тип/шаблон существующего КП с пересборкой `companySnapshot` и безопасной политикой условий |
 | DELETE | `/api/kp/:id` | Удалить |
 | POST | `/api/kp/:id/duplicate` | Дублировать → новый `_id`, `status: draft`, `title: "Копия — ..."` |
 
@@ -121,7 +137,9 @@ Rate limit: 10 попыток / 15 мин с одного IP.
     "number": "string", "validityDays": 10,
     "prepaymentPercent": 50, "productionDays": 15,
     "tablePageBreakAfter": 6,
-    "photoScalePercent": 150
+    "photoScalePercent": 150,
+    "defaultMarkupPercent": 0,
+    "defaultDiscountPercent": 0
   },
   "items": [{
     "productId": "string", "code": "string?", "name": "string",
@@ -144,6 +162,7 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 | GET | `/api/counterparties` | Список. Фильтры: `?role=client\|supplier\|company&status=active\|inactive&q=&isOurCompany=true\|false` |
 | POST | `/api/counterparties/upload-branding-image` | Upload изображения шаблона КП (`multipart/form-data`, поле `file`) |
 | GET | `/api/counterparties/:id/branding-templates` | Шаблоны брендирования компании по типам КП (`kpTypes`, `templatesByType`, `defaultByType`) |
+| PUT | `/api/counterparties/:id/branding-templates` | Обновить полный список `brandingTemplates` для нашей компании |
 | POST | `/api/counterparties/bulk` | Массовый импорт JSON: `{ items: Counterparty[], mode: "skip" \| "update" }` |
 | GET | `/api/counterparties/:id` | Один контрагент |
 | POST | `/api/counterparties` | Создать |
@@ -157,7 +176,15 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 Валидация контрагентов возвращает человекочитаемые сообщения на русском языке (без английских префиксов Mongoose): например `Краткое название обязательно`, `ИНН должен содержать 10 или 12 цифр`, `Контрагент с таким ИНН уже существует`.  
 Особенность по ИНН: для `legalForm="Физлицо"` поле `inn` опционально; для остальных оргформ — обязательно.
 Шаблоны брендирования (`brandingTemplates`) валидируются на сервере: обязательны `name`, `kpType`, `assets.kpPage1`; `key` уникален в рамках компании; `isDefault=true` не может повторяться внутри одного `kpType`.
+При `POST /api/kp` и `PUT /api/kp/:id/switch-type` в режиме `Авто` (`templateKey` не передан) выбор шаблона делается так: сначала `isDefault=true` для нужного `kpType`, если default отсутствует — первый доступный шаблон этого `kpType`; если шаблонов нужного типа нет, возвращается `400`.
+`PUT /api/kp/:id/switch-type` поддерживает смену компании-инициатора через `companyId` в теле запроса (с тем же пересчётом snapshot/шаблона/условий).
 В шаблоне доступен список `conditions: string[]` (пункты условий КП). При `POST /api/kp`, если `conditions` не передан или пустой, сервер подставляет `selectedTemplate.conditions`.
+`PUT /api/kp/:id/switch-type` возвращает `{ kp, meta }`, где `meta.conditionsReplaced` показывает, были ли условия заменены на шаблонные (замена происходит только если пользователь не менял их вручную, либо при `overwriteConditions=true`).
+Для legacy-совместимости switch-type принимает компанию-инициатора как `isOurCompany=true` или как историческую запись с `role` содержащей `company`.
+Если в старом КП пустой корневой `companyId`, switch-type использует fallback `companySnapshot.companyId`.
+Если в старом `companySnapshot` отсутствует объект `texts`, switch-type нормализует его в пустую структуру (`headerNote/introText/footerText/closingText`), чтобы не ломаться на Mongoose-cast.
+Для контрагента-инициатора поддержаны `defaultMarkupPercent/defaultDiscountPercent`; сервер прокидывает их в `Kp.metadata.defaultMarkupPercent/defaultDiscountPercent` при создании КП и при switch-type.
+Нумерация type-aware: `response` получает префикс `ПИСЬМО-xxx`, остальные типы — `КП-xxx`.
 
 ---
 

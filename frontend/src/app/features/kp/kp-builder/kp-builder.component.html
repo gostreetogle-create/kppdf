@@ -72,10 +72,6 @@
           </button>
           @if (!recipientCollapsed()) {
 
-          <div class="recipient-snapshot-note">
-            <span class="recipient-snapshot-note__icon">📸</span>
-            <span>Данные получателя скопированы при создании КП и не меняются при изменении контрагента.</span>
-          </div>
           <div class="recipient-select-row">
             <select
               class="sidebar-section__select form-control"
@@ -192,6 +188,59 @@
                 [disabled]="isReadOnly()"
                 (input)="kp()!.metadata.number = $any($event.target).value"
               />
+            </label>
+            <label class="kp-params-grid__field kp-params-grid__field--wide">
+              <span>Наша компания</span>
+              <select
+                [ngModel]="selectedCompanyId()"
+                [disabled]="isReadOnly() || switchingType()"
+                (ngModelChange)="onCompanySelectionChange($event)">
+                @for (company of companyOptions(); track company._id) {
+                  <option [value]="company._id">{{ company.shortName || company.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="kp-params-grid__field">
+              <span>Тип документа</span>
+              <select
+                [ngModel]="selectedKpType()"
+                [disabled]="isReadOnly() || switchingType()"
+                (ngModelChange)="onKpTypeSelectionChange($event)">
+                @for (item of kpTypeOptions(); track item.value) {
+                  <option [value]="item.value">{{ item.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="kp-params-grid__field kp-params-grid__field--wide">
+              <span>Шаблон брендирования</span>
+              <div class="template-picker">
+                @if (showBrandingTemplateSelect()) {
+                  <select
+                    [ngModel]="selectedTemplateKey()"
+                    [disabled]="isReadOnly() || switchingType()"
+                    (ngModelChange)="onTemplateSelectionChange($event)">
+                    <option value="auto">По умолчанию для типа</option>
+                    @for (template of templatesForSelectedType(); track template.key) {
+                      <option [value]="template.key">
+                        {{ template.name }} @if (template.isDefault) { (default) }
+                      </option>
+                    }
+                  </select>
+                } @else {
+                  <input type="text" value="По умолчанию для типа" disabled />
+                }
+                <button
+                  type="button"
+                  ui-btn
+                  size="sm"
+                  variant="ghost"
+                  class="template-picker__open-btn"
+                  title="Открыть шаблоны компании"
+                  [disabled]="switchingType() || !selectedCompanyId()"
+                  (click)="openCompanyBranding()">
+                  +
+                </button>
+              </div>
             </label>
             <label class="kp-params-grid__field">
               <span>Срок действия (дни)</span>
@@ -451,6 +500,7 @@
   @if (productFormOpen()) {
     <app-product-form
       [product]="null"
+      [compactForKp]="true"
       (saved)="onProductFormSaved($event)"
       (cancelled)="closeProductForm()" />
   }

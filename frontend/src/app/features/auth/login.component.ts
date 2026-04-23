@@ -18,6 +18,7 @@ export class LoginComponent {
 
   username = '';
   password = '';
+  guestLink = '';
   loading  = signal(false);
   error    = signal('');
 
@@ -36,5 +37,29 @@ export class LoginComponent {
         this.error.set(err.error?.message ?? 'Ошибка входа');
       }
     });
+  }
+
+  enterGuest(): void {
+    const raw = this.guestLink.trim();
+    if (!raw) {
+      this.error.set('Вставьте гостевую ссылку или токен');
+      return;
+    }
+
+    const token = this.extractGuestToken(raw);
+    if (!token) {
+      this.error.set('Не удалось распознать токен гостевого доступа');
+      return;
+    }
+
+    this.error.set('');
+    this.router.navigate(['/guest-preview', token]);
+  }
+
+  private extractGuestToken(input: string): string | null {
+    const directMatch = input.match(/\/guest-preview\/([^/?#]+)/i);
+    if (directMatch?.[1]) return directMatch[1];
+    if (/^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/.test(input)) return input;
+    return null;
   }
 }

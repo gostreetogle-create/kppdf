@@ -1,5 +1,6 @@
 import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { KpType } from '../../../../core/services/api.service';
 
 export interface KpRecipient {
   name:                  string;
@@ -39,6 +40,7 @@ export interface KpMetadata {
 export class KpHeaderComponent {
   recipient = input.required<KpRecipient>();
   metadata  = input.required<KpMetadata>();
+  kpType = input<KpType>('standard');
 
   protected recipientDisplayName(): string {
     const recipient = this.recipient();
@@ -60,5 +62,11 @@ export class KpHeaderComponent {
     const value = this.metadata().createdAt;
     if (!value) return new Date();
     return value instanceof Date ? value : new Date(value);
+  }
+
+  protected introTitle(): string {
+    const kpType = this.kpType();
+    if (kpType === 'response') return 'Ответ на письмо для:';
+    return 'Коммерческое предложение для:';
   }
 }

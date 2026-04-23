@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Counterparty } from '../models/counterparty.model';
 
 const KP_TYPE_LABELS: Record<string, string> = {
-  standard: 'Обычное КП',
+  standard: 'КП',
   response: 'Ответ на письмо',
   special: 'Спецпредложение',
   tender: 'Для тендера',

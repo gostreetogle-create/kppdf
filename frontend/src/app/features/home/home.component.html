@@ -2,42 +2,10 @@
   <div class="page-header">
     <h1>Коммерческие предложения</h1>
     <div class="home-actions">
-      <select
-        class="home-actions__company form-control"
-        [ngModel]="selectedCompanyId()"
-        (ngModelChange)="onCompanyChanged($event || null)"
-      >
-        <option [ngValue]="null">Выберите компанию-инициатора</option>
-        @for (company of companies(); track company._id) {
-          <option [ngValue]="company._id">{{ company.shortName || company.name }}</option>
-        }
-      </select>
-      <select
-        class="home-actions__kptype form-control"
-        [ngModel]="selectedKpType()"
-        (ngModelChange)="onKpTypeChanged($event || null)">
-        <option [ngValue]="null">Выберите тип КП</option>
-        @for (item of availableKpTypes(); track item.value) {
-          <option [ngValue]="item.value">{{ item.label }}</option>
-        }
-      </select>
-      <select
-        class="home-actions__template form-control"
-        [ngModel]="selectedTemplateMode()"
-        (ngModelChange)="selectedTemplateMode.set($event || 'auto')">
-        <option [ngValue]="'auto'">Авто (по умолчанию)</option>
-        @for (template of templatesForSelectedType(); track template.key) {
-          <option [ngValue]="template.key">{{ templateLabel(template) }}</option>
-        }
-      </select>
       <a routerLink="/products" ui-btn>Каталог товаров</a>
-      <button ui-btn variant="primary" [disabled]="!canCreateKp()" (click)="createNew()">+ Создать КП</button>
+      <button ui-btn variant="primary" (click)="createNew()">+ Создать КП</button>
     </div>
   </div>
-
-  @if (templatesWarning()) {
-    <ui-alert type="error">{{ templatesWarning() }}</ui-alert>
-  }
 
   @if (error()) {
     <ui-alert type="error">{{ error() }}</ui-alert>

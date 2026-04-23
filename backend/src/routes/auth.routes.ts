@@ -92,6 +92,10 @@ router.post('/login', async (req: Request, res: Response) => {
 
 // POST /api/auth/logout
 router.post('/logout', authGuard, async (req: Request, res: Response) => {
+  if (req.user?.isGuest) {
+    res.json({ message: 'Гостевая сессия завершена' });
+    return;
+  }
   try {
     await User.findByIdAndUpdate(req.user!.userId, {
       refreshTokenHash: null,
@@ -186,6 +190,21 @@ router.post('/change-password', authGuard, async (req: Request, res: Response) =
 
 // GET /api/auth/me
 router.get('/me', authGuard, async (req: Request, res: Response) => {
+  if (req.user?.isGuest) {
+    res.json({
+      _id: 'guest-preview',
+      username: 'guest',
+      name: 'Гостевой просмотр',
+      roleId: null,
+      roleKey: 'guest',
+      roleName: 'Гость',
+      permissions: req.user.permissions ?? [],
+      isActive: true,
+      mustChangePassword: false,
+      createdAt: new Date().toISOString()
+    });
+    return;
+  }
   try {
     const user = await User.findById(req.user!.userId)
       .select('-passwordHash -refreshTokenHash')

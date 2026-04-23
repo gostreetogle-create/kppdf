@@ -48,6 +48,8 @@ export interface IKp extends Document {
     productionDays: number;
     tablePageBreakAfter: number;
     photoScalePercent?: number;
+    defaultMarkupPercent?: number;
+    defaultDiscountPercent?: number;
   };
   items: IKpItem[];
   conditions: string[];
@@ -125,6 +127,8 @@ const KpSchema = new Schema<IKp>({
     productionDays:    { type: Number, default: 15 },
     tablePageBreakAfter: { type: Number, default: 6, min: [1, 'tablePageBreakAfter должен быть >= 1'] },
     photoScalePercent: { type: Number, default: 150, min: [150, 'photoScalePercent должен быть >= 150'], max: [350, 'photoScalePercent должен быть <= 350'] },
+    defaultMarkupPercent: { type: Number, default: 0, min: [0, 'defaultMarkupPercent должен быть >= 0'], max: [500, 'defaultMarkupPercent должен быть <= 500'] },
+    defaultDiscountPercent: { type: Number, default: 0, min: [0, 'defaultDiscountPercent должен быть >= 0'], max: [100, 'defaultDiscountPercent должен быть <= 100'] },
   },
   items:      { type: [KpItemSchema], default: [] },
   conditions: { type: [String], default: [] },

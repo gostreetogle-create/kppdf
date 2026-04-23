@@ -10,7 +10,7 @@ export type ImageContext  = 'product' | 'kp-page1' | 'kp-page2' | 'passport';
 export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
 
 export const KP_TYPE_LABELS: Record<KpType, string> = {
-  standard: 'Обычное КП',
+  standard: 'КП',
   response: 'Ответ на письмо',
   special: 'Спецпредложение',
   tender: 'Для тендера',
@@ -158,6 +158,8 @@ export interface Counterparty {
   isDefaultInitiator?:   boolean;
   images?:               ProductImage[];
   footerText?:           string;
+  defaultMarkupPercent?: number;
+  defaultDiscountPercent?: number;
   brandingTemplates?:    BrandingTemplate[];
   createdAt:             string;
   updatedAt:             string;
@@ -181,6 +183,25 @@ export interface BrandingTemplatesDto {
   kpTypes: Array<{ value: KpType; label: string }>;
   templatesByType: Partial<Record<KpType, Array<{ key: string; name: string; isDefault: boolean }>>>;
   defaultByType: Partial<Record<KpType, string>>;
+}
+
+export interface UpdateBrandingTemplatesResponse {
+  message: string;
+  brandingTemplates: BrandingTemplate[];
+}
+
+export interface SwitchKpTypeResponse {
+  kp: Kp;
+  meta: {
+    conditionsReplaced: boolean;
+    previousKpType: KpType;
+    nextKpType: KpType;
+  };
+}
+
+export interface GuestPreviewIssueResponse {
+  previewUrl: string;
+  expiresInSeconds: number;
 }
 
 export interface KpItem {
@@ -230,6 +251,8 @@ export interface Kp {
     productionDays: number;
     tablePageBreakAfter: number;
     photoScalePercent?: number;
+    defaultMarkupPercent?: number;
+    defaultDiscountPercent?: number;
   };
   items: KpItem[];
   conditions: string[];
@@ -267,8 +290,8 @@ export interface Kp {
 export interface CreateKpPayload {
   title: string;
   status: 'draft' | 'sent' | 'accepted' | 'rejected';
-  companyId: string;
-  kpType: KpType;
+  companyId?: string;
+  kpType?: KpType;
   templateKey?: string;
   recipient: { name: string };
   items: KpItem[];
@@ -344,12 +367,20 @@ export class ApiService {
     return this.http.put<Kp>(`${BASE}/kp/${id}`, data);
   }
 
+  switchKpType(id: string, payload: { kpType: KpType; companyId?: string; templateKey?: string; overwriteConditions?: boolean }): Observable<SwitchKpTypeResponse> {
+    return this.http.put<SwitchKpTypeResponse>(`${BASE}/kp/${id}/switch-type`, payload);
+  }
+
   deleteKp(id: string): Observable<void> {
     return this.http.delete<void>(`${BASE}/kp/${id}`);
   }
 
   duplicateKp(id: string): Observable<Kp> {
     return this.http.post<Kp>(`${BASE}/kp/${id}/duplicate`, {});
+  }
+
+  issueGuestPreviewLink(ttlDays = 7): Observable<GuestPreviewIssueResponse> {
+    return this.http.post<GuestPreviewIssueResponse>(`${BASE}/guest/issue`, { ttlDays });
   }
 
   // ─── Dictionaries ─────────────────────────────────────
@@ -480,6 +511,12 @@ export class ApiService {
 
   getBrandingTemplates(companyId: string): Observable<BrandingTemplatesDto> {
     return this.http.get<BrandingTemplatesDto>(`${BASE}/counterparties/${companyId}/branding-templates`);
+  }
+
+  updateBrandingTemplates(companyId: string, brandingTemplates: BrandingTemplate[]): Observable<UpdateBrandingTemplatesResponse> {
+    return this.http.put<UpdateBrandingTemplatesResponse>(`${BASE}/counterparties/${companyId}/branding-templates`, {
+      brandingTemplates
+    });
   }
 
   createCounterparty(data: Omit<Counterparty, '_id' | 'createdAt' | 'updatedAt'>): Observable<Counterparty> {

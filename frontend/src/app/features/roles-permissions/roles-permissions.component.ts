@@ -47,6 +47,7 @@ export class RolesPermissionsComponent {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly creatingRole = signal(false);
+  readonly guestLinkLoading = signal(false);
   readonly roles = signal<Role[]>([]);
   readonly permissions = signal<PermissionDefinition[]>([]);
   readonly selectedRoleId = signal<string | null>(null);
@@ -241,6 +242,28 @@ export class RolesPermissionsComponent {
     }
   }
 
+  generateGuestLink(): void {
+    if (this.guestLinkLoading()) return;
+    this.guestLinkLoading.set(true);
+    this.api.issueGuestPreviewLink(7)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: async ({ previewUrl }) => {
+          this.guestLinkLoading.set(false);
+          const copied = await this.copyToClipboard(previewUrl);
+          if (copied) {
+            this.ns.success('Гостевая ссылка скопирована в буфер');
+          } else {
+            this.ns.success(`Гостевая ссылка: ${previewUrl}`);
+          }
+        },
+        error: (err) => {
+          this.guestLinkLoading.set(false);
+          this.ns.error(err?.error?.message ?? 'Не удалось сгенерировать гостевую ссылку');
+        }
+      });
+  }
+
   cancelPermissionChanges(): void {
     this.editedPermissionsMap.set(this.clonePermissionMap(this.originalPermissionsMap()));
     this.dirtyRoleIds.set(new Set());
@@ -287,5 +310,15 @@ export class RolesPermissionsComponent {
       if (!b.has(value)) return false;
     }
     return true;
+  }
+
+  private async copyToClipboard(value: string): Promise<boolean> {
+    if (!navigator?.clipboard?.writeText) return false;
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

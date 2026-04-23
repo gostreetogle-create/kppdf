@@ -35,5 +35,25 @@
       [disabled]="loading()">
       {{ loading() ? 'Вход...' : 'Войти' }}
     </button>
+
+    <div class="login-card__divider">или</div>
+
+    <ui-form-field label="Гостевая ссылка">
+      <input
+        type="text"
+        [(ngModel)]="guestLink"
+        placeholder="Вставьте ссылку или токен"
+        (keydown.enter)="enterGuest()"
+        autocomplete="off"
+      />
+    </ui-form-field>
+
+    <button
+      ui-btn
+      variant="ghost"
+      class="login-card__guest"
+      (click)="enterGuest()">
+      Войти как гость
+    </button>
   </div>
 </div>

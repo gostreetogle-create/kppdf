@@ -45,4 +45,17 @@
     font-size: $font-md;
     justify-content: center;
   }
+
+  &__divider {
+    margin: $space-4 0 $space-3;
+    text-align: center;
+    color: var(--ui-text-muted);
+    font-size: $font-sm;
+  }
+
+  &__guest {
+    width: 100%;
+    justify-content: center;
+    margin-top: $space-2;
+  }
 }

@@ -1,40 +1,25 @@
-@use '../../../../../styles/tokens' as *;
-
 .counterparty-table {
+  --cp-col-name-width: 170px;
+  --cp-col-inn-width: 140px;
+  --cp-col-actions-width: 140px;
+
   table-layout: fixed;
   width: 100%;
 
-  .col-name    { width: 36%; }
-  .col-inn     { width: 14%; }
-  .col-role    { width: 15%; }
-  .col-status  { width: 11%; }
-  .col-form    { width: 8%; }
-  .col-actions { width: 16%; min-width: 190px; }
+  col.col-name    { width: var(--cp-col-name-width); }
+  col.col-inn     { width: var(--cp-col-inn-width); }
+  col.col-actions { width: var(--cp-col-actions-width); }
+
+  th.col-name,
+  td.col-name {
+    width: var(--cp-col-name-width);
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 
   .col-name {
     word-break: break-word;
     white-space: normal;
-  }
-
-  td.col-role {
-    white-space: normal;
-
-    ui-status-badge {
-      display: inline-block;
-      margin: 0.15rem 0.25rem 0.15rem 0;
-      white-space: nowrap;
-      vertical-align: middle;
-    }
-  }
-
-  td.col-status {
-    white-space: nowrap;
-  }
-
-  td.col-form {
-    white-space: normal;
-    word-break: break-word;
-    color: var(--ui-text-muted);
   }
 
   td.col-actions {
@@ -50,6 +35,18 @@
     }
   }
 
+  .icon-action-btn {
+    min-width: 2rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
   th, td {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -59,12 +56,3 @@
 .col-inn  { font-family: monospace; color: var(--ui-text-muted); }
 
 .cp-name  { display: block; font-weight: 500; }
-.cp-short { display: block; font-size: $font-xs; color: var(--ui-text-muted); }
-
-@media (max-width: 900px) {
-  .counterparty-table {
-    .col-inn, .col-status, .col-form, .col-actions {
-      width: auto;
-    }
-  }
-}

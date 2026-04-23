@@ -12,7 +12,8 @@ import settingsRoutes from './routes/settings.routes';
 import usersRoutes from './routes/users.routes';
 import rolesRoutes from './routes/roles.routes';
 import permissionsRoutes from './routes/permissions.routes';
-import { authGuard, enforcePasswordChange } from './middleware/auth.middleware';
+import guestRoutes from './routes/guest.routes';
+import { authGuard, enforcePasswordChange, guestReadonlyGuard } from './middleware/auth.middleware';
 import { requirePermission } from './middleware/rbac.guard';
 import { initRolesAndMigrateUsers } from './services/role-init.service';
 
@@ -61,16 +62,17 @@ app.use('/api/auth/login', (req, res, next) => {
 
 // Публичные роуты
 app.use('/api/auth', authRoutes);
+app.use('/api/guest', guestRoutes);
 
 // Защищённые роуты
-app.use('/api/settings',        authGuard, enforcePasswordChange, settingsRoutes);
-app.use('/api/dictionaries',    authGuard, enforcePasswordChange, dictionaryRoutes);
-app.use('/api/counterparties',  authGuard, enforcePasswordChange, counterpartyRoutes);
-app.use('/api/products',        authGuard, enforcePasswordChange, productRoutes);
-app.use('/api/kp',              authGuard, enforcePasswordChange, kpRoutes);
-app.use('/api/users',           authGuard, enforcePasswordChange, requirePermission('users.manage'), usersRoutes);
-app.use('/api/roles',           authGuard, enforcePasswordChange, requirePermission('users.manage'), rolesRoutes);
-app.use('/api/permissions',     authGuard, enforcePasswordChange, requirePermission('users.manage'), permissionsRoutes);
+app.use('/api/settings',        authGuard, guestReadonlyGuard, enforcePasswordChange, settingsRoutes);
+app.use('/api/dictionaries',    authGuard, guestReadonlyGuard, enforcePasswordChange, dictionaryRoutes);
+app.use('/api/counterparties',  authGuard, guestReadonlyGuard, enforcePasswordChange, counterpartyRoutes);
+app.use('/api/products',        authGuard, guestReadonlyGuard, enforcePasswordChange, productRoutes);
+app.use('/api/kp',              authGuard, guestReadonlyGuard, enforcePasswordChange, kpRoutes);
+app.use('/api/users',           authGuard, guestReadonlyGuard, enforcePasswordChange, requirePermission('users.manage'), usersRoutes);
+app.use('/api/roles',           authGuard, guestReadonlyGuard, enforcePasswordChange, requirePermission('users.manage'), rolesRoutes);
+app.use('/api/permissions',     authGuard, guestReadonlyGuard, enforcePasswordChange, requirePermission('users.manage'), permissionsRoutes);
 
 const PORT     = process.env.PORT     || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/kp-app';

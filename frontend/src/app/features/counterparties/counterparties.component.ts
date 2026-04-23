@@ -1,4 +1,4 @@
-import { Component, signal, inject, DestroyRef } from '@angular/core';
+import { Component, signal, inject, DestroyRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -7,11 +7,13 @@ import { ApiService, Counterparty, CpRole } from '../../core/services/api.servic
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalService } from '../../core/services/modal.service';
 import { CounterpartyTableComponent } from './components/counterparty-table/counterparty-table.component';
+import { BrandingTemplatesManagerComponent } from './components/branding-templates-manager/branding-templates-manager.component';
 import { CounterpartyFormComponent } from '../../shared/components/counterparty-form/counterparty-form.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { SearchInputComponent } from '../../shared/ui/search-input/search-input.component';
 import { FilterSelectComponent } from '../../shared/ui/filter-select/filter-select.component';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-counterparties',
@@ -19,6 +21,7 @@ import { FilterSelectComponent } from '../../shared/ui/filter-select/filter-sele
   imports: [
     CommonModule, FormsModule,
     CounterpartyTableComponent, CounterpartyFormComponent,
+    BrandingTemplatesManagerComponent,
     ButtonComponent, AlertComponent, SearchInputComponent, FilterSelectComponent
   ],
   templateUrl: './counterparties.component.html',
@@ -32,6 +35,8 @@ export class CounterpartiesComponent {
   private readonly ns         = inject(NotificationService);
   private readonly modal      = inject(ModalService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route      = inject(ActivatedRoute);
+  private readonly router     = inject(Router);
 
   counterparties = signal<Counterparty[]>([]);
   loading        = signal(true);
@@ -40,10 +45,22 @@ export class CounterpartiesComponent {
   filterRole     = signal<CpRole | ''>('');
   filterStatus   = signal<'active' | 'inactive' | ''>('');
   formOpen       = signal(false);
+  brandingOpen   = signal(false);
   editTarget     = signal<Counterparty | null>(null);
+  brandingTarget = signal<Counterparty | null>(null);
   deleteTarget   = signal<Counterparty | null>(null);
+  private pendingBrandingCompanyId = signal<string | null>(null);
+  clientCounterparties = computed(() => this.counterparties().filter((cp) => this.hasRole(cp, 'client')));
+  supplierCounterparties = computed(() => this.counterparties().filter((cp) => this.hasRole(cp, 'supplier')));
+  companyCounterparties = computed(() => this.counterparties().filter((cp) => this.hasRole(cp, 'company')));
 
   constructor() {
+    const shouldOpenBranding = this.route.snapshot.queryParamMap.get('openBranding') === '1';
+    const companyId = this.route.snapshot.queryParamMap.get('companyId');
+    if (shouldOpenBranding && companyId) {
+      this.pendingBrandingCompanyId.set(companyId);
+    }
+
     // toObservable() вызывается в constructor — injection context гарантирован
     combineLatest([
       toObservable(this.search),
@@ -69,6 +86,7 @@ export class CounterpartiesComponent {
     ).subscribe(list => {
       this.counterparties.set(list);
       this.loading.set(false);
+      this.tryOpenPendingBranding();
     });
   }
 
@@ -79,6 +97,16 @@ export class CounterpartiesComponent {
     this.editTarget.set(null);
   }
 
+  openBranding(cp: Counterparty) {
+    this.brandingTarget.set(cp);
+    this.brandingOpen.set(true);
+  }
+
+  closeBranding() {
+    this.brandingOpen.set(false);
+    this.brandingTarget.set(null);
+  }
+
   onSaved(cp: Counterparty) {
     const isEdit = !!this.editTarget();
     this.counterparties.update(list =>
@@ -86,6 +114,12 @@ export class CounterpartiesComponent {
     );
     this.closeForm();
     this.ns.success(isEdit ? 'Контрагент обновлён' : 'Контрагент создан');
+  }
+
+  onBrandingSaved(cp: Counterparty) {
+    this.counterparties.update(list => list.map((item) => item._id === cp._id ? cp : item));
+    this.closeBranding();
+    this.ns.success('Шаблоны брендирования обновлены');
   }
 
   confirmDelete(cp: Counterparty) {
@@ -120,5 +154,25 @@ export class CounterpartiesComponent {
           this.ns.error('Не удалось удалить контрагента');
         }
       });
+  }
+
+  private hasRole(cp: Counterparty, role: CpRole): boolean {
+    if (role === 'company' && cp.isOurCompany) return true;
+    return (cp.role ?? []).includes(role);
+  }
+
+  private tryOpenPendingBranding() {
+    const pendingId = this.pendingBrandingCompanyId();
+    if (!pendingId) return;
+    const company = this.counterparties().find((cp) => cp._id === pendingId);
+    if (!company) return;
+    this.pendingBrandingCompanyId.set(null);
+    this.openBranding(company);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { openBranding: null, companyId: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 }

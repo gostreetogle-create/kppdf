@@ -143,24 +143,6 @@
   }
 }
 
-.recipient-snapshot-note {
-  display: flex;
-  gap: $space-2;
-  align-items: flex-start;
-  margin-bottom: $space-2;
-  padding: $space-2;
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 26%, var(--ui-border));
-  border-radius: $radius-md;
-  background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-bg));
-  color: var(--ui-text-muted);
-  font-size: $font-xs;
-  line-height: 1.35;
-}
-
-.recipient-snapshot-note__icon {
-  line-height: 1;
-}
-
 .recipient-snapshot-fields {
   display: grid;
   gap: $space-2;

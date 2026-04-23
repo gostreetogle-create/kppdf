@@ -1,12 +1,14 @@
 <div class="table-scroll">
   <table class="cp-table counterparty-table data-table">
+    <colgroup>
+      <col class="col-name" />
+      <col class="col-inn" />
+      <col class="col-actions" />
+    </colgroup>
     <thead>
       <tr>
-        <th class="col-name">Название</th>
+        <th class="col-name">Короткое название</th>
         <th class="col-inn">ИНН</th>
-        <th class="col-role">Роль</th>
-        <th class="col-status">Статус</th>
-        <th class="col-form">Орг. форма</th>
         <th class="col-actions"></th>
       </tr>
     </thead>
@@ -17,23 +19,33 @@
             <span class="cp-name">{{ cp.shortName || cp.name }}</span>
           </td>
           <td class="col-inn">{{ cp.inn }}</td>
-          <td class="col-role">
-            @for (role of displayedRoles(cp); track role) {
-              @if (role === 'company') {
-                <ui-status-badge variant="company" label="Наша компания"></ui-status-badge>
-              } @else {
-                <ui-status-badge [variant]="roleVariant(role)" [label]="roleLabel(role)"></ui-status-badge>
-              }
-            }
-          </td>
-          <td class="col-status">
-            <ui-status-badge [variant]="cp.status === 'active' ? 'active' : 'inactive'"></ui-status-badge>
-          </td>
-          <td class="col-form">{{ cp.legalForm }}</td>
           <td class="col-actions">
             <div class="ui-table-actions">
-              <button ui-btn size="sm" (click)="edit.emit(cp)">Изменить</button>
-              <button ui-btn size="sm" variant="danger" (click)="delete.emit(cp)">Удалить</button>
+              @if (showBrandingButton()) {
+                <button
+                  ui-btn
+                  size="sm"
+                  variant="ghost"
+                  class="icon-action-btn"
+                  title="Шаблоны брендирования"
+                  aria-label="Шаблоны брендирования"
+                  (click)="branding.emit(cp)">🎨</button>
+              }
+              <button
+                ui-btn
+                size="sm"
+                class="icon-action-btn"
+                title="Изменить"
+                aria-label="Изменить"
+                (click)="edit.emit(cp)">✎</button>
+              <button
+                ui-btn
+                size="sm"
+                variant="danger"
+                class="icon-action-btn"
+                title="Удалить"
+                aria-label="Удалить"
+                (click)="delete.emit(cp)">🗑</button>
             </div>
           </td>
         </tr>

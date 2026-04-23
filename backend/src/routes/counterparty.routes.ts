@@ -142,6 +142,33 @@ router.post('/upload-branding-image', (req: Request, res: Response) => {
 // GET /api/counterparties/:id/branding-templates
 router.get('/:id/branding-templates', counterpartyController.getBrandingTemplates);
 
+// PUT /api/counterparties/:id/branding-templates
+router.put('/:id/branding-templates', async (req: Request, res: Response) => {
+  try {
+    const cp = await Counterparty.findById(req.params.id);
+    if (!cp) {
+      res.status(404).json({ message: 'Контрагент не найден' });
+      return;
+    }
+    const isOurCompany = cp.isOurCompany === true || (Array.isArray(cp.role) && cp.role.includes('company'));
+    if (!isOurCompany) {
+      res.status(400).json({ message: 'Выбранный контрагент не является нашей компанией' });
+      return;
+    }
+
+    const brandingTemplates = normalizeBrandingTemplates(req.body?.brandingTemplates);
+    cp.brandingTemplates = brandingTemplates as any;
+    await cp.save();
+
+    res.json({
+      message: 'Шаблоны брендирования обновлены',
+      brandingTemplates: cp.brandingTemplates
+    });
+  } catch (e: any) {
+    res.status(400).json({ message: formatCounterpartyError(e) });
+  }
+});
+
 // POST /api/counterparties/bulk — массовый импорт
 // Body: { items: Array<counterparty fields>, mode: 'skip' | 'update' }
 router.post('/bulk', async (req: Request, res: Response) => {
@@ -285,6 +312,8 @@ function buildPayload(body: any) {
     tags:                  Array.isArray(body.tags) ? body.tags.map((v: string) => v.trim()).filter(Boolean) : [],
     isOurCompany:          Boolean(body.isOurCompany),
     isDefaultInitiator:    Boolean(body.isOurCompany) && Boolean(body.isDefaultInitiator),
+    defaultMarkupPercent:  Math.max(0, Math.min(500, Number(body.defaultMarkupPercent ?? 0) || 0)),
+    defaultDiscountPercent:Math.max(0, Math.min(100, Number(body.defaultDiscountPercent ?? 0) || 0)),
     images:                Array.isArray(body.images) ? body.images : [],
     footerText:            body.footerText ?? '',
     brandingTemplates:     Array.isArray(body.brandingTemplates) ? body.brandingTemplates : []
@@ -307,4 +336,23 @@ function formatCounterpartyError(error: any): string {
     return error.message;
   }
   return 'Ошибка валидации контрагента';
+}
+
+function normalizeBrandingTemplates(raw: unknown): any[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item: any) => ({
+    key: String(item?.key ?? '').trim(),
+    name: String(item?.name ?? '').trim(),
+    kpType: String(item?.kpType ?? '').trim(),
+    isDefault: Boolean(item?.isDefault),
+    assets: {
+      kpPage1: String(item?.assets?.kpPage1 ?? '').trim(),
+      kpPage2: String(item?.assets?.kpPage2 ?? '').trim() || undefined,
+      passport: String(item?.assets?.passport ?? '').trim() || undefined,
+      appendix: String(item?.assets?.appendix ?? '').trim() || undefined,
+    },
+    conditions: Array.isArray(item?.conditions)
+      ? item.conditions.map((value: unknown) => String(value ?? '').trim()).filter(Boolean)
+      : []
+  }));
 }

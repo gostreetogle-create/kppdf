@@ -1,4 +1,4 @@
-<ui-modal [title]="isEdit ? 'Редактировать товар' : 'Новый товар'" maxWidth="640px" (closed)="cancelled.emit()">
+<ui-modal [title]="modalTitle" [maxWidth]="compactForKp() ? '820px' : '640px'" (closed)="cancelled.emit()">
 
   <div modal-body>
     @if (errors().length > 0) {
@@ -7,106 +7,141 @@
       </ui-alert>
     }
 
-    <!-- Строка 1: Артикул + Тип -->
-    <div class="form-row">
-      <ui-form-field label="Артикул" [required]="true">
-        <input type="text" [(ngModel)]="form.code" placeholder="АРТ-001" />
-      </ui-form-field>
-      <ui-form-field label="Тип">
-        <select [(ngModel)]="form.kind">
-          @for (k of kinds; track k.value) {
-            <option [value]="k.value">{{ k.label }}</option>
-          }
-        </select>
-      </ui-form-field>
-    </div>
-
-    <!-- Название -->
-    <ui-form-field label="Название" [required]="true">
-      <input type="text" [(ngModel)]="form.name" placeholder="Металлоконструкция стальная" />
-    </ui-form-field>
-
-    <!-- Описание -->
-    <ui-form-field label="Описание">
-      <textarea [(ngModel)]="form.description" rows="2" placeholder="Краткое описание"></textarea>
-    </ui-form-field>
-
-    <!-- Категория + Подкатегория -->
-    <div class="form-row">
-      <ui-form-field label="Категория">
-        <input type="text" [(ngModel)]="form.category" placeholder="Воркаут" list="categories-list" />
-        <datalist id="categories-list">
-          @for (cat of categories(); track cat) {
-            <option [value]="cat">{{ cat }}</option>
-          }
-        </datalist>
-      </ui-form-field>
-      <ui-form-field label="Подкатегория">
-        <input type="text" [(ngModel)]="form.subcategory" placeholder="Уличные тренажёры" />
-      </ui-form-field>
-    </div>
-
-    <!-- Цена + Себестоимость + Единица -->
-    <div class="form-row form-row--3">
-      <ui-form-field label="Цена (₽)" [required]="true">
-        <input type="number" [(ngModel)]="form.price" placeholder="0" min="0" />
-      </ui-form-field>
-      <ui-form-field label="Себестоимость (₽)">
-        <input type="number" [(ngModel)]="form.costRub" placeholder="0" min="0" />
-      </ui-form-field>
-      <ui-form-field label="Единица" [required]="true">
-        <select [(ngModel)]="form.unit">
-          <option value="" disabled>Выберите...</option>
-          @for (unit of units(); track unit) {
-            <option [value]="unit">{{ unit }}</option>
-          }
-        </select>
-      </ui-form-field>
-    </div>
-
-    <!-- Фотографии -->
-    <div class="form-section">
-      <p class="form-section__title">Фотографии</p>
-      @if (form.images.length > 0) {
-        <div class="images-list">
-          @for (img of form.images; track img.url; let i = $index) {
-            <div class="image-item" [class.image-item--main]="img.isMain">
-              <img [src]="img.url" [alt]="'Фото ' + (i + 1)" />
-              <div class="image-item__actions">
-                @if (!img.isMain) {
-                  <button ui-btn size="sm" (click)="setMain(i)" title="Сделать главным">★</button>
-                } @else {
-                  <span class="image-item__main-badge">Главное</span>
-                }
-                <button ui-btn size="sm" variant="danger" (click)="removeImage(i)">✕</button>
-              </div>
-            </div>
-          }
+    @if (compactForKp()) {
+      <p class="compact-kp-hint">Быстрое добавление товара в формате строки КП.</p>
+      <div class="compact-kp-table" role="group" aria-label="Быстрое добавление товара в КП">
+        <div class="compact-kp-table__row">
+          <label class="compact-kp-table__cell">
+            <span>Арт.</span>
+            <input type="text" [(ngModel)]="form.code" placeholder="АРТ-001" />
+          </label>
+          <label class="compact-kp-table__cell">
+            <span>Наименование *</span>
+            <input type="text" [(ngModel)]="form.name" placeholder="Наименование" />
+          </label>
+          <label class="compact-kp-table__cell">
+            <span>Описание</span>
+            <input type="text" [(ngModel)]="form.description" placeholder="Описание (опционально)" />
+          </label>
+          <label class="compact-kp-table__cell">
+            <span>Ед. *</span>
+            <select [(ngModel)]="form.unit">
+              <option value="" disabled>Ед.</option>
+              @for (unit of units(); track unit) {
+                <option [value]="unit">{{ unit }}</option>
+              }
+            </select>
+          </label>
+          <label class="compact-kp-table__cell">
+            <span>Цена (₽) *</span>
+            <input type="number" [(ngModel)]="form.price" placeholder="0" min="0" />
+          </label>
         </div>
-      }
-      <div class="image-add">
-        <input
-          type="text"
-          [(ngModel)]="form.newImageUrl"
-          placeholder="URL фото..."
-          (keydown.enter)="addImage()"
-        />
-        <button ui-btn size="sm" (click)="addImage()">Добавить</button>
       </div>
-    </div>
+    } @else {
+      <!-- Строка 1: Артикул + Тип -->
+      <div class="form-row">
+        <ui-form-field label="Артикул" [required]="true">
+          <input type="text" [(ngModel)]="form.code" placeholder="АРТ-001" />
+        </ui-form-field>
+        <ui-form-field label="Тип">
+          <select [(ngModel)]="form.kind">
+            @for (k of kinds; track k.value) {
+              <option [value]="k.value">{{ k.label }}</option>
+            }
+          </select>
+        </ui-form-field>
+      </div>
 
-    <!-- Заметки + Активен -->
-    <div class="form-row">
-      <ui-form-field label="Внутренние заметки">
-        <textarea [(ngModel)]="form.notes" rows="2" placeholder="Только для внутреннего использования"></textarea>
+      <!-- Название -->
+      <ui-form-field label="Название" [required]="true">
+        <input type="text" [(ngModel)]="form.name" placeholder="Металлоконструкция стальная" />
       </ui-form-field>
-      <div class="form-checkbox">
-        <label>
-          <input type="checkbox" [(ngModel)]="form.isActive" />
-          Активен (показывать в каталоге)
-        </label>
+
+      <!-- Описание -->
+      <ui-form-field label="Описание">
+        <textarea [(ngModel)]="form.description" rows="2" placeholder="Краткое описание"></textarea>
+      </ui-form-field>
+
+      <!-- Категория + Подкатегория -->
+      <div class="form-row">
+        <ui-form-field label="Категория">
+          <input type="text" [(ngModel)]="form.category" placeholder="Воркаут" list="categories-list" />
+          <datalist id="categories-list">
+            @for (cat of categories(); track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </datalist>
+        </ui-form-field>
+        <ui-form-field label="Подкатегория">
+          <input type="text" [(ngModel)]="form.subcategory" placeholder="Уличные тренажёры" />
+        </ui-form-field>
       </div>
-    </div>
+
+      <!-- Цена + Себестоимость + Единица -->
+      <div class="form-row form-row--3">
+        <ui-form-field label="Цена (₽)" [required]="true">
+          <input type="number" [(ngModel)]="form.price" placeholder="0" min="0" />
+        </ui-form-field>
+        <ui-form-field label="Себестоимость (₽)">
+          <input type="number" [(ngModel)]="form.costRub" placeholder="0" min="0" />
+        </ui-form-field>
+        <ui-form-field label="Единица" [required]="true">
+          <select [(ngModel)]="form.unit">
+            <option value="" disabled>Выберите...</option>
+            @for (unit of units(); track unit) {
+              <option [value]="unit">{{ unit }}</option>
+            }
+          </select>
+        </ui-form-field>
+      </div>
+    }
+
+    @if (!compactForKp()) {
+      <!-- Фотографии -->
+      <div class="form-section">
+        <p class="form-section__title">Фотографии</p>
+        @if (form.images.length > 0) {
+          <div class="images-list">
+            @for (img of form.images; track img.url; let i = $index) {
+              <div class="image-item" [class.image-item--main]="img.isMain">
+                <img [src]="img.url" [alt]="'Фото ' + (i + 1)" />
+                <div class="image-item__actions">
+                  @if (!img.isMain) {
+                    <button ui-btn size="sm" (click)="setMain(i)" title="Сделать главным">★</button>
+                  } @else {
+                    <span class="image-item__main-badge">Главное</span>
+                  }
+                  <button ui-btn size="sm" variant="danger" (click)="removeImage(i)">✕</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        <div class="image-add">
+          <input
+            type="text"
+            [(ngModel)]="form.newImageUrl"
+            placeholder="URL фото..."
+            (keydown.enter)="addImage()"
+          />
+          <button ui-btn size="sm" (click)="addImage()">Добавить</button>
+        </div>
+      </div>
+
+      <!-- Заметки + Активен -->
+      <div class="form-row">
+        <ui-form-field label="Внутренние заметки">
+          <textarea [(ngModel)]="form.notes" rows="2" placeholder="Только для внутреннего использования"></textarea>
+        </ui-form-field>
+        <div class="form-checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="form.isActive" />
+            Активен (показывать в каталоге)
+          </label>
+        </div>
+      </div>
+    }
   </div>
 
   <ng-container modal-footer>

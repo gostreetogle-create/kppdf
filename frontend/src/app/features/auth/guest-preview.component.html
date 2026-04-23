@@ -1,0 +1,13 @@
+<section class="guest-preview">
+  @if (loading()) {
+    <p class="guest-preview__state">Открываем гостевой просмотр...</p>
+  } @else if (error()) {
+    <div class="guest-preview__error">
+      <h1>Гостевой доступ</h1>
+      <p>{{ error() }}</p>
+      <button type="button" class="guest-preview__button" (click)="goToLogin()">
+        Перейти к логину
+      </button>
+    </div>
+  }
+</section>

@@ -42,6 +42,8 @@ export interface KpMetadata {
   productionDays:    number;
   tablePageBreakAfter: number;
   photoScalePercent?: number;
+  defaultMarkupPercent?: number;
+  defaultDiscountPercent?: number;
 }
 
 export interface IKp {

@@ -11,6 +11,7 @@ export interface AuthPayload {
   roleKey: string;
   permissions: Permission[];
   type?: 'access' | 'refresh';
+  isGuest?: boolean;
 }
 
 // Расширяем Request чтобы хранить payload
@@ -43,6 +44,14 @@ export function authGuard(req: Request, res: Response, next: NextFunction): void
   }
 }
 
+export function guestReadonlyGuard(req: Request, res: Response, next: NextFunction): void {
+  if (req.user?.isGuest && req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
+    res.status(403).json({ message: 'Гостевой доступ только для просмотра' });
+    return;
+  }
+  next();
+}
+
 export function requireRole(...allowed: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const role = req.user?.roleKey as any;
@@ -61,6 +70,14 @@ export function requireRole(...allowed: string[]) {
 export function requirePermission(permission: Permission) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authUser = req.user;
+    if (authUser?.isGuest) {
+      if (!authUser.permissions.includes(permission)) {
+        res.status(403).json({ message: 'Недостаточно прав' });
+        return;
+      }
+      next();
+      return;
+    }
     const userId = authUser?.userId;
     if (!userId) {
       res.status(401).json({ message: 'Не авторизован' });
@@ -92,6 +109,10 @@ export function requirePermission(permission: Permission) {
 }
 
 export async function enforcePasswordChange(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (req.user?.isGuest) {
+    next();
+    return;
+  }
   if (process.env.ENFORCE_PASSWORD_CHANGE !== 'true') {
     next();
     return;

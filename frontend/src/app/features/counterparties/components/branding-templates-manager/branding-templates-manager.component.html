@@ -1,0 +1,179 @@
+<ui-modal [title]="'Шаблоны брендирования: ' + (company().shortName || company().name)" maxWidth="980px" [closeOnBackdrop]="false" (closed)="cancelled.emit()">
+  <div modal-body>
+    @if (error()) {
+      <ui-alert type="error">{{ error() }}</ui-alert>
+    }
+
+    @if (loading()) {
+      <div class="templates-empty">Загрузка шаблонов...</div>
+    } @else {
+      <div class="templates-toolbar">
+        <p class="templates-help">
+          Для каждого типа КП укажите шаблон. Обязательное поле - только фон первой страницы (`kpPage1`).
+        </p>
+        <button ui-btn size="sm" variant="primary" type="button" (click)="addBrandingTemplate()">+ Добавить шаблон</button>
+      </div>
+
+      <div class="templates-list">
+        @if (templates().length === 0) {
+          <div class="templates-empty">Нет шаблонов. Добавьте первый шаблон брендирования.</div>
+        }
+        @for (template of templates(); track template.key; let idx = $index) {
+          <div class="template-card">
+            <div class="template-card__head">
+              <button
+                type="button"
+                class="template-card__toggle"
+                (click)="toggleTemplatePanel(idx)"
+                [attr.aria-expanded]="isTemplatePanelExpanded(idx)">
+                <span class="template-card__arrow">{{ isTemplatePanelExpanded(idx) ? '▾' : '▸' }}</span>
+                <span class="template-card__title-wrap">
+                  <strong>{{ template.name || ('Шаблон #' + (idx + 1)) }}</strong>
+                  <span class="template-card__meta">{{ kpTypeLabel(template.kpType) }}</span>
+                </span>
+              </button>
+              <button ui-btn size="sm" variant="danger" type="button" (click)="confirmRemoveBrandingTemplate(idx)">Удалить</button>
+            </div>
+
+            @if (isTemplatePanelExpanded(idx)) {
+              <div class="template-card__body">
+                <div class="form-row form-row--template-main">
+                  <ui-form-field label="Ключ шаблона" [required]="true">
+                    <input type="text" [ngModel]="template.key" (ngModelChange)="updateTemplateField(idx, 'key', $event)" />
+                  </ui-form-field>
+                  <ui-form-field label="Название шаблона" [required]="true">
+                    <input type="text" [ngModel]="template.name" (ngModelChange)="updateTemplateField(idx, 'name', $event)" />
+                  </ui-form-field>
+                </div>
+
+                <div class="form-row">
+                  <ui-form-field label="Тип КП" [required]="true">
+                    <select [ngModel]="template.kpType" (ngModelChange)="onTemplateKpTypeChanged(idx, $event)">
+                      @for (kpType of kpTypeOptions; track kpType) {
+                        <option [value]="kpType">{{ kpTypeLabel(kpType) }}</option>
+                      }
+                    </select>
+                  </ui-form-field>
+                  <div class="form-checkbox-row form-checkbox-row--default">
+                    <label>
+                      <input type="checkbox" [checked]="template.isDefault" (change)="onTemplateDefaultChanged(idx, $any($event.target).checked)" />
+                      По умолчанию для типа
+                    </label>
+                  </div>
+                </div>
+
+                <div class="section-title section-title--inner">Assets</div>
+                <div class="asset-grid">
+                  <div class="asset-card">
+                    <div class="asset-card__title">Фон — страница 1 <span class="required">*</span></div>
+                    <ui-form-field label="URL" [required]="true">
+                      <input type="text" [ngModel]="template.assets.kpPage1" (ngModelChange)="updateTemplateAsset(idx, 'kpPage1', $event)" placeholder="/media/kp/company-a-page1.png" />
+                    </ui-form-field>
+                    <div class="asset-upload-row">
+                      <label class="asset-upload-row__btn">
+                        <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadTemplateAsset($event, idx, 'kpPage1')" />
+                        Выбрать и загрузить
+                      </label>
+                      @if (uploadingAsset() === (idx + ':kpPage1')) {
+                        <span class="asset-upload-row__state">Загрузка...</span>
+                      }
+                    </div>
+                    @if (templateAssetPreview(template.assets.kpPage1)) {
+                      <img class="asset-preview" [src]="templateAssetPreview(template.assets.kpPage1)" alt="Предпросмотр фона страницы 1" />
+                    }
+                  </div>
+
+                  @if (!isResponseTemplate(template)) {
+                    <div class="asset-card">
+                      <div class="asset-card__title">Фон КП — страница 2+</div>
+                      <ui-form-field label="URL">
+                        <input type="text" [ngModel]="template.assets.kpPage2" (ngModelChange)="updateTemplateAsset(idx, 'kpPage2', $event)" placeholder="/media/kp/company-a-page2.png" />
+                      </ui-form-field>
+                      <div class="asset-upload-row">
+                        <label class="asset-upload-row__btn">
+                          <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadTemplateAsset($event, idx, 'kpPage2')" />
+                          Выбрать и загрузить
+                        </label>
+                        @if (uploadingAsset() === (idx + ':kpPage2')) {
+                          <span class="asset-upload-row__state">Загрузка...</span>
+                        }
+                      </div>
+                      @if (templateAssetPreview(template.assets.kpPage2)) {
+                        <img class="asset-preview" [src]="templateAssetPreview(template.assets.kpPage2)" alt="Предпросмотр фона страницы 2" />
+                      }
+                    </div>
+
+                    <div class="asset-card">
+                      <div class="asset-card__title">Фон паспорта</div>
+                      <ui-form-field label="URL">
+                        <input type="text" [ngModel]="template.assets.passport" (ngModelChange)="updateTemplateAsset(idx, 'passport', $event)" placeholder="/media/kp/company-a-passport.png" />
+                      </ui-form-field>
+                      <div class="asset-upload-row">
+                        <label class="asset-upload-row__btn">
+                          <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadTemplateAsset($event, idx, 'passport')" />
+                          Выбрать и загрузить
+                        </label>
+                        @if (uploadingAsset() === (idx + ':passport')) {
+                          <span class="asset-upload-row__state">Загрузка...</span>
+                        }
+                      </div>
+                      @if (templateAssetPreview(template.assets.passport)) {
+                        <img class="asset-preview" [src]="templateAssetPreview(template.assets.passport)" alt="Предпросмотр фона паспорта" />
+                      }
+                    </div>
+
+                    <div class="asset-card">
+                      <div class="asset-card__title">Фон приложения (appendix)</div>
+                      <ui-form-field label="URL">
+                        <input type="text" [ngModel]="template.assets.appendix" (ngModelChange)="updateTemplateAsset(idx, 'appendix', $event)" />
+                      </ui-form-field>
+                      <div class="asset-upload-row">
+                        <label class="asset-upload-row__btn">
+                          <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadTemplateAsset($event, idx, 'appendix')" />
+                          Выбрать и загрузить
+                        </label>
+                        @if (uploadingAsset() === (idx + ':appendix')) {
+                          <span class="asset-upload-row__state">Загрузка...</span>
+                        }
+                      </div>
+                      @if (templateAssetPreview(template.assets.appendix)) {
+                        <img class="asset-preview" [src]="templateAssetPreview(template.assets.appendix)" alt="Предпросмотр appendix" />
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="section-title section-title--inner">Условия</div>
+                <div class="template-conditions">
+                  @if (!(template.conditions?.length)) {
+                    <div class="template-conditions__empty">Список пуст. Добавьте условия для этого шаблона.</div>
+                  }
+                  @for (condition of (template.conditions ?? []); track $index; let conditionIndex = $index) {
+                    <div class="template-conditions__row">
+                      <span class="template-conditions__prefix">+</span>
+                      <input
+                        type="text"
+                        [ngModel]="condition"
+                        (ngModelChange)="updateTemplateCondition(idx, conditionIndex, $event)"
+                        placeholder="Например: Срок поставки: 15 рабочих дней с момента оплаты."
+                      />
+                      <button ui-btn size="sm" variant="ghost" type="button" (click)="removeTemplateCondition(idx, conditionIndex)">✕</button>
+                    </div>
+                  }
+                  <button ui-btn size="sm" variant="ghost" type="button" (click)="addTemplateCondition(idx)">+ Добавить условие</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <ng-container modal-footer>
+    <button ui-btn (click)="cancelled.emit()">Закрыть</button>
+    <button ui-btn variant="primary" [disabled]="loading() || saving()" (click)="submit()">
+      {{ saving() ? 'Сохранение...' : 'Сохранить шаблоны' }}
+    </button>
+  </ng-container>
+</ui-modal>

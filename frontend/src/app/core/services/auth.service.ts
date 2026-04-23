@@ -9,6 +9,7 @@ const ACCESS_TOKEN_KEY = 'kp_access_token';
 const REFRESH_TOKEN_KEY = 'kp_refresh_token';
 const USER_KEY  = 'kp_user';
 const BASE      = `${environment.apiUrl}/auth`;
+const GUEST_SESSION_KEY = 'kp_guest_session';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -33,8 +34,9 @@ export class AuthService {
   async initAuth(): Promise<void> {
     const token = localStorage.getItem(ACCESS_TOKEN_KEY);
     const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    const isGuestSession = localStorage.getItem(GUEST_SESSION_KEY) === '1';
 
-    if (!token || !refreshToken) {
+    if (!token) {
       this.authReady.set(true);
       return;
     }
@@ -50,7 +52,7 @@ export class AuthService {
       this._user.set(user);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
     } catch {
-      const rotated = await this.tryRefresh();
+      const rotated = isGuestSession ? false : await this.tryRefresh();
       if (!rotated) this.clearToken();
     } finally {
       this.authReady.set(true);
@@ -65,8 +67,25 @@ export class AuthService {
           localStorage.setItem(ACCESS_TOKEN_KEY, res.accessToken);
           localStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
           localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+          localStorage.removeItem(GUEST_SESSION_KEY);
           this._token.set(res.accessToken);
           this._refreshToken.set(res.refreshToken);
+          this._user.set(res.user);
+        })
+      );
+  }
+
+  guestEnter(linkToken: string): Observable<{ accessToken: string; user: AuthUser }> {
+    return this.http
+      .post<{ accessToken: string; user: AuthUser }>(`${environment.apiUrl}/guest/enter/${linkToken}`, {})
+      .pipe(
+        tap(res => {
+          localStorage.setItem(ACCESS_TOKEN_KEY, res.accessToken);
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+          localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+          localStorage.setItem(GUEST_SESSION_KEY, '1');
+          this._token.set(res.accessToken);
+          this._refreshToken.set(null);
           this._user.set(res.user);
         })
       );
@@ -123,6 +142,7 @@ export class AuthService {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(GUEST_SESSION_KEY);
     this._token.set(null);
     this._refreshToken.set(null);
     this._user.set(null);

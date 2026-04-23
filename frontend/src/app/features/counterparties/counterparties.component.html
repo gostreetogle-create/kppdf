@@ -43,11 +43,48 @@
       <button ui-btn variant="primary" (click)="openCreate()">Создать первого</button>
     </div>
   } @else {
-    <app-counterparty-table
-      [counterparties]="counterparties()"
-      (edit)="openEdit($event)"
-      (delete)="confirmDelete($event)">
-    </app-counterparty-table>
+    <div class="counterparties-grid">
+      <section class="counterparties-grid__column">
+        <h2>Клиент</h2>
+        @if (clientCounterparties().length === 0) {
+          <p class="column-empty">Нет контрагентов с ролью «Клиент».</p>
+        } @else {
+          <app-counterparty-table
+            [counterparties]="clientCounterparties()"
+            (edit)="openEdit($event)"
+            (delete)="confirmDelete($event)">
+          </app-counterparty-table>
+        }
+      </section>
+
+      <section class="counterparties-grid__column">
+        <h2>Поставщик</h2>
+        @if (supplierCounterparties().length === 0) {
+          <p class="column-empty">Нет контрагентов с ролью «Поставщик».</p>
+        } @else {
+          <app-counterparty-table
+            [counterparties]="supplierCounterparties()"
+            (edit)="openEdit($event)"
+            (delete)="confirmDelete($event)">
+          </app-counterparty-table>
+        }
+      </section>
+
+      <section class="counterparties-grid__column">
+        <h2>Наша компания</h2>
+        @if (companyCounterparties().length === 0) {
+          <p class="column-empty">Нет контрагентов с ролью «Наша компания».</p>
+        } @else {
+          <app-counterparty-table
+            [counterparties]="companyCounterparties()"
+            [showBrandingButton]="true"
+            (edit)="openEdit($event)"
+            (branding)="openBranding($event)"
+            (delete)="confirmDelete($event)">
+          </app-counterparty-table>
+        }
+      </section>
+    </div>
   }
 </div>
 
@@ -57,5 +94,13 @@
     (saved)="onSaved($event)"
     (cancelled)="closeForm()">
   </app-counterparty-form>
+}
+
+@if (brandingOpen() && brandingTarget(); as company) {
+  <app-branding-templates-manager
+    [company]="company"
+    (saved)="onBrandingSaved($event)"
+    (cancelled)="closeBranding()">
+  </app-branding-templates-manager>
 }
 

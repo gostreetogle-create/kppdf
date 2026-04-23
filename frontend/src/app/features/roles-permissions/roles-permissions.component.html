@@ -5,6 +5,13 @@
       <p>Управление ролями и назначением прав доступа.</p>
     </div>
     <div class="roles-page__header-actions">
+      <button
+        ui-btn
+        variant="ghost"
+        [disabled]="guestLinkLoading()"
+        (click)="generateGuestLink()">
+        {{ guestLinkLoading() ? 'Генерация...' : 'Гостевая ссылка' }}
+      </button>
       <button ui-btn variant="ghost" (click)="openCreateRoleModal()">+ Создать роль</button>
       <button
         ui-btn

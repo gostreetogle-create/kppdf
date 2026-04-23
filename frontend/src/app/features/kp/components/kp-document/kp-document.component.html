@@ -16,7 +16,8 @@
         <section class="kp-content__header-block">
           <app-kp-header 
             [recipient]="recipient()" 
-            [metadata]="metadata()">
+            [metadata]="metadata()"
+            [kpType]="companySnapshot().kpType">
           </app-kp-header>
           @if (headerNote()) {
             <p class="kp-brand-note">{{ headerNote() }}</p>

@@ -49,6 +49,8 @@ export interface ICounterparty extends Document {
   isDefaultInitiator?:  boolean;
   images:               IImage[];   // context: kp-page1, kp-page2, passport
   footerText?:          string;     // HTML — текст внизу КП
+  defaultMarkupPercent?: number;
+  defaultDiscountPercent?: number;
   brandingTemplates: Array<{
     key: string;
     name: string;
@@ -146,6 +148,8 @@ const CounterpartySchema = new Schema<ICounterparty>({
   isDefaultInitiator: { type: Boolean, default: false },
   images:       { type: [ImageSchema], default: [] },
   footerText:   { type: String, default: '' },
+  defaultMarkupPercent: { type: Number, default: 0, min: [0, 'defaultMarkupPercent должен быть >= 0'], max: [500, 'defaultMarkupPercent должен быть <= 500'] },
+  defaultDiscountPercent: { type: Number, default: 0, min: [0, 'defaultDiscountPercent должен быть >= 0'], max: [100, 'defaultDiscountPercent должен быть <= 100'] },
   brandingTemplates: { type: [BrandingTemplateSchema], default: [] },
 }, { timestamps: true });
 

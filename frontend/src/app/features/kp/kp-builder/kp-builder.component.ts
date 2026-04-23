@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, map, Observable, Subject, take } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ApiService, Kp, Product, KpItem, Counterparty } from '../../../core/services/api.service';
+import { ApiService, Kp, Product, KpItem, Counterparty, KpType, KP_TYPE_LABELS, BrandingTemplatesDto } from '../../../core/services/api.service';
 import { KpDocumentComponent } from '../components/kp-document/kp-document.component';
 import { type KpCatalogItem } from '../components/kp-catalog/kp-catalog.component';
 import { FormsModule } from '@angular/forms';
@@ -42,11 +42,17 @@ export class KpBuilderComponent implements OnInit {
   kp             = signal<Kp | null>(null);
   products       = signal<Product[]>([]);
   counterparties = signal<Counterparty[]>([]);
+  ourCompanies = signal<Counterparty[]>([]);
   loading        = signal(true);
   conditionDraft = '';
   selectedItemIds = signal<string[]>([]);
   bulkMarkupPercent = signal(0);
   bulkDiscountPercent = signal(0);
+  brandingTemplatesDto = signal<BrandingTemplatesDto | null>(null);
+  selectedCompanyId = signal<string | null>(null);
+  selectedKpType = signal<KpType>('standard');
+  selectedTemplateKey = signal<string>('auto');
+  switchingType = signal(false);
   focusCatalog = signal(false);
   catalogSearch = signal('');
   catalogCategory = signal('');
@@ -89,6 +95,16 @@ export class KpBuilderComponent implements OnInit {
   readonly categories = computed(() =>
     Array.from(new Set(this.products().map(p => p.category).filter(Boolean))).sort((a, b) => a.localeCompare(b))
   );
+  readonly kpTypeOptions = computed(() =>
+    Object.entries(KP_TYPE_LABELS).map(([value, label]) => ({ value: value as KpType, label }))
+  );
+  readonly templatesForSelectedType = computed(() => {
+    const dto = this.brandingTemplatesDto();
+    if (!dto) return [];
+    return dto.templatesByType[this.selectedKpType()] ?? [];
+  });
+  readonly showBrandingTemplateSelect = computed(() => this.templatesForSelectedType().length > 1);
+  readonly companyOptions = computed(() => this.ourCompanies());
   readonly filteredProducts = computed(() => {
     const q = this.catalogSearch().trim().toLowerCase();
     const cat = this.catalogCategory();
@@ -149,15 +165,22 @@ export class KpBuilderComponent implements OnInit {
     const counterparties$ = this.api.getCounterparties({ status: 'active' }).pipe(
       map(list => list.filter(c => c.role.includes('client') || c.role.includes('company')))
     );
+    const ourCompanies$ = this.api.getCounterparties({ isOurCompany: true, status: 'active' });
 
-    forkJoin({ kp: this.api.getKp(id), counterparties: counterparties$ })
+    forkJoin({ kp: this.api.getKp(id), counterparties: counterparties$, ourCompanies: ourCompanies$ })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ kp, counterparties }) => {
+        next: ({ kp, counterparties, ourCompanies }) => {
           this.counterparties.set(counterparties);
+          this.ourCompanies.set(ourCompanies);
           this.kp.set(kp);
+          this.hydrateTypeControls(kp);
+          this.applyCompanyDefaultsToBulk(kp);
           if (kp.items.length > 0) this.itemsCollapsed.set(false);
           this.loading.set(false);
+          const initCompanyId = kp.companyId || kp.companySnapshot?.companyId || ourCompanies[0]?._id || null;
+          this.selectedCompanyId.set(initCompanyId);
+          if (initCompanyId) this.loadBrandingTemplates(initCompanyId, kp);
           Promise.resolve().then(() => {
             if (selectCpId) {
               this.fillFromCounterparty(selectCpId);
@@ -384,12 +407,20 @@ export class KpBuilderComponent implements OnInit {
   onBulkMarkupInput(rawValue: string | number) {
     const percent = this.clampPercent(this.parsePercentInput(rawValue), 0, 500);
     this.bulkMarkupPercent.set(percent);
+    const kp = this.kp();
+    if (kp) {
+      kp.metadata.defaultMarkupPercent = percent;
+    }
     this.applyBulkMarkup();
   }
 
   onBulkDiscountInput(rawValue: string | number) {
     const percent = this.clampPercent(this.parsePercentInput(rawValue), 0, 100);
     this.bulkDiscountPercent.set(percent);
+    const kp = this.kp();
+    if (kp) {
+      kp.metadata.defaultDiscountPercent = percent;
+    }
     this.applyBulkDiscount();
   }
 
@@ -593,6 +624,91 @@ export class KpBuilderComponent implements OnInit {
     return labels[status];
   }
 
+  onKpTypeSelectionChange(value: string) {
+    this.selectedKpType.set(value as KpType);
+    this.selectedTemplateKey.set('auto');
+    this.switchKpType();
+  }
+
+  onCompanySelectionChange(value: string) {
+    const companyId = value || null;
+    this.selectedCompanyId.set(companyId);
+    this.selectedTemplateKey.set('auto');
+    if (companyId) {
+      this.loadBrandingTemplates(companyId);
+      this.switchKpType();
+    } else {
+      this.brandingTemplatesDto.set(null);
+    }
+  }
+
+  onTemplateSelectionChange(value: string) {
+    this.selectedTemplateKey.set(value || 'auto');
+    this.switchKpType();
+  }
+
+  openCompanyBranding() {
+    const companyId = this.selectedCompanyId();
+    if (!companyId) {
+      this.ns.warning('Сначала выберите нашу компанию');
+      return;
+    }
+    void this.router.navigate(['/counterparties'], {
+      queryParams: {
+        openBranding: '1',
+        companyId
+      }
+    });
+  }
+
+  switchKpType() {
+    const kp = this.kp();
+    if (!kp || this.isReadOnly() || this.switchingType()) return;
+    const nextType = this.selectedKpType();
+    const templateKey = this.selectedTemplateKey();
+    if (kp.kpType === nextType && this.isCurrentTemplateSelection()) {
+      return;
+    }
+    this.switchingType.set(true);
+    this.api.switchKpType(kp._id, {
+      kpType: nextType,
+      companyId: this.selectedCompanyId() || undefined,
+      templateKey: templateKey === 'auto' ? undefined : templateKey
+    })
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ kp: nextKp, meta }) => {
+          this.api.getKp(nextKp._id)
+            .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (fresh) => {
+                this.kp.set(fresh);
+                this.hydrateTypeControls(fresh);
+                this.applyCompanyDefaultsToBulk(fresh);
+                this.syncTemplateSelectionByKp(fresh);
+                this.switchingType.set(false);
+                this.ns.success(meta.conditionsReplaced
+                  ? 'Тип КП изменён, условия обновлены из нового шаблона'
+                  : 'Тип КП изменён, пользовательские условия сохранены');
+              },
+              error: () => {
+                // Fallback to switch response if refresh fails.
+                this.kp.set(nextKp);
+                this.hydrateTypeControls(nextKp);
+                this.applyCompanyDefaultsToBulk(nextKp);
+                this.syncTemplateSelectionByKp(nextKp);
+                this.switchingType.set(false);
+                this.ns.success('Тип КП изменён');
+              }
+            });
+        },
+        error: (err) => {
+          this.switchingType.set(false);
+          this.ns.error(err?.error?.message || 'Не удалось переключить тип КП');
+        }
+      });
+  }
+
   normalizeImageUrl(url?: string): string {
     if (!url) return '';
     if (/^(https?:|data:|blob:)/i.test(url)) return url;
@@ -651,6 +767,46 @@ export class KpBuilderComponent implements OnInit {
     if (!value?.trim()) return 0;
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
+  }
+
+  private hydrateTypeControls(kp: Kp) {
+    this.selectedKpType.set((kp.kpType ?? 'standard') as KpType);
+    this.selectedCompanyId.set(kp.companyId || kp.companySnapshot?.companyId || null);
+  }
+
+  private applyCompanyDefaultsToBulk(kp: Kp) {
+    const markup = this.clampPercent(Number(kp.metadata?.defaultMarkupPercent ?? 0) || 0, 0, 500);
+    const discount = this.clampPercent(Number(kp.metadata?.defaultDiscountPercent ?? 0) || 0, 0, 100);
+    this.bulkMarkupPercent.set(markup);
+    this.bulkDiscountPercent.set(discount);
+  }
+
+  private syncTemplateSelectionByKp(kp: Kp) {
+    const current = kp.companySnapshot?.templateKey;
+    const matches = this.templatesForSelectedType().some(template => template.key === current);
+    this.selectedTemplateKey.set(matches && current ? current : 'auto');
+  }
+
+  private isCurrentTemplateSelection(): boolean {
+    const kp = this.kp();
+    if (!kp) return false;
+    if ((this.selectedCompanyId() || '') !== (kp.companyId || kp.companySnapshot?.companyId || '')) return false;
+    if (this.selectedTemplateKey() === 'auto') return true;
+    return this.selectedTemplateKey() === (kp.companySnapshot?.templateKey ?? '');
+  }
+
+  private loadBrandingTemplates(companyId: string, kp?: Kp) {
+    this.api.getBrandingTemplates(companyId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (dto) => {
+          this.brandingTemplatesDto.set(dto);
+          if (kp) this.syncTemplateSelectionByKp(kp);
+        },
+        error: () => {
+          this.brandingTemplatesDto.set(null);
+        }
+      });
   }
 
   readonly conditionTemplates = [

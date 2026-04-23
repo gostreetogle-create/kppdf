@@ -69,6 +69,8 @@
 - Единый permission-layer на бэкенде: `can()`, `requirePermission`.
 - Поддержан флаг `mustChangePassword`.
 - Enforcement контролируется feature-flag `ENFORCE_PASSWORD_CHANGE`.
+- HTTP `authInterceptor`: при `401` ответы `POST /api/auth/login` и `POST /api/auth/logout` не запускают refresh/`logout()` (иначе возможен цикл: `logout` без токена → `401` → снова `logout`).
+- Добавлен guest preview flow: одноразовая ссылка `/guest-preview/:token` открывает гостевую read-only сессию; backend жёстко запрещает для guest любые методы кроме `GET/HEAD/OPTIONS`.
 
 ### 6) Users management
 - Users API: `/api/users` (`GET/POST/PATCH/DELETE /:id`, reset-password).
@@ -122,6 +124,7 @@
 | URL | Компонент | Guard |
 |-----|-----------|-------|
 | `/login` | `LoginComponent` | — |
+| `/guest-preview/:token` | `GuestPreviewComponent` | — |
 | `/` | `HomeComponent` | `authGuard` |
 | `/products` | `ProductsComponent` | `authGuard` |
 | `/counterparties` | `CounterpartiesComponent` | `authGuard` |
@@ -146,6 +149,41 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-04-23 | Кнопка `Гостевая ссылка` перенесена на страницу `Роли и полномочия`: admin-flow генерации (`POST /api/guest/issue`) и копирования `previewUrl` теперь находится рядом с управлением ролями |
+| 2026-04-23 | Страница `/login` упрощена для guest-flow: добавлен быстрый вход “Гостевая ссылка/токен” прямо в форме логина (без ручного набора `/guest-preview/...` в адресной строке) |
+| 2026-04-23 | В `KP Builder` добавлен альтернативный compact-flow добавления товара: из `+ Добавить товар` открывается табличная форма только с полями строки КП (`Арт./Наименование/Описание/Ед./Цена`) для быстрого ввода без перегруза |
+| 2026-04-23 | Добавлен guest preview режим без ломки RBAC: `POST /api/guest/issue` выдаёт одноразовую ссылку, `POST /api/guest/enter/:token` открывает гостевую сессию, а backend middleware блокирует любые write-операции для `isGuest=true` |
+| 2026-04-23 | В документной таблице КП зафиксировано правило видимости `Описание`: колонка показывается только если есть хотя бы одно непустое описание у позиций, иначе скрывается автоматически |
+| 2026-04-23 | В `KP Builder` (секция `Получатель`) удалён служебный инфо-блок `📸 ...`: оставлен только практический UI выбора/создания получателя для более чистого интерфейса |
+| 2026-04-23 | В `KP Builder` выполнен общий density-pass кнопок боковых панелей: унифицированы `ui-btn` высоты/радиусы, icon-кнопки получили стабильный border+background для визуальной консистентности UI-kit |
+| 2026-04-23 | Доведён UI-kit стиль кнопок в `Параметры КП`: action `+` у поля `Шаблон брендирования` рендерится как квадратный `ui-btn` (`ghost/sm`) с консистентной геометрией и отступами |
+| 2026-04-23 | UX в `Параметры КП` упрощён: селект `Шаблон брендирования` показывается только при >1 варианте, а переход к редактированию шаблонов вынесен в компактную кнопку `+` справа от поля (UI-kit aligned) |
+| 2026-04-23 | В `KP Builder` добавлена кнопка-ссылка `Открыть шаблоны компании`: переход в `/counterparties` с query-параметрами автоматически открывает менеджер `brandingTemplates` для выбранной `Наша компания` |
+| 2026-04-23 | UX-поток создания КП упрощён: на Home удалены селекты `Компания/Тип/Шаблон`, оставлена только кнопка `+ Создать КП`; backend `POST /api/kp` получил fallback (`default` компания-инициатор + `kpType=standard`) |
+| 2026-04-23 | Выбор компании перенесён в `/kp/:id`: в `Параметры КП` добавлен селект `Наша компания`, а `PUT /api/kp/:id/switch-type` расширен `companyId` в payload для мгновенного пересчёта snapshot/шаблона/условий |
+| 2026-04-23 | Унифицирован label для `kpType=standard`: текст `Обычное КП` заменён на короткий `КП` в frontend (`KP_TYPE_LABELS`) и в backend-ответе `GET /api/counterparties/:id/branding-templates` |
+| 2026-04-23 | UX switch-type в `KP Builder` переведён в instant-режим: кнопка `Применить тип и шаблон` убрана, переключение выполняется автоматически сразу при выборе `Тип документа`/`Шаблон брендирования` (без confirm), с блокировкой контролов на время запроса |
+| 2026-04-23 | Полный аудит `switch-type`: устранён 400 на legacy-КП без `companySnapshot.texts`; при переключении типа `texts` теперь всегда нормализуются в объект со строковыми полями (`headerNote/introText/footerText/closingText`) |
+| 2026-04-23 | Switch-type flow усилен для реальных legacy-КП: `companyId` при `PUT /api/kp/:id/switch-type` резолвится с fallback из `companySnapshot.companyId`; после успешного switch фронт делает `GET /api/kp/:id`, чтобы исключить визуальный рассинхрон состояния |
+| 2026-04-23 | `PUT /api/kp/:id/switch-type` приведён к legacy-совместимости по компании-инициатору: допускается не только `isOurCompany=true`, но и исторический вариант `role` содержит `company` |
+| 2026-04-23 | Добавлен server-side switch flow `PUT /api/kp/:id/switch-type`: смена `kpType` в существующем `/kp/:id` с пересборкой `companySnapshot`, авто-резолвом шаблона и безопасной политикой `conditions` (замена только если условия не были вручную изменены) |
+| 2026-04-23 | Введены company-level defaults для repricing: `Counterparty.defaultMarkupPercent/defaultDiscountPercent`; при создании/переключении типа КП значения попадают в `Kp.metadata.defaultMarkupPercent/defaultDiscountPercent` и используются в `KP Builder` как базовые поля наценки/скидки |
+| 2026-04-23 | Нумерация КП стала type-aware: префикс документа зависит от `kpType` (`response -> ПИСЬМО-xxx`, остальные типы -> `КП-xxx`) для `POST /api/kp`, `POST /api/kp/:id/duplicate` и `PUT /api/kp/:id/switch-type` |
+| 2026-04-23 | В `KP Builder` добавлено управление типом/шаблоном прямо в блоке `Параметры КП` (селект типа, селект шаблона, подтверждаемое действие `Применить тип и шаблон`) без потери выбранных товарных позиций |
+| 2026-04-23 | Заголовок документа стал type-aware: для `response` используется интро `Ответ на письмо для:`, для остальных типов сохранён `Коммерческое предложение для:` |
+| 2026-04-23 | В менеджере `brandingTemplates` уточнён нейтральный copy для обязательного assets-поля: `Фон — страница 1` (вместо `Фон КП — страница 1`) |
+| 2026-04-23 | Менеджер `brandingTemplates`: для `kpType=response` (Ответ на письмо) оставлены только релевантные поля `assets.kpPage1`; дополнительные фоны скрываются и очищаются при переключении типа |
+| 2026-04-23 | Менеджер `brandingTemplates` переведён на accordion-режим: шаблоны раскрываются по заголовку (`▸/▾`), что уменьшает визуальный шум и упрощает работу с несколькими типами КП |
+| 2026-04-23 | Таблица `/counterparties`: action-кнопки переведены на компактный icon-only формат (`Шаблоны`/`Изменить`/`Удалить`) с `title`/`aria-label`; ширина `col-actions` адаптирована под новый UI |
+| 2026-04-23 | Брендирование КП декомпозировано: `brandingTemplates` вынесены из `counterparty-form` в отдельный менеджер шаблонов для `Наша компания`; добавлен API `PUT /api/counterparties/:id/branding-templates` |
+| 2026-04-23 | `POST /api/kp` (auto template resolve): если для выбранного `kpType` отсутствует `isDefault=true`, backend выбирает первый доступный шаблон этого типа; `400` возвращается только когда шаблонов типа нет |
+| 2026-04-23 | `counterparty-table` cleanup: ширины колонок централизованы через CSS-переменные + `colgroup`; удалены дублирующие правила и `!important`, поведение `col-name=170px` сохранено |
+| 2026-04-23 | В `counterparty-table` добавлен `colgroup` с фиксированными ширинами (`col-name=170px`, `col-inn=140px`, `col-actions=190px`) для жёсткого контроля геометрии таблицы |
+| 2026-04-23 | Уточнена фактическая ширина `col-name` в `counterparty-table`: `170px` фиксируется как итоговая ширина ячейки (`box-sizing: border-box` + локальные paddings), чтобы колонка не выглядела шире в браузере |
+| 2026-04-23 | В `counterparty-table` колонка «Короткое название» переведена на фиксированную ширину `170px` для более предсказуемого вида трёхколоночного role-layout |
+| 2026-04-23 | `/counterparties` разложен в 3 таблицы по ролям в фиксированном порядке `Клиент` → `Поставщик` → `Наша компания`; увеличены интервалы между колонками и расширен контейнер страницы |
+| 2026-04-23 | Таблица `/counterparties`: оставлены только колонки «Короткое название», «ИНН» и кнопки действий; роль/статус/орг. форма убраны из списка (фильтры над таблицей без изменений) |
+| 2026-04-23 | Frontend `authInterceptor`: для `401` на `POST /api/auth/login` и `POST /api/auth/logout` отключены refresh и вызов `AuthService.logout()` — устранён бесконечный цикл `POST /logout` при неверном пароле или выходе без валидного access token |
 | 2026-04-22 | `deploy/deploy.sh` исправлен: генерация `kppdf.conf` больше не пишет URI-часть в `proxy_pass` внутри regex-location (`/products/*`, `/kp/*`), поэтому `nginx -t` проходит стабильно на деплое |
 | 2026-04-22 | Исправлен nginx-конфиг для legacy media regex-location (`/products/*`, `/kp/*`): в `proxy_pass` удалена URI-часть, чтобы `nginx -t` не падал на деплое (`proxy_pass cannot have URI part in location given by regular expression`) |
 | 2026-04-22 | KP Builder preview: скролл центральной зоны сделан условным — включается только при многостраничном документе (`previewPageCount > 1`), чтобы 2+ страницы были доступны без постоянной полосы на одностраничном КП |
@@ -231,6 +269,35 @@
 ---
 
 ## Audit log
+
+- Дата: 2026-04-23
+- Выполнено:
+  - Добавлен безопасный guest-preview контур: backend `POST /api/guest/issue` (генерация ссылки, только `users.manage`) и `POST /api/guest/enter/:token` (обмен приглашения на access token гостя).
+  - `auth.middleware`: добавлен `guestReadonlyGuard`, `enforcePasswordChange` теперь пропускает guest, а `requirePermission` умеет работать с `isGuest` без обращения к БД-пользователю.
+  - Все защищённые API (`/settings`, `/dictionaries`, `/counterparties`, `/products`, `/kp`, `/users`, `/roles`, `/permissions`) получили глобальный read-only guard для guest-сессий.
+  - Frontend: добавлен публичный маршрут `/guest-preview/:token` и компонент авто-входа гостя; `AuthService` поддерживает гостевую сессию без refresh token.
+  - `authInterceptor` обновлён: `401` на `/guest/enter/*` не запускает refresh/logout-цикл.
+  - `backend/src/routes/kp.routes.ts`: добавлен endpoint `PUT /api/kp/:id/switch-type` (смена `kpType`/шаблона в уже созданном КП), пересборка `companySnapshot`, типовой re-resolve шаблона и безопасная замена `conditions` только для не-модифицированных пользователем условий.
+  - Нумерация документов сделана зависимой от типа КП (`КП-*` / `ПИСЬМО-*`): генерация применяется в `POST /api/kp`, `POST /api/kp/:id/duplicate` и при switch-type, если номер ранее был авто-сгенерирован.
+  - В `Counterparty` и `Kp.metadata` добавлены defaults для repricing (`defaultMarkupPercent/defaultDiscountPercent`), значения подхватываются сервером и редактируются в UI.
+  - `KP Builder`: добавлены controls смены типа/шаблона (с подтверждением), интеграция с `switch-type` API и синхронизация bulk-полей наценки/скидки с metadata defaults.
+  - `KpHeader` теперь рендерит type-aware intro (`Ответ на письмо для:` для `response`).
+  - Форма контрагента для роли `Наша компания` получила поля `% наценки/% скидки по умолчанию`, которые используются как source defaults для новых/переключаемых КП.
+  - В `branding-templates-manager` скорректирован текст обязательного assets-поля на более универсальный (`Фон — страница 1`).
+  - `branding-templates-manager`: карточки шаблонов сделаны раскрывающимися (accordion по заголовку шаблона); для `kpType=response` в assets оставлен только `kpPage1`, поля `kpPage2/passport/appendix` скрываются и очищаются автоматически.
+  - `counterparty-table`: действия в строках переведены в icon-only кнопки (меньше визуальный шум и стабильнее ширина таблицы), добавлены `title`/`aria-label` для доступности.
+  - Выделен отдельный frontend-компонент `branding-templates-manager` (assets/default/conditions) и вход через кнопку `Шаблоны` в таблице `Наша компания`.
+  - `counterparty-form` упрощён: удалена inline-логика редактирования `brandingTemplates`, сохранены только базовые поля контрагента и флаг `isDefaultInitiator`.
+  - Добавлен endpoint `PUT /api/counterparties/:id/branding-templates` для отдельного сохранения шаблонов брендирования компании.
+  - `backend/src/routes/kp.routes.ts`: в auto-режиме выбора шаблона для `POST /api/kp` добавлен fallback `defaultByType -> first template by kpType`; убран ложный блокер при отсутствии default-шаблона.
+  - `counterparty-table.component.scss`: выполнен style-cleanup (единый источник ширин через CSS variables + `colgroup`, удалены лишние повторения `width/min/max` и `!important`).
+  - `counterparty-table`: добавлен `colgroup` и фиксированные ширины колонок, чтобы исключить автоперерасчёт browser table-layout и удерживать `col-name` на `170px`.
+  - `counterparty-table`: уточнена фиксация `col-name` до реальных `170px` (`box-sizing: border-box` + локальные paddings у `th/td.col-name`), чтобы колонка не расширялась визуально.
+  - `counterparty-table`: ширина колонки «Короткое название» зафиксирована в `170px` для стабильной геометрии таблиц при раскладке по ролям.
+  - `/counterparties`: список разделён на 3 role-колонки (`Клиент`, `Поставщик`, `Наша компания`) с отдельными таблицами и увеличенным межколоночным spacing; добавлены computed-группы в `counterparties.component.ts`.
+  - `counterparty-table`: упрощён список контрагентов до колонок короткое название / ИНН / действия; обновлены `docs/ui-kit.md` (описание таблицы).
+  - `frontend/src/app/core/interceptors/auth.interceptor.ts`: при `401` запросы к `/auth/login` и `/auth/logout` пробрасывают ошибку без `tryRefresh`/`logout()`, чтобы не зациклить клиент на `POST /api/auth/logout`.
+  - `start.ps1`: после `docker compose up -d` проверяется `$LASTEXITCODE`; при ошибке (например, не запущен Docker Desktop) скрипт выходит с кодом и не печатает ложное «Docker services are up»; подсказка про `-SkipDocker` при внешнем MongoDB.
 
 - Дата: 2026-04-22
 - Выполнено:

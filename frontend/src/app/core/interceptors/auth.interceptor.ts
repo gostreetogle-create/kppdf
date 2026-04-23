@@ -16,7 +16,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError(err => {
       if (err instanceof HttpErrorResponse && err.status === 401) {
-        const isAuthRefreshCall = req.url.includes('/api/auth/refresh');
+        const url = req.url;
+        // Не вмешиваемся в 401 с «публичных» auth-запросов: иначе цикл
+        // (logout без токена → 401 → снова logout) или бесконечный retry логина.
+        const skipRefreshAndLogout =
+          url.includes('/auth/login') || url.includes('/auth/logout') || url.includes('/guest/enter/');
+        if (skipRefreshAndLogout) {
+          return throwError(() => err);
+        }
+
+        const isAuthRefreshCall = url.includes('/auth/refresh');
         if (isAuthRefreshCall) {
           auth.logout();
           router.navigate(['/login']);

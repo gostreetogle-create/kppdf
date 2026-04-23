@@ -36,6 +36,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   product   = input<Product | null>(null);
+  compactForKp = input(false);
   saved     = output<Product>();
   cancelled = output<void>();
 
@@ -89,6 +90,12 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 
   get isEdit(): boolean { return !!this.product(); }
+  get modalTitle(): string {
+    if (this.compactForKp()) {
+      return this.isEdit ? 'Товар в КП' : 'Добавить товар в КП';
+    }
+    return this.isEdit ? 'Редактировать товар' : 'Новый товар';
+  }
 
   get mainImage(): ProductImage | undefined {
     return this.form.images.find(i => i.isMain) ?? this.form.images[0];

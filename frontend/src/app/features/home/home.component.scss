@@ -6,15 +6,6 @@
   align-items: center;
 }
 
-.home-actions__company {
-  min-width: 260px;
-}
-
-.home-actions__kptype,
-.home-actions__template {
-  min-width: 220px;
-}
-
 .kp-table-wrap {
   border-radius: $radius-lg;
 }
@@ -62,16 +53,5 @@
 @media (max-width: 900px) {
   .home-actions {
     flex-wrap: wrap;
-  }
-
-  .home-actions__company {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .home-actions__kptype,
-  .home-actions__template {
-    width: 100%;
-    min-width: 0;
   }
 }

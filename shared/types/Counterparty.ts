@@ -48,6 +48,8 @@ export interface ICounterparty {
   isOurCompany?:         boolean;
   images?:               CpImage[];
   footerText?:           string;
+  defaultMarkupPercent?: number;
+  defaultDiscountPercent?: number;
   brandingTemplates?: Array<{
     key: string;
     name: string;
