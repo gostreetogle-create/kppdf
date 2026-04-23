@@ -142,7 +142,13 @@ npm --prefix "${REPO_ROOT}/backend" ci
 npm --prefix "${REPO_ROOT}/backend" run build
 
 log "Собираю frontend..."
-npm --prefix "${REPO_ROOT}/frontend" ci
+if npm --prefix "${REPO_ROOT}/frontend" ci; then
+  log "Frontend dependencies installed via npm ci."
+else
+  log "ПРЕДУПРЕЖДЕНИЕ: npm ci для frontend завершился ошибкой (обычно peer dependency conflict)."
+  log "Пробую fallback: npm ci --legacy-peer-deps"
+  npm --prefix "${REPO_ROOT}/frontend" ci --legacy-peer-deps
+fi
 npm --prefix "${REPO_ROOT}/frontend" run build
 
 mkdir -p "${MEDIA_ROOT}"

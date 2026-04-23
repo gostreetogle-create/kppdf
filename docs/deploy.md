@@ -68,7 +68,7 @@ cd deploy
 1. Валидирует `deploy/.env`
 2. Автоматически очищает auto-generated git-артефакты в `backend/dist` (чтобы сборка на сервере не делала дерево dirty)
 3. Делает `git pull --ff-only`
-4. Выполняет `npm ci` + `npm run build` в `backend` и `frontend`
+4. Выполняет `npm ci` + `npm run build` в `backend` и `frontend` (для frontend при peer-conflict автоматически пробует fallback `npm ci --legacy-peer-deps`)
 5. Генерирует `backend/.env`
 6. Создает/обновляет `kppdf-backend.service` и перезапускает сервис
 7. Копирует фронт-статику в `/var/www/kppdf`
