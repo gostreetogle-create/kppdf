@@ -1,9 +1,9 @@
 @use '../../../../styles/tokens' as *;
 
 .builder {
-  --kp-left-col: clamp(300px, 30vw, 420px);
-  --kp-left-col-collapsed: clamp(240px, 24vw, 320px);
-  --kp-right-col: clamp(240px, 24vw, 300px);
+  --kp-left-col: clamp(250px, 22vw, 320px);
+  --kp-left-col-collapsed: clamp(200px, 18vw, 260px);
+  --kp-right-col: clamp(220px, 20vw, 280px);
   --kp-preview-scale: clamp(0.7, calc((100vh - 170px) / 100vh), 1);
   --kp-center-side-gap: 1mm;
   --kp-center-col: calc((var(--layout-hero-max) * var(--kp-preview-scale)) + (2 * var(--kp-center-side-gap)));
@@ -11,19 +11,22 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  background: var(--ui-bg-muted);
+  background: color-mix(in srgb, var(--ui-bg-main, var(--ui-bg-muted)) 88%, #d8d8dc);
 
   &__toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: $space-2;
-    padding: $space-2 $space-3;
-    background: var(--ui-bg);
-    border-bottom: 1px solid var(--ui-border);
+    padding: 0 $space-3;
+    background: var(--ui-bg-glass, var(--ui-bg));
+    backdrop-filter: var(--blur-effect);
+    border-bottom: 1px solid color-mix(in srgb, var(--ui-text-main) 5%, transparent);
     flex-shrink: 0;
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--ui-border) 72%, transparent);
-    min-height: 62px;
+    min-height: 3.25rem;
+    position: relative;
+    z-index: 100;
+    overflow: visible;
   }
 
   &__toolbar-main {
@@ -31,7 +34,16 @@
     align-items: center;
     gap: $space-2;
     min-width: 0;
-    flex: 1;
+
+    &--left {
+      flex: 1;
+      justify-content: flex-start;
+    }
+
+    &--center {
+      flex: 0 0 auto;
+      justify-content: center;
+    }
   }
 
   &__toolbar-actions {
@@ -40,16 +52,40 @@
     justify-content: flex-end;
     gap: $space-2;
     flex-wrap: wrap;
+    flex: 1;
+    overflow: visible;
 
     .builder__toolbar-btn[ui-btn].btn--ghost {
       color: var(--ui-text-muted);
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+      padding-inline: $space-2;
+
+      &:hover {
+        background: color-mix(in srgb, var(--ui-primary) 10%, transparent);
+        color: var(--ui-primary);
+      }
     }
   }
 
   &__toolbar-btn {
-    min-height: 36px;
-    padding-top: 0.4rem;
-    padding-bottom: 0.4rem;
+    min-height: 2.125rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+  }
+
+  &__toolbar-btn--back {
+    min-width: 2rem;
+    width: 2rem;
+    padding: 0 !important;
+    font-size: 1rem;
+  }
+
+  &__toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: color-mix(in srgb, var(--ui-text-main) 10%, transparent);
   }
 
   &__toolbar-hint {
@@ -58,32 +94,52 @@
     border-bottom: 1px solid var(--ui-border-light);
   }
 
+  &__title-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    min-width: 0;
+  }
+
   &__title {
-    flex: 1;
     min-width: 220px;
-    min-height: 36px;
-    border: 1px solid var(--ui-border);
-    border-radius: $radius-md;
-    padding: 0.42rem $space-3;
-    font-size: 0.84rem;
+    min-height: 2rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 0.25rem $space-2;
+    font-size: 0.875rem;
+    font-weight: 600;
     line-height: 1.25;
     font-family: inherit;
-    transition: border-color $transition-fast;
-    background: var(--ui-bg);
-    color: var(--ui-text);
-    &:focus { outline: none; border-color: var(--ui-primary); }
+    transition: border-color $transition-fast, background-color $transition-fast;
+    background: transparent;
+    color: var(--ui-text-main);
+
+    &:hover {
+      background: color-mix(in srgb, var(--ui-text-main) 5%, transparent);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: transparent;
+      background: color-mix(in srgb, var(--ui-text-main) 7%, transparent);
+    }
   }
 
   &__status {
-    min-height: 36px;
-    border: 1px solid var(--ui-border);
+    min-height: 2rem;
+    border: 1px solid transparent;
     border-radius: $radius-md;
-    padding: 0.42rem $space-2;
-    font-size: 0.8rem;
+    padding: 0.3rem $space-2;
+    font-size: 0.75rem;
     font-family: inherit;
-    background: var(--ui-bg);
-    color: var(--ui-text);
-    &:focus { outline: none; border-color: var(--ui-primary); }
+    background: color-mix(in srgb, var(--ui-bg-soft) 90%, var(--ui-bg));
+    color: var(--ui-text-muted);
+    &:focus-visible {
+      outline: none;
+      border-color: var(--ui-primary);
+      box-shadow: 0 0 0 3px var(--ui-primary-focus);
+    }
   }
 
   &__body {
@@ -91,8 +147,10 @@
     grid-template-columns: minmax(var(--kp-left-col), 1fr) minmax(0, var(--kp-center-col));
     grid-template-areas: 'left center';
     flex: 1;
+    height: 100%;
     overflow: hidden;
-    align-items: start;
+    min-height: 0;
+    align-items: stretch;
     padding: 0;
 
     &--with-right {
@@ -110,51 +168,91 @@
 
   &__slot {
     min-width: 0;
+    min-height: 0;
   }
 
   &__sidebar {
     grid-area: left;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid color-mix(in srgb, var(--ui-text-main) 5%, transparent);
+    background: var(--ui-bg-glass, color-mix(in srgb, var(--ui-bg) 92%, var(--ui-bg-soft)));
+    backdrop-filter: var(--blur-effect);
+    height: 100%;
+    min-height: 0;
+    box-shadow: none;
+  }
+
+  &__sidebar-scroll {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    border-right: 1px solid var(--ui-border);
-    background: color-mix(in srgb, var(--ui-bg) 92%, var(--ui-bg-soft));
-    min-height: 100%;
-    box-shadow: inset -1px 0 0 rgba(15, 23, 42, 0.04);
+    scrollbar-width: thin;
   }
 
   &__preview {
     grid-area: center;
     overflow-y: hidden;
     overflow-x: hidden;
-    background: var(--ui-bg);
-    padding: 0 var(--kp-center-side-gap);
+    background: var(--builder-preview-bg, var(--ui-bg));
+    padding: var(--space-2, 8px) var(--kp-center-side-gap) 0;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column;
+    justify-content: flex-start !important;
+    align-items: center;
     min-height: 100%;
+    min-width: 0;
   }
 
   &__preview--scrollable {
     overflow-y: auto;
     scrollbar-gutter: stable both-edges;
+    scrollbar-width: thin;
   }
 
   &__preview-scale {
     width: var(--layout-hero-max);
     transform: scale(var(--kp-preview-scale));
-    transform-origin: top center;
+    transform-origin: top center !important;
+    margin-top: 0 !important;
     flex: 0 0 auto;
   }
 
   &__right {
     grid-area: right;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-left: 1px solid color-mix(in srgb, var(--ui-text-main) 5%, transparent);
+    background: var(--ui-bg-glass, color-mix(in srgb, var(--ui-bg) 92%, var(--ui-bg-soft)));
+    backdrop-filter: var(--blur-effect);
+    height: 100%;
+    min-height: 0;
+    box-shadow: none;
+  }
+
+  &__right-scroll {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    border-left: 1px solid var(--ui-border);
-    background: color-mix(in srgb, var(--ui-bg) 92%, var(--ui-bg-soft));
-    min-height: 100%;
-    box-shadow: inset 1px 0 0 rgba(15, 23, 42, 0.04);
+    scrollbar-width: thin;
   }
+}
+
+.builder__sidebar-scroll::-webkit-scrollbar,
+.builder__preview--scrollable::-webkit-scrollbar,
+.builder__right-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.builder__sidebar-scroll::-webkit-scrollbar-thumb,
+.builder__preview--scrollable::-webkit-scrollbar-thumb,
+.builder__right-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
 }
 
 .builder-loading {
@@ -168,13 +266,13 @@
 .save-status {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  font-size: $font-xs;
-  font-weight: 600;
-  padding: 0.24rem $space-3;
-  border: 1px solid var(--ui-border);
-  background: color-mix(in srgb, var(--ui-bg-soft) 72%, var(--ui-bg));
-  border-radius: $radius-md;
+  min-height: 1.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.125rem $space-2;
+  border: 1px solid color-mix(in srgb, var(--ui-text-main) 6%, transparent);
+  background: color-mix(in srgb, var(--ui-bg-soft) 85%, var(--ui-bg));
+  border-radius: 4px;
   white-space: nowrap;
   transition: all $transition-fast;
 
@@ -190,15 +288,89 @@
   border: 1px solid color-mix(in srgb, var(--ui-warning) 24%, var(--ui-border));
   border-radius: $radius-md;
   padding: 0.24rem $space-2;
-  font-size: $font-xs;
-  min-height: 36px;
+  font-size: 0.75rem;
+  min-height: 1.5rem;
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
 }
 
+.builder__pdf-split {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: $radius-md;
+  overflow: visible;
+  box-shadow: var(--shadow-sm);
+}
+
+.builder__pdf-main[ui-btn].btn--primary {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: 1px solid color-mix(in srgb, var(--ui-text-on-primary) 20%, transparent);
+  padding-right: $space-3;
+}
+
+.builder__pdf-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.builder__pdf-arrow[ui-btn].btn--primary {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  min-width: 2rem;
+  width: 2rem;
+  padding: 0;
+  justify-content: center;
+}
+
+.builder__pdf-menu {
+  position: absolute;
+  top: calc(100% + #{$space-1});
+  right: 0;
+  min-width: 13rem;
+  padding: 0.25rem;
+  border: 1px solid var(--ui-border-light);
+  border-radius: $radius-md;
+  background: color-mix(in srgb, var(--ui-bg-card, #fff) 98%, #fff);
+  backdrop-filter: var(--blur-effect);
+  box-shadow:
+    0 18px 36px color-mix(in srgb, #0f172a 22%, transparent),
+    0 6px 14px color-mix(in srgb, #0f172a 14%, transparent);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: opacity $transition-fast, transform $transition-fast;
+}
+
+.builder__pdf-menu-item {
+  width: 100%;
+  border: none;
+  border-radius: $radius-sm;
+  padding: 0.5rem $space-2;
+  text-align: left;
+  font-size: 0.75rem;
+  font-family: inherit;
+  color: var(--ui-text-main);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--ui-primary) 12%, transparent);
+    color: var(--ui-primary);
+  }
+}
+
+.builder__pdf-split.is-menu-open .builder__pdf-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 .role-hint {
-  font-size: $font-xs;
+  font-size: 0.75rem;
   color: var(--ui-text-muted);
   opacity: 0.88;
   white-space: nowrap;
@@ -206,15 +378,15 @@
 
 @media (max-width: 1024px) {
   .builder {
-    --kp-left-col: clamp(260px, 35vw, 360px);
-    --kp-left-col-collapsed: clamp(220px, 30vw, 300px);
-    --kp-right-col: clamp(220px, 30vw, 280px);
+    --kp-left-col: clamp(230px, 30vw, 300px);
+    --kp-left-col-collapsed: clamp(180px, 25vw, 240px);
+    --kp-right-col: clamp(210px, 28vw, 260px);
 
     &__toolbar {
       flex-wrap: wrap;
       align-items: stretch;
       gap: $space-1;
-      padding: $space-2;
+      padding: $space-1 $space-2;
     }
 
     &__toolbar-main,
@@ -261,7 +433,7 @@
     &__toolbar-btn,
     .save-status,
     .readonly-badge {
-      min-height: 34px;
+      min-height: 2.125rem;
     }
 
     &__body,
@@ -312,7 +484,47 @@
   .builder {
     height: auto !important;
     overflow: visible !important;
-    background: #fff !important;
+    background: var(--ui-print-paper) !important;
+  }
+
+  .builder__body,
+  .builder__body--with-right,
+  .builder__body--catalog-collapsed {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    grid-template-columns: none !important;
+    grid-template-areas: none !important;
+  }
+
+  .builder__preview {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    scrollbar-width: none;
+  }
+
+  .builder__preview::-webkit-scrollbar {
+    display: none;
+  }
+
+  .builder__preview-scale {
+    width: auto !important;
+    transform: none !important;
+    transform-origin: top left !important;
+  }
+}
+
+:root[data-pdf-export='true'] {
+  .no-print {
+    display: none !important;
+  }
+
+  .builder {
+    height: auto !important;
+    overflow: visible !important;
+    background: var(--ui-print-paper) !important;
   }
 
   .builder__body,

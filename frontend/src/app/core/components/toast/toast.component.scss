@@ -16,7 +16,7 @@
   align-items: center;
   gap: $space-3;
   padding: $space-3 $space-4;
-  border-radius: $radius-lg;
+  border-radius: $radius-md;
   box-shadow: $shadow-lg;
   font-size: $font-sm;
   font-weight: 500;
@@ -24,14 +24,42 @@
   pointer-events: all;
   animation: slideIn 0.2s ease;
   max-width: 360px;
+  border-left: 4px solid transparent;
+  backdrop-filter: blur(8px);
+  color: var(--ui-text-main);
 
-  &--success { background: $color-success;       color: white; }
-  &--error   { background: $color-danger;         color: white; }
-  &--warning { background: $color-warning;        color: white; }
-  &--info    { background: $color-primary;        color: white; }
+  &--success {
+    background: color-mix(in srgb, var(--ui-success) 14%, var(--ui-bg));
+    border-color: var(--ui-success);
+  }
+
+  &--error {
+    background: color-mix(in srgb, var(--ui-danger) 12%, var(--ui-bg));
+    border-color: var(--ui-danger);
+  }
+
+  &--warning {
+    background: color-mix(in srgb, var(--ui-warning) 14%, var(--ui-bg));
+    border-color: var(--ui-warning);
+  }
+
+  &--info {
+    background: color-mix(in srgb, var(--ui-primary) 14%, var(--ui-bg));
+    border-color: var(--ui-primary);
+  }
 
   &__icon    { font-size: $font-md; flex-shrink: 0; }
-  &__message { line-height: 1.4; }
+  &__message { line-height: 1.4; flex: 1; min-width: 0; }
+
+  &__close {
+    border: none;
+    background: transparent;
+    color: var(--ui-text-muted);
+    font-size: $font-md;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
 }
 
 @keyframes slideIn {

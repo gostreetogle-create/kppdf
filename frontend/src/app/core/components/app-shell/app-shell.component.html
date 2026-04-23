@@ -63,10 +63,22 @@
     <div class="sidebar__footer">
       @if (user()) {
         <span class="sidebar__username">{{ user()!.name }}</span>
-        <button ui-btn size="sm" variant="ghost" (click)="toggleTheme()">
-          @if (themeMode() === 'dark') { ☀️ Светлая } @else { 🌙 Тёмная }
-        </button>
-        <button ui-btn size="sm" variant="ghost" (click)="logout()">Выйти</button>
+        <div class="sidebar__footer-actions">
+          <button
+            ui-btn
+            icon
+            variant="ghost"
+            class="theme-toggle"
+            [attr.aria-label]="isDark() ? 'Включить светлую тему' : 'Включить темную тему'"
+            [title]="isDark() ? 'Светлая тема' : 'Темная тема'"
+            (click)="toggleTheme()">
+            <div class="theme-toggle__container" [class.is-dark]="isDark()">
+              <span class="theme-toggle__icon sun">☀️</span>
+              <span class="theme-toggle__icon moon">🌙</span>
+            </div>
+          </button>
+          <button ui-btn size="sm" variant="ghost" (click)="logout()">Выйти</button>
+        </div>
       }
     </div>
   </aside>

@@ -59,3 +59,12 @@
     margin-top: $space-2;
   }
 }
+
+.remember-me {
+  margin-top: $space-2;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  color: var(--ui-text-muted);
+  font-size: $font-sm;
+}

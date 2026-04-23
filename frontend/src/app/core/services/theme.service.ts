@@ -19,6 +19,7 @@ export class ThemeService {
   private apply(mode: ThemeMode) {
     this.mode.set(mode);
     document.documentElement.setAttribute('data-theme', mode);
+    document.body.classList.toggle('dark-theme', mode === 'dark');
     localStorage.setItem('kppdf-theme', mode);
   }
 }

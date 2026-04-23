@@ -20,6 +20,13 @@
   </div>
   <div class="card__actions">
     <button class="btn-action btn-action--edit" (click)="edit.emit()">Редактировать</button>
+    <button
+      class="btn-action btn-action--passport"
+      [class.btn-action--passport-active]="!!product().specId"
+      (click)="passport.emit()">
+      <span class="btn-action__doc-icon">[]</span>
+      <span>Тех. паспорт</span>
+    </button>
     <button class="btn-action btn-action--delete" (click)="delete.emit()">Удалить</button>
   </div>
 </div>

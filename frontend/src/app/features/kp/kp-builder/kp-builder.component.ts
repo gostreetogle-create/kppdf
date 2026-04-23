@@ -1,17 +1,21 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, signal, computed, inject, DestroyRef, effect, HostListener } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, map, Observable, Subject, take } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ApiService, Kp, Product, KpItem, Counterparty, KpType, KP_TYPE_LABELS, BrandingTemplatesDto } from '../../../core/services/api.service';
 import { KpDocumentComponent } from '../components/kp-document/kp-document.component';
-import { type KpCatalogItem } from '../components/kp-catalog/kp-catalog.component';
+import { KpCatalogItemComponent } from '../components/kp-catalog-item/kp-catalog-item.component';
+import { type KpCatalogItem, type PriceChangedEvent } from '../components/kp-catalog/kp-catalog.component';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent, ModalComponent } from '../../../shared/ui/index';
 import { StatusBadgeComponent } from '../../../shared/ui/status-badge/status-badge.component';
 import { CounterpartyFormComponent } from '../../../shared/components/counterparty-form/counterparty-form.component';
 import { ProductFormComponent } from '../../products/components/product-form/product-form.component';
 import { AutosaveService } from './autosave.service';
+import { KpBuilderStore } from './kp-builder.store';
+import { KpTemplateService } from './kp-template.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PermissionsService } from '../../../core/services/permissions.service';
 import { ModalService } from '../../../core/services/modal.service';
@@ -19,27 +23,29 @@ import { ModalService } from '../../../core/services/modal.service';
 @Component({
   selector: 'app-kp-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, KpDocumentComponent, ButtonComponent, ModalComponent, StatusBadgeComponent, CounterpartyFormComponent, ProductFormComponent],
-  providers: [AutosaveService],   // scope — только этот компонент
+  imports: [CommonModule, FormsModule, DragDropModule, KpDocumentComponent, KpCatalogItemComponent, ButtonComponent, ModalComponent, StatusBadgeComponent, CounterpartyFormComponent, ProductFormComponent],
+  providers: [AutosaveService, KpBuilderStore, KpTemplateService],   // scope — только этот компонент
   templateUrl: './kp-builder.component.html',
   styleUrls: [
     './kp-builder.component.scss',
     './kp-builder.layout.scss',
     './kp-builder.sidebar.scss',
     './kp-builder.widgets.scss'
-  ]
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class KpBuilderComponent implements OnInit {
   private readonly destroyRef  = inject(DestroyRef);
   private readonly route       = inject(ActivatedRoute);
   private readonly router      = inject(Router);
   private readonly api         = inject(ApiService);
+  private readonly store       = inject(KpBuilderStore);
   private readonly permissions = inject(PermissionsService);
   private readonly modal       = inject(ModalService);
   private readonly ns          = inject(NotificationService);
   readonly autosave            = inject(AutosaveService);
 
-  kp             = signal<Kp | null>(null);
+  readonly kp    = this.store.kp;
   products       = signal<Product[]>([]);
   counterparties = signal<Counterparty[]>([]);
   ourCompanies = signal<Counterparty[]>([]);
@@ -67,7 +73,10 @@ export class KpBuilderComponent implements OnInit {
   productFormOpen = signal(false);
   /** Подтверждение ухода со страницы (ui-modal, не window.confirm) */
   showLeaveConfirm = signal(false);
+  showRestoreBackup = signal(false);
   lastRemovedItem = signal<KpItem | null>(null);
+  isExporting = signal(false);
+  isPdfMenuOpen = signal(false);
 
   // ─── computed ─────────────────────────────────────────
   readonly catalogItems = computed<KpCatalogItem[]>(() =>
@@ -126,8 +135,11 @@ export class KpBuilderComponent implements OnInit {
   readonly previewPageCount = computed(() => {
     const kp = this.kp();
     if (!kp) return 1;
-    const perPage = Math.max(1, Number(kp.metadata?.tablePageBreakAfter) || 6);
-    return Math.max(1, Math.ceil(kp.items.length / perPage));
+    const first = Math.max(1, Number(kp.metadata?.tablePageBreakFirstPage ?? kp.metadata?.tablePageBreakAfter) || 6);
+    const next = Math.max(1, Number(kp.metadata?.tablePageBreakNextPages ?? kp.metadata?.tablePageBreakAfter) || 6);
+    const total = kp.items.length;
+    if (total <= first) return 1;
+    return 1 + Math.ceil((total - first) / next);
   });
 
   /** Есть ли несохранённые изменения — используется в CanDeactivate guard */
@@ -140,6 +152,28 @@ export class KpBuilderComponent implements OnInit {
   /** Автосохранение включаем только после первой позиции товара */
   private autosaveEnabled = false;
   private leaveChoice?: Subject<boolean>;
+
+  updateKp(patch: Partial<Kp>): void {
+    this.store.patchKp(patch);
+  }
+
+  updateKpWith(updater: (prev: Kp) => Kp): void {
+    const current = this.kp();
+    if (!current) return;
+    this.store.updateState(updater);
+  }
+
+  updateMetadata(patch: Partial<Kp['metadata']>): void {
+    this.store.updateMetadata(patch);
+  }
+
+  private setKpState(next: Kp, trackHistory = true): void {
+    if (!trackHistory) {
+      this.store.setKp(next);
+      return;
+    }
+    this.store.updateState(() => next);
+  }
 
   constructor() {
     effect(() => {
@@ -171,16 +205,18 @@ export class KpBuilderComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ kp, counterparties, ourCompanies }) => {
+          const normalizedKp = this.normalizePaginationMetadata(kp);
           this.counterparties.set(counterparties);
           this.ourCompanies.set(ourCompanies);
-          this.kp.set(kp);
-          this.hydrateTypeControls(kp);
-          this.applyCompanyDefaultsToBulk(kp);
-          if (kp.items.length > 0) this.itemsCollapsed.set(false);
+          this.setKpState(normalizedKp, false);
+          this.hydrateTypeControls(normalizedKp);
+          this.applyCompanyDefaultsToBulk(normalizedKp);
+          if (normalizedKp.items.length > 0) this.itemsCollapsed.set(false);
+          this.showRestoreBackup.set(this.hasBackupForKp(normalizedKp._id));
           this.loading.set(false);
-          const initCompanyId = kp.companyId || kp.companySnapshot?.companyId || ourCompanies[0]?._id || null;
+          const initCompanyId = normalizedKp.companyId || normalizedKp.companySnapshot?.companyId || ourCompanies[0]?._id || null;
           this.selectedCompanyId.set(initCompanyId);
-          if (initCompanyId) this.loadBrandingTemplates(initCompanyId, kp);
+          if (initCompanyId) this.loadBrandingTemplates(initCompanyId, normalizedKp);
           Promise.resolve().then(() => {
             if (selectCpId) {
               this.fillFromCounterparty(selectCpId);
@@ -298,7 +334,7 @@ export class KpBuilderComponent implements OnInit {
   private applyCounterpartyToKp(cp: Counterparty) {
     const kp = this.kp();
     if (!kp) return;
-    this.kp.set({
+    this.setKpState({
       ...kp,
       counterpartyId: cp._id,
       recipient: {
@@ -343,7 +379,7 @@ export class KpBuilderComponent implements OnInit {
           discountEnabled: false,
           discountPercent: 0
         }];
-    this.kp.set({ ...kp, items });
+    this.setKpState({ ...kp, items });
     if (items.length > 0) this.itemsCollapsed.set(false);
   }
 
@@ -352,8 +388,18 @@ export class KpBuilderComponent implements OnInit {
     const kp = this.kp();
     if (!kp) return;
     this.lastRemovedItem.set(item);
-    this.kp.set({ ...kp, items: kp.items.filter(i => i.productId !== item.productId) });
+    this.setKpState({ ...kp, items: kp.items.filter(i => i.productId !== item.productId) });
     this.selectedItemIds.update(ids => ids.filter(id => id !== item.productId));
+  }
+
+  reorderItems(event: CdkDragDrop<KpItem[]>) {
+    if (this.isReadOnly()) return;
+    if (event.previousIndex === event.currentIndex) return;
+    const kp = this.kp();
+    if (!kp) return;
+    const items = [...kp.items];
+    moveItemInArray(items, event.previousIndex, event.currentIndex);
+    this.setKpState({ ...kp, items });
   }
 
   updateQty(item: KpItem, qty: number) {
@@ -361,7 +407,7 @@ export class KpBuilderComponent implements OnInit {
     if (qty < 1) return;
     const kp = this.kp();
     if (!kp) return;
-    this.kp.set({ ...kp, items: kp.items.map(i => i.productId === item.productId ? { ...i, qty } : i) });
+    this.setKpState({ ...kp, items: kp.items.map(i => i.productId === item.productId ? { ...i, qty } : i) });
   }
 
   incrementQty(item: KpItem) {
@@ -389,7 +435,7 @@ export class KpBuilderComponent implements OnInit {
     if (!kp) return;
 
     // Interactive behavior: unselecting a row resets applied bulk adjustments for this row.
-    this.kp.set({
+    this.setKpState({
       ...kp,
       items: kp.items.map(i =>
         i.productId === item.productId
@@ -404,23 +450,29 @@ export class KpBuilderComponent implements OnInit {
     this.selectedItemIds.set([]);
   }
 
+  private ensureAllItemsSelected(kp: Kp): Set<string> {
+    const allIds = kp.items.map((item) => item.productId);
+    this.selectedItemIds.set(allIds);
+    return new Set(allIds);
+  }
+
   onBulkMarkupInput(rawValue: string | number) {
     const percent = this.clampPercent(this.parsePercentInput(rawValue), 0, 500);
     this.bulkMarkupPercent.set(percent);
-    const kp = this.kp();
-    if (kp) {
-      kp.metadata.defaultMarkupPercent = percent;
-    }
+    this.updateKpWith((prev) => ({
+      ...prev,
+      metadata: { ...prev.metadata, defaultMarkupPercent: percent }
+    }));
     this.applyBulkMarkup();
   }
 
   onBulkDiscountInput(rawValue: string | number) {
     const percent = this.clampPercent(this.parsePercentInput(rawValue), 0, 100);
     this.bulkDiscountPercent.set(percent);
-    const kp = this.kp();
-    if (kp) {
-      kp.metadata.defaultDiscountPercent = percent;
-    }
+    this.updateKpWith((prev) => ({
+      ...prev,
+      metadata: { ...prev.metadata, defaultDiscountPercent: percent }
+    }));
     this.applyBulkDiscount();
   }
 
@@ -433,11 +485,10 @@ export class KpBuilderComponent implements OnInit {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    const selected = new Set(this.selectedItemIds());
-    if (selected.size === 0) return;
+    const selected = this.ensureAllItemsSelected(kp);
     const percent = this.clampPercent(this.bulkMarkupPercent(), 0, 500);
     this.bulkMarkupPercent.set(percent);
-    this.kp.set({
+    this.setKpState({
       ...kp,
       items: kp.items.map(i =>
         selected.has(i.productId)
@@ -451,11 +502,10 @@ export class KpBuilderComponent implements OnInit {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    const selected = new Set(this.selectedItemIds());
-    if (selected.size === 0) return;
+    const selected = this.ensureAllItemsSelected(kp);
     const percent = this.clampPercent(this.bulkDiscountPercent(), 0, 100);
     this.bulkDiscountPercent.set(percent);
-    this.kp.set({
+    this.setKpState({
       ...kp,
       items: kp.items.map(i =>
         selected.has(i.productId)
@@ -469,9 +519,8 @@ export class KpBuilderComponent implements OnInit {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    const selected = new Set(this.selectedItemIds());
-    if (selected.size === 0) return;
-    this.kp.set({
+    const selected = this.ensureAllItemsSelected(kp);
+    this.setKpState({
       ...kp,
       items: kp.items.map(i =>
         selected.has(i.productId)
@@ -483,16 +532,55 @@ export class KpBuilderComponent implements OnInit {
 
   updateTablePageBreakAfter(value: number) {
     if (this.isReadOnly()) return;
-    const kp = this.kp();
-    if (!kp) return;
-    kp.metadata.tablePageBreakAfter = Math.max(1, value || 6);
+    const normalized = Math.max(1, value || 6);
+    this.updateMetadata({
+      tablePageBreakAfter: normalized,
+      tablePageBreakFirstPage: normalized,
+      tablePageBreakNextPages: normalized
+    });
+  }
+
+  updateTablePageBreakFirstPage(value: number) {
+    if (this.isReadOnly()) return;
+    this.updateMetadata({ tablePageBreakFirstPage: Math.max(1, value || 6) });
+  }
+
+  updateTablePageBreakNextPages(value: number) {
+    if (this.isReadOnly()) return;
+    this.updateMetadata({ tablePageBreakNextPages: Math.max(1, value || 6) });
   }
 
   updatePhotoScalePercent(value: number) {
     if (this.isReadOnly()) return;
-    const kp = this.kp();
-    if (!kp) return;
-    kp.metadata.photoScalePercent = this.clampPercent(value, 150, 350);
+    this.updateMetadata({ photoScalePercent: this.clampPercent(value, 150, 350) });
+  }
+
+  onTitleChange(newTitle: string): void {
+    this.updateKp({ title: newTitle });
+  }
+
+  onMetadataNumberChange(value: string): void {
+    this.updateMetadata({ number: value });
+  }
+
+  onValidityDaysChange(value: number): void {
+    this.updateMetadata({ validityDays: Math.max(1, value || 1) });
+  }
+
+  onPrepaymentPercentChange(value: number): void {
+    this.updateMetadata({ prepaymentPercent: this.clampPercent(value, 0, 100) });
+  }
+
+  onProductionDaysChange(value: number): void {
+    this.updateMetadata({ productionDays: Math.max(1, value || 1) });
+  }
+
+  onVatPercentChange(value: number): void {
+    this.updateKp({ vatPercent: this.clampPercent(value, 0, 100) });
+  }
+
+  onDocumentPriceChanged(event: PriceChangedEvent): void {
+    this.store.updateItemPrice(event.itemId, event.newPrice);
   }
 
   /** Ручное сохранение — немедленно, сбрасывает дебаунс */
@@ -512,7 +600,7 @@ export class KpBuilderComponent implements OnInit {
       this.conditionDraft = '';
       return;
     }
-    this.kp.set({ ...kp, conditions: [...kp.conditions, value] });
+    this.setKpState({ ...kp, conditions: [...kp.conditions, value] });
     this.conditionDraft = '';
   }
 
@@ -520,7 +608,7 @@ export class KpBuilderComponent implements OnInit {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    this.kp.set({
+    this.setKpState({
       ...kp,
       conditions: kp.conditions.map((item, i) => (i === index ? value : item))
     });
@@ -530,7 +618,7 @@ export class KpBuilderComponent implements OnInit {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    this.kp.set({
+    this.setKpState({
       ...kp,
       conditions: kp.conditions.filter((_, i) => i !== index)
     });
@@ -542,7 +630,7 @@ export class KpBuilderComponent implements OnInit {
     if (!kp) return;
     const conditions = [...kp.conditions];
     [conditions[index - 1], conditions[index]] = [conditions[index], conditions[index - 1]];
-    this.kp.set({ ...kp, conditions });
+    this.setKpState({ ...kp, conditions });
   }
 
   moveConditionDown(index: number) {
@@ -551,7 +639,7 @@ export class KpBuilderComponent implements OnInit {
     if (!kp || index >= kp.conditions.length - 1) return;
     const conditions = [...kp.conditions];
     [conditions[index], conditions[index + 1]] = [conditions[index + 1], conditions[index]];
-    this.kp.set({ ...kp, conditions });
+    this.setKpState({ ...kp, conditions });
   }
 
   addConditionTemplate(template: string) {
@@ -564,7 +652,7 @@ export class KpBuilderComponent implements OnInit {
     const removed = this.lastRemovedItem();
     const kp = this.kp();
     if (!removed || !kp) return;
-    this.kp.set({ ...kp, items: [...kp.items, removed] });
+    this.setKpState({ ...kp, items: [...kp.items, removed] });
     this.itemsCollapsed.set(false);
     this.lastRemovedItem.set(null);
   }
@@ -581,9 +669,8 @@ export class KpBuilderComponent implements OnInit {
     return product._id;
   }
 
-  productPreviewImage(product: Product): string {
-    const raw = product.images.find(i => i.isMain)?.url ?? product.images[0]?.url ?? '';
-    return this.normalizeImageUrl(raw);
+  isProductInKp(product: Product): boolean {
+    return (this.kp()?.items ?? []).some((item) => item.productId === product._id);
   }
 
   canSelectStatus(targetStatus: Kp['status']): boolean {
@@ -609,7 +696,7 @@ export class KpBuilderComponent implements OnInit {
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
-        this.kp.set({ ...kp, status: nextStatus });
+        this.setKpState({ ...kp, status: nextStatus });
         this.ns.success(`Статус изменён: ${this.statusLabel(nextStatus)}`);
       });
   }
@@ -664,11 +751,18 @@ export class KpBuilderComponent implements OnInit {
   switchKpType() {
     const kp = this.kp();
     if (!kp || this.isReadOnly() || this.switchingType()) return;
+    const previous = JSON.parse(JSON.stringify(kp)) as Kp;
     const nextType = this.selectedKpType();
     const templateKey = this.selectedTemplateKey();
+    const nextCompanyId = this.selectedCompanyId() || kp.companyId || kp.companySnapshot?.companyId || '';
     if (kp.kpType === nextType && this.isCurrentTemplateSelection()) {
       return;
     }
+    this.setKpState({
+      ...kp,
+      kpType: nextType,
+      companyId: nextCompanyId
+    });
     this.switchingType.set(true);
     this.api.switchKpType(kp._id, {
       kpType: nextType,
@@ -682,10 +776,11 @@ export class KpBuilderComponent implements OnInit {
             .pipe(take(1), takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: (fresh) => {
-                this.kp.set(fresh);
-                this.hydrateTypeControls(fresh);
-                this.applyCompanyDefaultsToBulk(fresh);
-                this.syncTemplateSelectionByKp(fresh);
+                const normalizedFresh = this.normalizePaginationMetadata(fresh);
+                this.setKpState(normalizedFresh, false);
+                this.hydrateTypeControls(normalizedFresh);
+                this.applyCompanyDefaultsToBulk(normalizedFresh);
+                this.syncTemplateSelectionByKp(normalizedFresh);
                 this.switchingType.set(false);
                 this.ns.success(meta.conditionsReplaced
                   ? 'Тип КП изменён, условия обновлены из нового шаблона'
@@ -693,16 +788,21 @@ export class KpBuilderComponent implements OnInit {
               },
               error: () => {
                 // Fallback to switch response if refresh fails.
-                this.kp.set(nextKp);
-                this.hydrateTypeControls(nextKp);
-                this.applyCompanyDefaultsToBulk(nextKp);
-                this.syncTemplateSelectionByKp(nextKp);
+                const normalizedNext = this.normalizePaginationMetadata(nextKp);
+                this.setKpState(normalizedNext, false);
+                this.hydrateTypeControls(normalizedNext);
+                this.applyCompanyDefaultsToBulk(normalizedNext);
+                this.syncTemplateSelectionByKp(normalizedNext);
                 this.switchingType.set(false);
                 this.ns.success('Тип КП изменён');
               }
             });
         },
         error: (err) => {
+          this.setKpState(previous, false);
+          this.hydrateTypeControls(previous);
+          this.applyCompanyDefaultsToBulk(previous);
+          this.syncTemplateSelectionByKp(previous);
           this.switchingType.set(false);
           this.ns.error(err?.error?.message || 'Не удалось переключить тип КП');
         }
@@ -787,6 +887,19 @@ export class KpBuilderComponent implements OnInit {
     this.selectedTemplateKey.set(matches && current ? current : 'auto');
   }
 
+  private normalizePaginationMetadata(kp: Kp): Kp {
+    const fallback = Math.max(1, Number(kp.metadata?.tablePageBreakAfter) || 6);
+    return {
+      ...kp,
+      metadata: {
+        ...kp.metadata,
+        tablePageBreakAfter: fallback,
+        tablePageBreakFirstPage: Math.max(1, Number(kp.metadata?.tablePageBreakFirstPage ?? fallback) || fallback),
+        tablePageBreakNextPages: Math.max(1, Number(kp.metadata?.tablePageBreakNextPages ?? fallback) || fallback),
+      }
+    };
+  }
+
   private isCurrentTemplateSelection(): boolean {
     const kp = this.kp();
     if (!kp) return false;
@@ -823,6 +936,90 @@ export class KpBuilderComponent implements OnInit {
     this.ns.info('Доп. действия появятся в следующем этапе');
   }
 
-  print() { window.print(); }
+  onExportHQ() {
+    const kp = this.kp();
+    if (!kp || this.isExporting()) return;
+
+    this.isExporting.set(true);
+    this.ns.info('Генерация PDF высокого качества...');
+    this.api.exportToPdf(kp._id).pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const docNumber = String(kp.metadata?.number || 'бн').replace(/[^\w.-]+/g, '_');
+        const safeFileName = `КП_${docNumber}.pdf`;
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = safeFileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+        this.isExporting.set(false);
+        this.ns.success('PDF успешно сгенерирован');
+      },
+      error: () => {
+        this.isExporting.set(false);
+        this.ns.error('Ошибка генерации PDF на сервере');
+      }
+    });
+  }
+
+  onQuickPrint() {
+    this.isPdfMenuOpen.set(false);
+    window.print();
+  }
+
+  togglePdfMenu(event: Event) {
+    event.stopPropagation();
+    this.isPdfMenuOpen.update((value) => !value);
+  }
+
+  @HostListener('document:click')
+  closePdfMenu() {
+    this.isPdfMenuOpen.set(false);
+  }
+
+  @HostListener('window:keydown.control.z', ['$event'])
+  onUndo(event: any) {
+    if (this.loading() || this.isReadOnly()) return;
+    event.preventDefault();
+    this.store.undo();
+  }
+
+  @HostListener('window:keydown.control.y', ['$event'])
+  @HostListener('window:keydown.control.shift.z', ['$event'])
+  onRedo(event: any) {
+    if (this.loading() || this.isReadOnly()) return;
+    event.preventDefault();
+    this.store.redo();
+  }
+
+  restoreUnsavedBackup() {
+    const kpId = this.kp()?._id;
+    if (!kpId) return;
+    const restored = this.store.restoreFromBackup(kpId);
+    this.showRestoreBackup.set(false);
+    if (restored) {
+      this.autosave.status.set('unsaved');
+      this.ns.success('Локальная копия восстановлена');
+      return;
+    }
+    this.ns.warning('Локальная копия недоступна');
+  }
+
+  dismissBackupRestore() {
+    const kpId = this.kp()?._id;
+    if (kpId) this.store.clearBackup(kpId);
+    this.showRestoreBackup.set(false);
+  }
+
+  private hasBackupForKp(kpId: string): boolean {
+    try {
+      return Boolean(localStorage.getItem(`kp_builder_backup_${kpId}`));
+    } catch {
+      return false;
+    }
+  }
+
   back()  { this.router.navigate(['/']); }
 }

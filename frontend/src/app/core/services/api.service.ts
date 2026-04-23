@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, shareReplay, tap } from 'rxjs';
+import { HttpErrorResponse, HttpClient } from '@angular/common/http';
+import { Observable, catchError, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 const BASE = environment.apiUrl;
@@ -39,6 +39,7 @@ export function createImage(
 
 export interface Product {
   _id:          string;
+  specId?:      string;
   code:         string;
   name:         string;
   description:  string;
@@ -51,6 +52,38 @@ export interface Product {
   isActive:     boolean;
   kind:         ProductKind;
   notes?:       string;
+}
+
+export interface ProductSpecParam {
+  name: string;
+  value: string;
+}
+
+export interface ProductSpecGroup {
+  title: string;
+  params: ProductSpecParam[];
+}
+
+export interface ProductSpecDrawings {
+  viewFront?: string;
+  viewSide?: string;
+  viewTop?: string;
+  view3D?: string;
+}
+
+export interface ProductSpec {
+  _id: string;
+  productId: string;
+  drawings: ProductSpecDrawings;
+  groups: ProductSpecGroup[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProductSpecTemplate {
+  key: string;
+  name: string;
+  groups: ProductSpecGroup[];
 }
 
 export interface Setting {
@@ -249,7 +282,9 @@ export interface Kp {
     validityDays: number;
     prepaymentPercent: number;
     productionDays: number;
-    tablePageBreakAfter: number;
+    tablePageBreakAfter?: number;
+    tablePageBreakFirstPage?: number;
+    tablePageBreakNextPages?: number;
     photoScalePercent?: number;
     defaultMarkupPercent?: number;
     defaultDiscountPercent?: number;
@@ -307,8 +342,17 @@ export class ApiService {
     this.products$ = this.http.get<Product[]>(`${BASE}/products`).pipe(shareReplay(1));
   }
 
-  getProducts(params?: { category?: string; kind?: string; isActive?: boolean; q?: string }): Observable<Product[]> {
-    return this.products$;
+  getProducts(params?: { category?: string; kind?: string; isActive?: boolean; q?: string; hasSpec?: boolean | null }): Observable<Product[]> {
+    if (!params || Object.keys(params).length === 0) {
+      return this.products$;
+    }
+    const normalizedParams: Record<string, string> = {};
+    if (params.category) normalizedParams['category'] = params.category;
+    if (params.kind) normalizedParams['kind'] = params.kind;
+    if (params.q) normalizedParams['q'] = params.q;
+    if (typeof params.isActive === 'boolean') normalizedParams['isActive'] = String(params.isActive);
+    if (typeof params.hasSpec === 'boolean') normalizedParams['hasSpec'] = String(params.hasSpec);
+    return this.http.get<Product[]>(`${BASE}/products`, { params: normalizedParams });
   }
 
   getProductCategories(): Observable<string[]> {
@@ -331,6 +375,32 @@ export class ApiService {
     return this.http.delete<void>(`${BASE}/products/${id}`).pipe(
       tap(() => this.invalidateProducts())
     );
+  }
+
+  getProductSpecByProductId(productId: string): Observable<ProductSpec | null> {
+    return this.http.get<ProductSpec>(`${BASE}/product-specs/product/${productId}`).pipe(
+      catchError((error: HttpErrorResponse) => error.status === 404 ? of(null) : throwError(() => error))
+    );
+  }
+
+  getProductSpecTemplates(): Observable<ProductSpecTemplate[]> {
+    return this.http.get<ProductSpecTemplate[]>(`${BASE}/product-specs/templates`);
+  }
+
+  upsertProductSpec(productId: string, payload: { drawings: ProductSpecDrawings; groups: ProductSpecGroup[] }): Observable<ProductSpec> {
+    return this.http.put<ProductSpec>(`${BASE}/product-specs/product/${productId}`, payload).pipe(
+      tap(() => this.invalidateProducts())
+    );
+  }
+
+  uploadProductSpecDrawing(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string }>(`${BASE}/product-specs/upload`, formData);
+  }
+
+  exportProductPassportPdf(productId: string): Observable<Blob> {
+    return this.http.get(`${BASE}/kp/passport/${productId}/export`, { responseType: 'blob' });
   }
 
   bulkImportProducts(
@@ -377,6 +447,16 @@ export class ApiService {
 
   duplicateKp(id: string): Observable<Kp> {
     return this.http.post<Kp>(`${BASE}/kp/${id}/duplicate`, {});
+  }
+
+  exportKpPdf(id: string): Observable<Blob> {
+    return this.http.get(`${BASE}/kp/${id}/export`, { responseType: 'blob' });
+  }
+
+  exportToPdf(id: string): Observable<Blob> {
+    return this.http.get(`${BASE}/kp/${id}/export`, {
+      responseType: 'blob'
+    });
   }
 
   issueGuestPreviewLink(ttlDays = 7): Observable<GuestPreviewIssueResponse> {

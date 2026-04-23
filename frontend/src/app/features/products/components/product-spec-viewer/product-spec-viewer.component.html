@@ -1,0 +1,21 @@
+<div class="spec-viewer">
+  @if (!groups().length) {
+    <p class="spec-viewer__empty">Разделы пока не заполнены.</p>
+  } @else {
+    @for (group of groups(); track group.title + $index) {
+      <section class="spec-viewer__group">
+        <header class="spec-viewer__title">{{ group.title }}</header>
+        <table class="spec-viewer__table">
+          <tbody>
+            @for (param of group.params; track param.name + $index) {
+              <tr>
+                <td>{{ param.name }}</td>
+                <td>{{ param.value }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+  }
+</div>

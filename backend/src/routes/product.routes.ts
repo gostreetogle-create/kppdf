@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { Product } from '../models/product.model';
+import { ProductSpec } from '../models/product-spec.model';
 import { Dictionary } from '../models/dictionary.model';
 import { requirePermission } from '../middleware/rbac.guard';
 
@@ -25,13 +26,38 @@ function validateProduct(req: Request, res: Response, next: NextFunction): void 
 // GET /api/products?category=&kind=&isActive=true&q=
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { category, kind, isActive, q } = req.query;
+    const { category, kind, isActive, q, hasSpec } = req.query;
     const filter: Record<string, any> = {};
     if (category) filter.category = category;
     if (kind)     filter.kind     = kind;
     if (isActive !== undefined) filter.isActive = isActive === 'true';
     if (q)        filter.$text    = { $search: String(q) };
-    const products = await Product.find(filter).sort({ category: 1, name: 1 });
+    const products = await Product.aggregate([
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'productspecs',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'spec'
+        }
+      },
+      {
+        $addFields: {
+          specId: {
+            $cond: [
+              { $gt: [{ $size: '$spec' }, 0] },
+              { $toString: { $arrayElemAt: ['$spec._id', 0] } },
+              undefined
+            ]
+          }
+        }
+      },
+      ...(hasSpec === 'true' ? [{ $match: { specId: { $exists: true } } }] : []),
+      ...(hasSpec === 'false' ? [{ $match: { specId: { $exists: false } } }] : []),
+      { $project: { spec: 0 } },
+      { $sort: { category: 1, name: 1 } }
+    ]);
     res.json(products);
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -59,7 +85,11 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) { res.status(404).json({ message: 'Товар не найден' }); return; }
-    res.json(product);
+    const spec = await ProductSpec.findOne({ productId: product._id }).select('_id').lean();
+    res.json({
+      ...product.toObject(),
+      specId: spec?._id ? String(spec._id) : undefined
+    });
   } catch {
     res.status(400).json({ message: 'Неверный ID' });
   }

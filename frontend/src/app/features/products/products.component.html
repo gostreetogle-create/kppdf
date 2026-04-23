@@ -18,6 +18,15 @@
       [options]="[{ value: '', label: 'Все категории' }, ...categories().map(cat => ({ value: cat, label: cat }))]"
       (valueChange)="filterCategory.set($event)"
     />
+    <ui-filter-select
+      [value]="filterHasSpec() === null ? '' : (filterHasSpec() ? 'true' : 'false')"
+      [options]="[
+        { value: '', label: 'Любой тех. паспорт' },
+        { value: 'true', label: 'Только с тех. паспортом' },
+        { value: 'false', label: 'Только без тех. паспорта' }
+      ]"
+      (valueChange)="setHasSpecFilter($event)"
+    />
     <div class="view-toggle">
       <button
         class="view-toggle__btn"
@@ -53,6 +62,7 @@
         <app-product-card
           [product]="product"
           (edit)="openEdit(product)"
+          (passport)="openSpecEditor(product)"
           (delete)="confirmDelete(product)">
         </app-product-card>
       }
@@ -87,6 +97,15 @@
               <td class="col-right col-price">{{ product.price | number:'1.0-0' }} ₽</td>
               <td class="col-unit">{{ product.unit }}</td>
               <td class="col-actions ui-table-actions">
+                <button
+                  ui-btn
+                  size="sm"
+                  [variant]="product.specId ? 'primary' : 'ghost'"
+                  class="btn-spec-entry"
+                  (click)="openSpecEditor(product)">
+                  <span class="btn-spec-entry__icon">[]</span>
+                  <span>Тех. паспорт</span>
+                </button>
                 <button ui-btn size="sm" (click)="openEdit(product)">Изменить</button>
                 <button ui-btn size="sm" variant="danger" (click)="confirmDelete(product)">Удалить</button>
               </td>
@@ -104,5 +123,21 @@
     (saved)="onSaved($event)"
     (cancelled)="closeForm()">
   </app-product-form>
+}
+
+@if (specTarget(); as product) {
+  <ui-drawer
+    [title]="'Тех. паспорт: ' + product.name"
+    [width]="'min(1120px, 96vw)'"
+    (closed)="closeSpecEditor()">
+    <app-product-spec-editor
+      drawer-body
+      [productId]="product._id"
+      [productName]="product.name"
+      [productCode]="product.code"
+      (saved)="onSpecSaved()"
+      (closed)="closeSpecEditor()">
+    </app-product-spec-editor>
+  </ui-drawer>
 }
 

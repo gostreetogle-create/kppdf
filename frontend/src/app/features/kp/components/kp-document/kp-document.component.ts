@@ -1,9 +1,10 @@
-import { Component, input, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, computed, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KpBackgroundComponent } from '../kp-background/kp-background.component';
 import { KpHeaderComponent, type KpRecipient, type KpMetadata } from '../kp-header/kp-header.component';
-import { KpCatalogComponent, type KpCatalogItem } from '../kp-catalog/kp-catalog.component';
+import { KpCatalogComponent, type KpCatalogItem, type PriceChangedEvent } from '../kp-catalog/kp-catalog.component';
 import { KpTableComponent, type KpTotals } from '../kp-table/kp-table.component';
+import { KpTemplatePipe } from '../template-pipe/template.pipe';
 
 interface KpPageChunk {
   items: KpCatalogItem[];
@@ -41,13 +42,17 @@ interface CompanySnapshot {
     KpBackgroundComponent, 
     KpHeaderComponent, 
     KpCatalogComponent, 
-    KpTableComponent
+    KpTableComponent,
+    KpTemplatePipe
   ],
   templateUrl: './kp-document.component.html',
-  styleUrl: './kp-document.component.scss'
+  styleUrl: './kp-document.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class KpDocumentComponent {
   itemsPerPage = input(10);
+  firstPageRows = input<number | null | undefined>(null);
+  nextPagesRows = input<number | null | undefined>(null);
 
   recipient = input<KpRecipient>({
     name: 'ООО "Пример Компания"',
@@ -62,13 +67,17 @@ export class KpDocumentComponent {
     prepaymentPercent: 50,
     productionDays: 15,
     tablePageBreakAfter: 6,
+    tablePageBreakFirstPage: 6,
+    tablePageBreakNextPages: 6,
     photoScalePercent: 150
   });
 
   items = input<KpCatalogItem[]>([]);
+  editablePrices = input(false);
   conditions = input<string[]>([]);
   vatPercent = input<number>(20);
   companySnapshot = input.required<CompanySnapshot>();
+  priceChanged = output<PriceChangedEvent>();
 
   protected readonly totals = computed((): KpTotals => {
     const subtotal = this.items().reduce((s, i) => s + i.price * i.qty, 0);
@@ -89,25 +98,60 @@ export class KpDocumentComponent {
     this.items().some(item => (item.code ?? '').trim().length > 0)
   );
 
-  protected readonly resolvedItemsPerPage = computed(() =>
-    Math.max(1, Number(this.itemsPerPage()) || 6)
-  );
+  protected readonly resolvedFirstPageRows = computed(() => {
+    const explicit = Number(this.firstPageRows());
+    if (Number.isFinite(explicit) && explicit > 0) return Math.max(1, explicit);
+    const legacy = Number(this.itemsPerPage());
+    return Math.max(1, legacy || 6);
+  });
+
+  protected readonly resolvedNextPagesRows = computed(() => {
+    const explicit = Number(this.nextPagesRows());
+    if (Number.isFinite(explicit) && explicit > 0) return Math.max(1, explicit);
+    const legacy = Number(this.itemsPerPage());
+    return Math.max(1, legacy || 6);
+  });
 
   protected readonly pageChunks = computed((): KpPageChunk[] => {
     const chunks: KpPageChunk[] = [];
-    const perPage = this.resolvedItemsPerPage();
+    const firstPageLimit = this.resolvedFirstPageRows();
+    const nextPagesLimit = this.resolvedNextPagesRows();
     const allItems = this.items();
+    const minLastPageRows = Math.min(3, nextPagesLimit);
 
     if (allItems.length === 0) {
       return [{ items: [], displayOffset: 0, useFirstBackground: true, showHeader: true, showTotals: true }];
     }
 
-    for (let i = 0; i < allItems.length; i += perPage) {
-      const pageItems = allItems.slice(i, i + perPage);
-      const isFirst = i === 0;
-      const isLast = i + perPage >= allItems.length;
-      chunks.push({ items: pageItems, displayOffset: i, useFirstBackground: isFirst, showHeader: isFirst, showTotals: isLast });
+    let cursor = 0;
+    let pageIndex = 0;
+    while (cursor < allItems.length) {
+      const pageLimit = pageIndex === 0 ? firstPageLimit : nextPagesLimit;
+      let chunkSize = Math.min(pageLimit, allItems.length - cursor);
+      const remainingAfterChunk = allItems.length - (cursor + chunkSize);
+      if (remainingAfterChunk > 0 && remainingAfterChunk < minLastPageRows && chunkSize > 1) {
+        const transferToLastPage = minLastPageRows - remainingAfterChunk;
+        chunkSize = Math.max(1, chunkSize - transferToLastPage);
+      }
+      const pageItems = allItems.slice(cursor, cursor + chunkSize);
+      const isFirst = pageIndex === 0;
+      const isLast = cursor + chunkSize >= allItems.length;
+      chunks.push({
+        items: pageItems,
+        displayOffset: cursor,
+        useFirstBackground: isFirst,
+        showHeader: isFirst,
+        showTotals: isLast
+      });
+      cursor += chunkSize;
+      pageIndex += 1;
     }
+
+    if (globalThis && Boolean((globalThis as Record<string, unknown>)['ngDevMode'])) {
+      const details = chunks.map((chunk, index) => `Page ${index + 1}: ${chunk.items.length} rows`).join(', ');
+      console.debug(`[KpDocument] Pagination chunks -> ${details}`);
+    }
+
     return chunks;
   });
 
@@ -121,18 +165,18 @@ export class KpDocumentComponent {
   }
 
   protected headerNote(): string {
-    return this.companySnapshot().texts?.headerNote?.trim() || '';
+    return String(this.companySnapshot().texts?.headerNote ?? '').trim();
   }
 
   protected introText(): string {
-    return this.companySnapshot().texts?.introText?.trim() || '';
+    return String(this.companySnapshot().texts?.introText ?? '').trim();
   }
 
   protected closingText(): string {
-    return this.companySnapshot().texts?.closingText?.trim() || '';
+    return String(this.companySnapshot().texts?.closingText ?? '').trim();
   }
 
   protected documentFooter(): string {
-    return this.companySnapshot().texts?.footerText?.trim() || '';
+    return String(this.companySnapshot().texts?.footerText ?? '').trim();
   }
 }

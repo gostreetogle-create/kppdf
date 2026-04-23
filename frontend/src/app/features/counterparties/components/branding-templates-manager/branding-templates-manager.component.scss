@@ -1,7 +1,5 @@
 @use '../../../../../styles/tokens' as *;
 
-.required { color: $color-danger; margin-left: 2px; }
-
 .templates-toolbar {
   display: flex;
   gap: $space-2;

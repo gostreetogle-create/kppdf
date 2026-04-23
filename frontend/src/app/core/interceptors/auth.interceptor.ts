@@ -3,10 +3,12 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth   = inject(AuthService);
   const router = inject(Router);
+  const ns     = inject(NotificationService);
   const token  = auth.token();
 
   const authReq = token
@@ -46,7 +48,31 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           })
         );
       }
+      if (err instanceof HttpErrorResponse && shouldNotifyError(req, err)) {
+        ns.error(getErrorMessage(err));
+      }
       return throwError(() => err);
     })
   );
 };
+
+function getErrorMessage(error: HttpErrorResponse): string {
+  if (error.status === 400) {
+    if (typeof error.error?.message === 'string' && error.error.message.trim()) {
+      return error.error.message;
+    }
+    return 'Проверьте корректность введённых данных';
+  }
+  if (error.status === 404) return 'Ресурс не найден';
+  if (error.status >= 500) return 'Сервис временно недоступен. Попробуйте позже';
+  if (error.status === 0) return 'Сервер недоступен. Проверьте сеть и повторите попытку';
+  if (typeof error.error?.message === 'string' && error.error.message.trim()) return error.error.message;
+  return 'Произошла непредвиденная ошибка';
+}
+
+function shouldNotifyError(req: { url: string; headers: { has: (key: string) => boolean } }, error: HttpErrorResponse): boolean {
+  if (req.headers.has('X-Silent-Error')) return false;
+  if (req.url.includes('/settings/backups/download/')) return false;
+  if (error.status === 401) return false;
+  return true;
+}

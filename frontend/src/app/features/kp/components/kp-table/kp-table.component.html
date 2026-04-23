@@ -22,7 +22,7 @@
     <div class="kp-summary-conditions">
       <div class="kp-conditions">
         @for (condition of conditions(); track $index) {
-          <p>{{ condition }}</p>
+          <p>{{ condition | kpTemplate }}</p>
         }
       </div>
     </div>

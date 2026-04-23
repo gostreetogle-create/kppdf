@@ -1,7 +1,8 @@
 @if (!auth.authReady()) {
   <div class="app-bootstrap-loading">
-    <div class="spinner"></div>
-    <p>Загрузка сессии...</p>
+    @if (showRestoreHint()) {
+      <p>Restoring session...</p>
+    }
   </div>
 } @else {
   <router-outlet />

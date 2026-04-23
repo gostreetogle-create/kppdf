@@ -15,7 +15,7 @@
 
 // ─── Sidebar ──────────────────────────────────────────────
 .sidebar {
-  width: var(--layout-shell-sidebar);
+  width: clamp(140px, 11vw, 170px);
   flex-shrink: 0;
   background: var(--ui-bg);
   border-right: 1px solid color-mix(in srgb, var(--ui-border) 85%, transparent);
@@ -28,12 +28,12 @@
   z-index: 200;
 
   &__brand {
-    padding: $space-5 $space-4;
+    padding: $space-4 $space-3;
     border-bottom: 1px solid color-mix(in srgb, var(--ui-border-light) 85%, transparent);
 
     a {
       font-weight: 700;
-      font-size: $font-xl;
+      font-size: $font-lg;
       color: var(--ui-primary);
       text-decoration: none;
       letter-spacing: -0.025em;
@@ -42,7 +42,7 @@
 
   &__nav {
     flex: 1;
-    padding: $space-3 $space-2;
+    padding: $space-3 $space-1;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -50,25 +50,25 @@
     a {
       display: flex;
       align-items: center;
-      gap: $space-3;
-      padding: $space-2 $space-3;
+      gap: $space-2;
+      padding: $space-2;
       border-radius: $radius-md;
-      font-size: $font-sm;
-      font-weight: 550;
+      font-size: $font-xs;
+      font-weight: 500;
       color: var(--ui-text-muted);
       text-decoration: none;
       transition: background $transition-fast, color $transition-fast;
 
-      &:hover  { background: color-mix(in srgb, var(--ui-bg-soft) 84%, var(--ui-bg)); color: var(--ui-text); }
+      &:hover  { background: color-mix(in srgb, var(--ui-bg-soft) 84%, var(--ui-bg)); color: color-mix(in srgb, var(--ui-text-muted) 88%, var(--ui-text)); }
       &.active {
-        background: color-mix(in srgb, var(--ui-primary) 14%, transparent);
+        background: color-mix(in srgb, var(--ui-primary) 10%, transparent);
         color: var(--ui-primary);
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-primary) 28%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-primary) 18%, transparent);
       }
     }
   }
 
-  &__icon { font-size: 1rem; width: 20px; text-align: center; }
+  &__icon { font-size: 0.875rem; width: 16px; text-align: center; opacity: 0.78; }
 
   &__footer {
     padding: $space-4;
@@ -78,12 +78,75 @@
     gap: $space-2;
   }
 
+  &__footer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+  }
+
   &__username {
     font-size: $font-xs;
     color: var(--ui-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+.theme-toggle[ui-btn].btn--icon {
+  --toggle-size: 20px;
+  min-width: 2rem;
+  min-height: 2rem;
+  border: 1px solid color-mix(in srgb, var(--ui-text-main) 8%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-bg-soft) 88%, var(--ui-bg));
+  color: var(--ui-text-main);
+  overflow: hidden;
+
+  .theme-toggle__container {
+    position: relative;
+    width: var(--toggle-size);
+    height: var(--toggle-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.is-dark {
+      transform: rotate(360deg);
+    }
+  }
+
+  .theme-toggle__icon {
+    position: absolute;
+    font-size: 18px;
+    line-height: 1;
+    transition:
+      opacity 0.4s ease,
+      transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &.sun {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    &.moon {
+      opacity: 0;
+      transform: scale(0.3) rotate(-90deg);
+    }
+
+    .is-dark & {
+      &.sun {
+        opacity: 0;
+        transform: scale(0.3) rotate(90deg);
+      }
+
+      &.moon {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+    }
   }
 }
 

@@ -40,7 +40,9 @@ export interface KpMetadata {
   validityDays:      number;
   prepaymentPercent: number;
   productionDays:    number;
-  tablePageBreakAfter: number;
+  tablePageBreakAfter?: number;
+  tablePageBreakFirstPage?: number;
+  tablePageBreakNextPages?: number;
   photoScalePercent?: number;
   defaultMarkupPercent?: number;
   defaultDiscountPercent?: number;

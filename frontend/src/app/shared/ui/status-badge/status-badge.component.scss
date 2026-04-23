@@ -3,12 +3,12 @@
 :host {
   display: inline-flex;
   align-items: center;
-  min-height: 1.35rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
+  min-height: 1.5rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
-  font-size: 0.6875rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -23,30 +23,30 @@
 :host(.status-badge--sent),
 :host(.status-badge--client),
 :host(.status-badge--viewer) {
-  color: #1d4ed8;
-  background: #eff6ff;
-  border-color: #bfdbfe;
+  color: color-mix(in srgb, var(--ui-primary) 84%, var(--ui-text-main));
+  background: color-mix(in srgb, var(--ui-primary) 12%, var(--ui-bg));
+  border-color: color-mix(in srgb, var(--ui-primary) 32%, var(--ui-border));
 }
 
 :host(.status-badge--accepted),
 :host(.status-badge--active),
 :host(.status-badge--company),
 :host(.status-badge--owner) {
-  color: #166534;
-  background: #f0fdf4;
-  border-color: #bbf7d0;
+  color: color-mix(in srgb, var(--ui-success) 78%, black);
+  background: color-mix(in srgb, var(--ui-success) 12%, var(--ui-bg));
+  border-color: color-mix(in srgb, var(--ui-success) 30%, var(--ui-border));
 }
 
 :host(.status-badge--rejected),
 :host(.status-badge--admin) {
-  color: #b91c1c;
-  background: #fef2f2;
-  border-color: #fecaca;
+  color: color-mix(in srgb, var(--ui-danger) 78%, black);
+  background: color-mix(in srgb, var(--ui-danger) 10%, var(--ui-bg));
+  border-color: color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
 }
 
 :host(.status-badge--manager),
 :host(.status-badge--supplier) {
-  color: #92400e;
-  background: #fffbeb;
-  border-color: #fde68a;
+  color: color-mix(in srgb, var(--ui-warning) 78%, black);
+  background: color-mix(in srgb, var(--ui-warning) 12%, var(--ui-bg));
+  border-color: color-mix(in srgb, var(--ui-warning) 30%, var(--ui-border));
 }

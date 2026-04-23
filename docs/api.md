@@ -18,13 +18,21 @@ Auth: `Authorization: Bearer <token>` — все роуты кроме `/api/aut
 
 | Метод | Путь | Тело | Ответ |
 |-------|------|------|-------|
-| POST | `/api/auth/login` | `{ username, password }` | `{ accessToken, refreshToken, user: { _id, username, name, role, isActive, mustChangePassword } }` |
+| POST | `/api/auth/login` | `{ username, password, rememberMe? }` | `{ accessToken, refreshToken, user: { _id, username, name, role, isActive, mustChangePassword } }` |
 | POST | `/api/auth/refresh` | `{ refreshToken }` | `{ accessToken, refreshToken }` (rotation) |
 | POST | `/api/auth/change-password` | `{ currentPassword, newPassword }` | `{ message }` |
 | POST | `/api/auth/logout` | — | `{ message }` |
 | GET | `/api/auth/me` | — | `IUser` без `passwordHash` |
 
 Rate limit: 10 попыток / 15 мин с одного IP.
+
+JWT TTL конфигурируется переменными окружения backend:
+- `JWT_ACCESS_EXPIRES` (например `1h`);
+- `JWT_REFRESH_EXPIRES` (например `30d`).
+
+Client-side session persistence:
+- `rememberMe=true`: frontend хранит auth-сессию в `localStorage`;
+- `rememberMe=false`: frontend хранит auth-сессию в `sessionStorage` (до закрытия вкладки/окна).
 
 ---
 
@@ -49,7 +57,7 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 
 | Метод | Путь | Описание |
 |-------|------|----------|
-| GET | `/api/products` | Список. Фильтры: `?category=&kind=ITEM\|SERVICE\|WORK&isActive=true&q=` |
+| GET | `/api/products` | Список. Фильтры: `?category=&kind=ITEM\|SERVICE\|WORK&isActive=true&q=&hasSpec=true\|false` |
 | GET | `/api/products/categories` | Уникальные категории (справочник + из товаров) |
 | GET | `/api/products/:id` | Один товар |
 | POST | `/api/products/bulk` | Массовый импорт JSON: `{ items: Product[], mode: "skip" \| "update" }` |
@@ -76,19 +84,101 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 }
 ```
 
+Дополнительно в ответе списка/карточки товара возвращается:
+- `specId?: string` — id технического профиля (`ProductSpec`), если он существует.
+
+---
+
+## Product Specs
+
+Гибкие технические характеристики хранятся отдельно от `Product` в коллекции `ProductSpec` (связь `1:1` по `productId`).
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/product-specs/:productId` | Получить профиль товара по `productId` |
+| GET | `/api/product-specs/templates` | Получить список шаблонов ProductSpec (`settings`-driven, с fallback) |
+| PUT | `/api/product-specs/:productId` | Upsert профиля товара по `productId` |
+| POST | `/api/product-specs/upload-drawing` | Upload чертежа (`multipart/form-data`, поле `file`) |
+
+Backward-compatible aliases (для существующих клиентов):
+- `GET /api/product-specs/product/:productId`
+- `PUT /api/product-specs/product/:productId`
+- `POST /api/product-specs/upload`
+
+RBAC:
+- `GET` требует `products.view`;
+- `PUT` и `POST upload-drawing` дополнительно ограничены ролями `owner/admin`.
+
+Шаблоны ProductSpec:
+- endpoint `GET /api/product-specs/templates` возвращает массив:
+```json
+[
+  {
+    "key": "sport-stand",
+    "name": "Спортивный стенд",
+    "groups": [
+      {
+        "title": "Габариты",
+        "params": [{ "name": "Длина", "value": "2000 мм" }]
+      }
+    ]
+  }
+]
+```
+- источник данных: `settings` key `product_spec_templates_v1`;
+- если ключ пустой или невалидный, backend возвращает встроенный fallback-набор шаблонов.
+
+Поведение отсутствующей спецификации:
+- `GET /api/product-specs/:productId` возвращает `200` с `null`, если профиль еще не создан (не считается ошибкой).
+
+`drawings`:
+```json
+{
+  "viewFront": "string?",
+  "viewSide": "string?",
+  "viewTop": "string?",
+  "view3D": "string?"
+}
+```
+
+`groups`:
+```json
+[
+  {
+    "title": "Материалы каркаса",
+    "params": [
+      { "name": "Материал", "value": "Сталь х/к" },
+      { "name": "Толщина", "value": "3 мм" }
+    ]
+  }
+]
+```
+
 ---
 
 ## KP
+
+Архитектурно: HTTP-слой вынесен в `backend/src/controllers/kp.controller.ts`, бизнес-логика в `backend/src/services/kp.service.ts`; файл `backend/src/routes/kp.routes.ts` отвечает за RBAC + route wiring.
 
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/api/kp` | Список (новые первые) |
 | GET | `/api/kp/:id` | Одно КП |
+| GET | `/api/kp/:id/export` | HQ-экспорт КП в PDF через frontend route (`application/pdf`, `Content-Disposition: attachment`) |
+| GET | `/api/kp/passport/:productId/export` | Экспорт технического паспорта товара в PDF |
 | POST | `/api/kp` | Создать черновик (можно без `companyId`/`kpType` — сервер возьмёт default-инициатора и `kpType=standard`; опц. `templateKey`) |
-| PUT | `/api/kp/:id` | Сохранить целиком |
+| PUT | `/api/kp/:id` | Сохранить целиком (включены `runValidators: true`, `context: "query"`) |
 | PUT | `/api/kp/:id/switch-type` | Переключить тип/шаблон существующего КП с пересборкой `companySnapshot` и безопасной политикой условий |
 | DELETE | `/api/kp/:id` | Удалить |
 | POST | `/api/kp/:id/duplicate` | Дублировать → новый `_id`, `status: draft`, `title: "Копия — ..."` |
+
+`GET /api/kp/:id/export` (HQ):
+- backend рендерит server-side HTML документа (`kp-pdf.service`) и генерирует PDF через Puppeteer без промежуточного браузерного маршрута;
+- ожидание готовности: `page.setContent(..., { waitUntil: 'networkidle0' })`;
+- параметры PDF: `A4`, `printBackground: true`, `displayHeaderFooter: true`;
+- колонтитулы: header с названием КП и датой, footer с нумерацией `Страница X из Y`;
+- поля страницы: top/bottom увеличены под колонтитулы (`top: 18mm`, `bottom: 16mm`);
+- ошибки: `404` если КП не найдено, `500` если генерация PDF завершилась неуспешно.
 
 **KP schema (ключевые поля):**
 ```json
@@ -137,6 +227,8 @@ Rate limit: 10 попыток / 15 мин с одного IP.
     "number": "string", "validityDays": 10,
     "prepaymentPercent": 50, "productionDays": 15,
     "tablePageBreakAfter": 6,
+    "tablePageBreakFirstPage": 6,
+    "tablePageBreakNextPages": 6,
     "photoScalePercent": 150,
     "defaultMarkupPercent": 0,
     "defaultDiscountPercent": 0
@@ -150,6 +242,17 @@ Rate limit: 10 попыток / 15 мин с одного IP.
   "vatPercent": 20
 }
 ```
+
+Валидация реквизитов при обновлении/создании КП:
+- `recipient.inn` и `companySnapshot.requisitesSnapshot.inn`: `^\\d{10}(\\d{2})?$`
+- `recipient.bik` и `companySnapshot.requisitesSnapshot.bik`: `^\\d{9}$`
+- `recipient.checkingAccount` / `recipient.correspondentAccount` и соответствующие поля snapshot: `^\\d{20}$`
+
+Пагинация таблицы товаров в КП:
+- `metadata.tablePageBreakFirstPage` — лимит строк на 1-й странице;
+- `metadata.tablePageBreakNextPages` — лимит строк на 2+ страницах;
+- `metadata.tablePageBreakAfter` остаётся как backward-compatible fallback для старых КП;
+- frontend `kp-document` использует детерминированное разбиение: первая/следующие страницы + баланс последней страницы (чтобы не оставлять «одинокие» 1-2 строки на финальной странице).
 
 ---
 
@@ -222,6 +325,9 @@ Rate limit: 10 попыток / 15 мин с одного IP.
 
 Дополнительные ключи `settings`:
 - `rbac_labels` — объект с пользовательскими подписями ролей и полномочий для UI (`roles`, `permissions`).
+- `passport_warranty_text` — текст блока «Гарантия» в PDF техпаспорта.
+- `passport_storage_text` — текст блока «Хранение и транспортировка» в PDF техпаспорта.
+- `product_spec_templates_v1` — JSON-массив шаблонов техпаспорта (`key`, `name`, `groups[].params[]`) для быстрого заполнения ProductSpec редактора.
 
 ---
 

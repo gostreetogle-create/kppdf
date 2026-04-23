@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  background: var(--ui-bg-main, var(--ui-bg-muted));
+  padding: 0.5rem 1.25rem 1.25rem;
+}
+
 /* === Основной контент === */
 .kp-content {
   --kp-page-mark-size: 0.8125rem;
@@ -47,7 +53,7 @@
 
 .kp-footer-note {
   margin-top: 8px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   line-height: 1.35;
   color: color-mix(in srgb, var(--ui-text) 76%, transparent);
 }
@@ -57,13 +63,29 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
   width: 100%;
+}
+
+:host ::ng-deep .kp-sheet {
+  margin-top: 0 !important;
+  box-shadow: var(--shadow-lg);
+  border-radius: 2px;
 }
 
 .kp-page--continuation {
   break-before: page;
   page-break-before: always;
+}
+
+.page-break-before {
+  break-before: page;
+  page-break-before: always;
+}
+
+.avoid-break {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 /* Номер страницы */
@@ -86,7 +108,7 @@
 
 /* Контент на продолжающихся страницах */
 .kp-content--continuation {
-  margin-top: 20mm; /* Отступ сверху для страниц без шапки */
+  margin-top: 6mm; /* На 2+ страницах поднимаем таблицу выше, сохраняя безопасный отступ */
 }
 
 /* Подсказка о продолжении таблицы */
@@ -101,6 +123,23 @@
 
 /* === Печать === */
 @media print {
+  @page {
+    size: A4;
+    margin: 0 !important;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  :host {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
   .kp-content {
     --kp-page-mark-size: 9.75pt;
     --kp-continues-size: 9pt;
@@ -124,4 +163,21 @@
     border-color: color-mix(in srgb, var(--ui-border) 86%, var(--ui-text));
     background: transparent;
   }
+
+  .kp-content--continuation {
+    margin-top: 6mm;
+  }
+
+  :host ::ng-deep .kp-sheet {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    top: 0 !important;
+  }
+}
+
+:host-context(:root[data-pdf-export='true']) ::ng-deep .kp-sheet {
+  margin-top: 0 !important;
+  top: 0 !important;
 }

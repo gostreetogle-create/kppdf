@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { tap, firstValueFrom, Observable } from 'rxjs';
+import { tap, firstValueFrom, Observable, of, from, catchError, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { AuthUser } from '../../../../../shared/types/User';
 
@@ -16,8 +16,8 @@ export class AuthService {
   private readonly http   = inject(HttpClient);
   private readonly router = inject(Router);
 
-  private readonly _token = signal<string | null>(localStorage.getItem(ACCESS_TOKEN_KEY));
-  private readonly _refreshToken = signal<string | null>(localStorage.getItem(REFRESH_TOKEN_KEY));
+  private readonly _token = signal<string | null>(this.readStorage(ACCESS_TOKEN_KEY));
+  private readonly _refreshToken = signal<string | null>(this.readStorage(REFRESH_TOKEN_KEY));
   private readonly _user     = signal<AuthUser | null>(this.restoreUser());
   // AUTH READY GATE — true только после завершения initAuth()
   readonly authReady         = signal(false);
@@ -32,9 +32,9 @@ export class AuthService {
    * Поэтому authGuard всегда видит authReady = true.
    */
   async initAuth(): Promise<void> {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    const isGuestSession = localStorage.getItem(GUEST_SESSION_KEY) === '1';
+    const token = this.readStorage(ACCESS_TOKEN_KEY);
+    const refreshToken = this.readStorage(REFRESH_TOKEN_KEY);
+    const isGuestSession = this.readStorage(GUEST_SESSION_KEY) === '1';
 
     if (!token) {
       this.authReady.set(true);
@@ -59,15 +59,29 @@ export class AuthService {
     }
   }
 
-  login(username: string, password: string): Observable<{ accessToken: string; refreshToken: string; user: AuthUser }> {
+  initSession(): Observable<boolean> {
+    const refreshToken = this._refreshToken();
+    if (!refreshToken) return of(false);
+    return from(this.tryRefresh()).pipe(
+      map((ok) => ok === true),
+      catchError(() => {
+        this.logout();
+        return of(false);
+      })
+    );
+  }
+
+  login(username: string, password: string, rememberMe = true): Observable<{ accessToken: string; refreshToken: string; user: AuthUser }> {
     return this.http
       .post<{ accessToken: string; refreshToken: string; user: AuthUser }>(`${BASE}/login`, { username, password })
       .pipe(
         tap(res => {
-          localStorage.setItem(ACCESS_TOKEN_KEY, res.accessToken);
-          localStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
-          localStorage.setItem(USER_KEY, JSON.stringify(res.user));
-          localStorage.removeItem(GUEST_SESSION_KEY);
+          this.persistTokens({
+            accessToken: res.accessToken,
+            refreshToken: res.refreshToken,
+            user: res.user,
+            rememberMe
+          });
           this._token.set(res.accessToken);
           this._refreshToken.set(res.refreshToken);
           this._user.set(res.user);
@@ -80,10 +94,10 @@ export class AuthService {
       .post<{ accessToken: string; user: AuthUser }>(`${environment.apiUrl}/guest/enter/${linkToken}`, {})
       .pipe(
         tap(res => {
-          localStorage.setItem(ACCESS_TOKEN_KEY, res.accessToken);
-          localStorage.removeItem(REFRESH_TOKEN_KEY);
-          localStorage.setItem(USER_KEY, JSON.stringify(res.user));
-          localStorage.setItem(GUEST_SESSION_KEY, '1');
+          this.clearStorageTokens();
+          sessionStorage.setItem(ACCESS_TOKEN_KEY, res.accessToken);
+          sessionStorage.setItem(USER_KEY, JSON.stringify(res.user));
+          sessionStorage.setItem(GUEST_SESSION_KEY, '1');
           this._token.set(res.accessToken);
           this._refreshToken.set(null);
           this._user.set(res.user);
@@ -93,7 +107,7 @@ export class AuthService {
 
   logout(): void {
     this.http.post(`${BASE}/logout`, {}).subscribe({ error: () => void 0 });
-    this.clearToken();
+    this.clearAuthState();
     this.router.navigate(['/login']);
   }
 
@@ -102,8 +116,12 @@ export class AuthService {
       refreshToken: this._refreshToken()
     }).pipe(
       tap(tokens => {
-        localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-        localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+        const storage = this.tokenStorage();
+        const alternate = storage === localStorage ? sessionStorage : localStorage;
+        storage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+        storage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+        alternate.removeItem(ACCESS_TOKEN_KEY);
+        alternate.removeItem(REFRESH_TOKEN_KEY);
         this._token.set(tokens.accessToken);
         this._refreshToken.set(tokens.refreshToken);
       })
@@ -122,7 +140,7 @@ export class AuthService {
         })
       );
       this._user.set(user);
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      this.tokenStorage().setItem(USER_KEY, JSON.stringify(user));
       return true;
     } catch {
       return false;
@@ -131,7 +149,7 @@ export class AuthService {
 
   private restoreUser(): AuthUser | null {
     try {
-      const raw = localStorage.getItem(USER_KEY);
+      const raw = this.readStorage(USER_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -139,12 +157,52 @@ export class AuthService {
   }
 
   private clearToken(): void {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(GUEST_SESSION_KEY);
+    this.clearAuthState();
+  }
+
+  private clearAuthState(): void {
+    this.clearStorageTokens();
     this._token.set(null);
     this._refreshToken.set(null);
     this._user.set(null);
+  }
+
+  private readStorage(key: string): string | null {
+    return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+  }
+
+  private tokenStorage(): Storage {
+    if (localStorage.getItem(REFRESH_TOKEN_KEY)) return localStorage;
+    if (sessionStorage.getItem(REFRESH_TOKEN_KEY)) return sessionStorage;
+    if (localStorage.getItem(ACCESS_TOKEN_KEY)) return localStorage;
+    if (sessionStorage.getItem(ACCESS_TOKEN_KEY)) return sessionStorage;
+    return localStorage;
+  }
+
+  private clearStorageTokens(): void {
+    [localStorage, sessionStorage].forEach((storage) => {
+      storage.removeItem(ACCESS_TOKEN_KEY);
+      storage.removeItem(REFRESH_TOKEN_KEY);
+      storage.removeItem(USER_KEY);
+      storage.removeItem(GUEST_SESSION_KEY);
+    });
+  }
+
+  private persistTokens(input: {
+    accessToken: string;
+    refreshToken: string;
+    user: AuthUser;
+    rememberMe: boolean;
+  }) {
+    const storage = input.rememberMe ? localStorage : sessionStorage;
+    const alternate = input.rememberMe ? sessionStorage : localStorage;
+    storage.setItem(ACCESS_TOKEN_KEY, input.accessToken);
+    storage.setItem(REFRESH_TOKEN_KEY, input.refreshToken);
+    storage.setItem(USER_KEY, JSON.stringify(input.user));
+    storage.removeItem(GUEST_SESSION_KEY);
+    alternate.removeItem(ACCESS_TOKEN_KEY);
+    alternate.removeItem(REFRESH_TOKEN_KEY);
+    alternate.removeItem(USER_KEY);
+    alternate.removeItem(GUEST_SESSION_KEY);
   }
 }

@@ -6,3 +6,5 @@ export { AlertComponent } from './alert/alert.component';
 export { SearchInputComponent } from './search-input/search-input.component';
 export { FilterSelectComponent } from './filter-select/filter-select.component';
 export { StatusBadgeComponent } from './status-badge/status-badge.component';
+export { CardComponent } from './card/card.component';
+export { DrawerComponent } from './drawer/drawer.component';

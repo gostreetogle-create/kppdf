@@ -7,14 +7,14 @@
   font-family: inherit;
   background: var(--ui-bg);
   color: var(--ui-text);
-  min-height: 40px;
+  min-height: var(--ui-control-height-md);
   line-height: 1.25;
-  min-width: min(100%, 180px);
+  min-width: min(100%, 11.25rem);
   padding: 0.5rem $space-3;
 
-  &:focus {
+  &:focus-visible {
     outline: none;
     border-color: var(--ui-primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 20%, transparent);
+    box-shadow: var(--ui-focus-ring-shadow);
   }
 }

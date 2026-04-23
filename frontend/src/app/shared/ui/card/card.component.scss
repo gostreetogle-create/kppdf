@@ -1,0 +1,24 @@
+@use '../../../../styles/tokens' as *;
+
+:host {
+  display: block;
+  border: 1px solid var(--ui-border);
+  border-radius: $radius-lg;
+  background: var(--ui-bg);
+  box-shadow: $shadow-sm;
+  padding: $space-4;
+}
+
+:host(.ui-card--muted) {
+  background: var(--ui-bg-soft);
+}
+
+:host(.ui-card--interactive) {
+  transition: border-color $transition-fast, box-shadow $transition-fast, background-color $transition-fast;
+}
+
+:host(.ui-card--interactive:hover) {
+  border-color: color-mix(in srgb, var(--ui-border) 70%, var(--ui-primary));
+  background: var(--ui-bg-soft);
+  box-shadow: $shadow-md;
+}

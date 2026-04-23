@@ -1,6 +1,6 @@
 <div class="toast-container">
   @for (toast of ns.toasts(); track toast.id) {
-    <div class="toast toast--{{ toast.type }}" (click)="ns.dismiss(toast.id)">
+    <div class="toast toast--{{ toast.type }}" role="status" (click)="dismissToast(toast.id)">
       <span class="toast__icon">
         @switch (toast.type) {
           @case ('success') { ✓ }
@@ -9,7 +9,14 @@
           @case ('info')    { ℹ }
         }
       </span>
-      <span class="toast__message">{{ toast.message }}</span>
+      <span class="toast__message">{{ toast.message || 'Произошла неизвестная ошибка' }}</span>
+      <button
+        type="button"
+        class="toast__close"
+        aria-label="Закрыть уведомление"
+        (click)="dismissToast(toast.id, $event)">
+        ×
+      </button>
     </div>
   }
 </div>

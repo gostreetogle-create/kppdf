@@ -1,0 +1,29 @@
+<div class="product-card" [class.is-selected]="isSelected()">
+  @if (product().specId) {
+    <span class="passport-badge" title="Есть тех. паспорт" aria-label="Есть тех. паспорт">⌁</span>
+  }
+
+  <div class="card-header">
+    <span class="sku">#{{ product().code || '—' }}</span>
+    <span class="status-dot" [class.status-dot--active]="product().isActive"></span>
+  </div>
+
+  <div class="card-body">
+    <h3 class="title">{{ product().name }}</h3>
+    @if (product().description) {
+      <p class="description">{{ product().description }}</p>
+    }
+  </div>
+
+  <div class="card-footer">
+    <div class="price-tag">
+      <span class="label">Цена</span>
+      <span class="value">{{ product().price | currency:'RUB':'symbol-narrow':'1.0-0' }}</span>
+    </div>
+
+    <button class="add-btn" type="button" (click)="onAdd.emit(product())">
+      <span class="icon-plus" aria-hidden="true"></span>
+      <span>Добавить</span>
+    </button>
+  </div>
+</div>

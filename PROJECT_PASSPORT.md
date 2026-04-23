@@ -51,13 +51,16 @@
 
 ### 2) Settings as defaults layer
 - Коллекция `Settings`: `{ key, value, label }`.
-- Актуальные системные ключи: `kp_validity_days`, `kp_prepayment_percent`, `kp_production_days`, `kp_vat_percent`.
-- `Settings` используются как дефолты при создании КП; Company-уровень может переопределять значения в контексте документа.
+- Актуальные системные ключи: `kp_validity_days`, `kp_prepayment_percent`, `kp_production_days`, `kp_vat_percent`, `passport_warranty_text`, `passport_storage_text`.
+- `Settings` используются как дефолты при создании КП и формировании PDF техпаспорта; Company-уровень может переопределять значения в контексте документа.
 
 ### 3) KP metadata and photo scale
 - `Kp.metadata.photoScalePercent` хранится в КП.
 - Диапазон: `150..350`, дефолт: `150`.
 - Поле применяется в документном рендере фото и сохраняется в metadata snapshot.
+- Пагинация таблицы в КП поддерживает dual-limit: `tablePageBreakFirstPage` (1-я страница) и `tablePageBreakNextPages` (2+ страницы).
+- Поле `tablePageBreakAfter` сохранено как legacy-fallback для старых КП и совместимости API.
+- Разбиение страниц детерминировано в `kp-document` (единая логика для preview и PDF), включая баланс последней страницы против «одиноких» строк.
 
 ### 4) Per-item repricing model
 - `KpItem.price` — базовая snapshot-цена позиции.
@@ -71,6 +74,7 @@
 - Enforcement контролируется feature-flag `ENFORCE_PASSWORD_CHANGE`.
 - HTTP `authInterceptor`: при `401` ответы `POST /api/auth/login` и `POST /api/auth/logout` не запускают refresh/`logout()` (иначе возможен цикл: `logout` без токена → `401` → снова `logout`).
 - Добавлен guest preview flow: одноразовая ссылка `/guest-preview/:token` открывает гостевую read-only сессию; backend жёстко запрещает для guest любые методы кроме `GET/HEAD/OPTIONS`.
+- Login UX поддерживает persistent-session стратегию: `remember me` хранит токены в `localStorage`, иначе в `sessionStorage`; при старте app выполняется восстановление сессии через refresh.
 
 ### 6) Users management
 - Users API: `/api/users` (`GET/POST/PATCH/DELETE /:id`, reset-password).
@@ -81,6 +85,37 @@
 - Backups (MongoDB + media): ручной запуск, список, очистка, скачивание/удаление.
 - Доступ к backup-операциям — через permission `backups.manage`.
 
+### 8) Smart template variables pipeline (KP)
+- Подстановка `{{token}}` для текстовых блоков документа централизована в `KpTemplateService`.
+- Источник данных переменных — `KpBuilderStore` (единый source-of-truth для текущего состояния КП).
+- Рендер в UI выполняется через standalone pipe `kpTemplate` в `kp-document` и `kp-table`.
+- Неизвестные токены не удаляются и остаются в тексте для безопасной деградации/отладки.
+
+### 9) PDF export strategy (server-side HTML + Puppeteer)
+- Экспорт `GET /api/kp/:id/export` генерируется в `kp-pdf.service` из server-side HTML-шаблона документа.
+- Для многостраничных документов включён `displayHeaderFooter`: header (название КП + дата), footer (`Страница X из Y`).
+- Геометрия PDF учитывает колонтитулы через увеличенные `top/bottom` margins.
+
+### 10) UI governance (Storybook + shared focus/required)
+- Storybook используется как контрольный слой для `shared/ui` (базовые компоненты должны рендериться в изоляции и на тех же токенах, что runtime).
+- Унифицированы кросс-компонентные паттерны: `--ui-focus-ring-shadow` (focus) и `.ui-required` (required marker) в глобальном style-layer.
+
+### 11) KP Builder resilience and instant UX
+- `KpBuilderStore` поддерживает snapshot-history (`past/future`, лимит 10) для `undo/redo`.
+- Параллельно с autosave хранится локальный backup КП в `localStorage` (`kp_builder_backup_<kpId>`), с явным restore flow после reload.
+- Для операций с backend roundtrip используется optimistic update + rollback (на ошибке серверного запроса восстанавливается предыдущее состояние).
+
+### 12) ProductSpec subsystem (technical profile 1:1)
+- Для техпаспорта введена отдельная коллекция `ProductSpec` с уникальной связью `productId -> Product`.
+- Структура характеристик гибкая (`groups[].params[]`) и не расширяет основной `Product` сотнями полей.
+- Чертежи хранятся в `drawings` + upload endpoint `/api/product-specs/upload` (media path `/media/specs/*`).
+- Доменные endpoint'ы спецификаций унифицированы по `productId` (`GET/PUT /api/product-specs/:productId`, `POST /api/product-specs/upload-drawing`); запись ограничена ролями `owner/admin`.
+- Экспорт техпаспорта: `GET /api/kp/passport/:productId/export` (Puppeteer, multi-page A4, данные из `Product + ProductSpec + Settings`).
+- Каталог товаров и API поддерживают признак `specId` + фильтрацию `hasSpec=true|false` для контроля покрытия базы техпаспортами.
+- В редакторе `ProductSpec` поддержано наследование «Копировать из аналога» (серийные товары), включая опцию копирования блока чертежей.
+- ProductSpec UI переведён в inspector-паттерн: правый `ui-drawer` в `Products`, без вложенного modal-flow.
+- Добавлены backend-driven шаблоны техпаспорта: `GET /api/product-specs/templates` читает `settings.product_spec_templates_v1` и использует fallback (`Спортивный стенд`, `МАФ`, `Павильон`).
+
 ---
 
 ## CHANGE IMPACT MATRIX
@@ -88,6 +123,7 @@
 | Что меняем | Основная цепочка | Обязательные проверки |
 |-----------|------------------|------------------------|
 | `Product` schema/type | `backend/src/models/product.model.ts` → `shared/types/Product.ts` → `frontend/api.service.ts` → `products` UI | Проверить карточку, форму, таблицу и создание позиции в КП |
+| `ProductSpec` schema/type | `backend/src/models/product-spec.model.ts` → `backend/src/routes/product-spec.routes.ts` → `frontend/api.service.ts` → `product-spec-*` UI | Проверить upload чертежей, upsert по `productId`, экспорт `passport` PDF |
 | `Kp` schema/type | `backend/src/models/kp.model.ts` → `shared/types/Kp.ts` → `kp.routes.ts` → `kp-builder`/`kp-document` | Проверить создание КП, autosave, preview, печать |
 | `KpItem` (включая repricing) | `kp.model.ts` → `shared/types/Kp.ts` → `kp-catalog`/`kp-table` | Проверить `effectivePrice`, итоги и рендер в `kp-table` |
 | `Counterparty` schema/type | `counterparty.model.ts` → `shared/types/Counterparty.ts` → `counterparty.routes.ts` → `counterparties` + `kp-header` | Проверить lookup, snapshot получателя, отображение реквизитов |
@@ -103,7 +139,6 @@
 
 | # | Проблема | Приоритет |
 |---|----------|-----------|
-| 6 | Нет upload изображений (только URL/media path) | 🟠 Medium |
 | 7 | `shared/types/` остаётся фронтенд-ориентированным (бэкенд не типизирован полностью этими контрактами) | 🟡 Low |
 | 8 | Rate limiting in-memory (сброс при рестарте, нет shared-store) | 🟡 Low |
 | 10 | Нет unit-тестов на расчёт `effectivePrice` и граничные случаи repricing | 🟡 Low |
@@ -149,6 +184,64 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-04-23 | Theme toggle micro-interaction final pass: в `AppShell` реализован smooth crossfade sun/moon без условного рендера (обе иконки всегда в DOM), с rotate/scale-анимацией через `opacity + transform` для стабильного 60fps-перехода |
+| 2026-04-23 | Notification anti-spam pass: в `NotificationService` добавлена дедупликация одинаковых toast-сообщений (`type + message`) в окне 2.5с; повторный identical-toast не создаёт новый блок, а продлевает TTL уже видимого уведомления |
+| 2026-04-23 | Theme toggle UX polish (`AppShell`): текстовый switch заменён на compact icon-button (sun/moon) с мягкой анимацией glyph, размещён в footer-actions рядом с logout; поведение сохранения темы через `ThemeService`/`localStorage` не изменено |
+| 2026-04-23 | Notification reliability pass: устранена проблема «пустых красных полос» — `NotificationService` нормализует/error-safe текст (`message`/`error.message` + fallback), `ToastComponent` получил fallback-message и кнопку закрытия, а `ui-alert` скрывает пустой контент через `:host:empty` |
+| 2026-04-23 | Dark theme token pass (Slate palette): в token-layer обновлены dark-значения (`ui-bg-main/elevated/card/hover`, `ui-text-main/muted/soft`, `ui-border/subtle`, `ui-primary`, `builder-preview-bg`, `input-bg`) для снижения контрастной усталости и более выраженной глубины слоёв |
+| 2026-04-23 | Theme switch compatibility: `ThemeService` теперь синхронно ставит `data-theme` на `html` и класс `.dark-theme` на `body`, а global styles поддерживают оба селектора для безопасного переключения тем через атрибут или класс |
+| 2026-04-23 | KP Builder dark UX polish: в правой панели `Состав КП` divider/hover переведены на `ui-border-subtle/ui-bg-hover`, stepper получил `input-bg + ui-border`, а цвет итоговой цены вынесен в variable (`--kp-line-total-color`); фон зоны предпросмотра документа переведён на `--builder-preview-bg` |
+| 2026-04-23 | KP Builder right-panel row stability fix: `selected-row` переведён с grid на flex-layout для устойчивого сжатия в узком сайдбаре, у `item-info` закреплены `flex:1 + min-width:0` для безопасного clamp/ellipsis, а правый блок действий зафиксирован через `flex-shrink:0` и `total-price min-width:65px` |
+| 2026-04-23 | KP Builder compact stepper tuning: stepper собран в единый контрол (`~76px`, общий border + внутренние разделители, узкий `qty-input` 28px, `radius:4px`), `item-handle` сделан визуально легче (`16px`, low-opacity), hover-delete сохранён на `opacity` без layout shift |
+| 2026-04-23 | KP Builder DnD pass + diagnostics hardening: для `Состав КП` активирован drag-and-drop через `@angular/cdk/drag-drop` (`cdkDropList/cdkDrag/cdkDragHandle`) с dashed placeholder и мягким drag-preview shadow; порядок товаров перестраивается прямо в `kp.items`, а metadata-поля `tablePageBreakAfter/FirstPage/NextPages` на frontend/shared приведены к optional-типизации для безопасной совместимости со старыми КП и устранения template diagnostics |
+| 2026-04-23 | Angular template diagnostics cleanup (`NG8102`): в `kp-builder` убран избыточный fallback `?? 6` в выражениях `tablePageBreakFirstPage/NextPages ?? tablePageBreakAfter`, т.к. `tablePageBreakAfter` уже обязательный `number`; runtime-поведение пагинации не изменено |
+| 2026-04-23 | KP Builder items redesign (SaaS row-mode): в секции `Состав КП` карточный вид заменён на компактные горизонтальные строки (`drag-handle`, thumb 40x40, name/meta, compact stepper, итог с `tabular-nums`, remove по hover через `opacity`), а кнопка `+ Добавить товар` переведена в лаконичный dashed-outline стиль |
+| 2026-04-23 | KP hybrid pagination pass: в metadata добавлены `tablePageBreakFirstPage`/`tablePageBreakNextPages` (с fallback на `tablePageBreakAfter`), `KP Builder` получил 2 отдельных поля лимита строк, а `kp-document` переведён на детерминированный split (first/next + баланс последней страницы) для一致ного preview/PDF без «одиноких» строк |
+| 2026-04-23 | KP Builder top alignment final pass: у `builder__preview-scale` зафиксирован `margin-top:0`, а в `kp-document` уменьшен host top-padding (с `2.5rem` до `0.5rem`) и принудительно обнулён `kp-sheet margin-top`, чтобы шапка КП в edit-режиме начиналась почти сразу под тулбаром |
+| 2026-04-23 | KP document top-gap fix (UI + print): в `builder__preview` документ прижат к верху (`padding-top:8px`, `justify-content:flex-start`, `transform-origin: top center`), а в `kp-document` для печати/экспорта обнулены системные page/body отступы (`@page margin:0`, `body margin/padding:0`) и верхние отступы листа (`kp-sheet margin-top:0`, включая `data-pdf-export` контекст) |
+| 2026-04-23 | KP Builder PDF dropdown visual clarity: у `builder__pdf-menu` убрана нежелательная прозрачность (фон уплотнён до `ui-bg-card`-based 98%), сохранён blur-эффект и усилена многоуровневая тень, чтобы меню полностью перекрывало задний текст и визуально “парило” над панелями |
+| 2026-04-23 | KP Builder PDF dropdown layering fix: для `builder__pdf-menu` поднят слой до `z-index:1000`, toolbar переведён в `position:relative` + `z-index:100` + `overflow:visible`, и actions-container получил `overflow:visible`, чтобы меню `Скачать PDF` не обрезалось и открывалось поверх правой панели/документа |
+| 2026-04-23 | ProductSpec drawing controls polish: в inspector-блоке `Чертежи` нативные file-поля заменены на `ui-btn` + hidden file input (`Загрузить`/`Очистить`), чтобы убрать визуальный шум и привести upload-паттерн к общему UI-kit стилю |
+| 2026-04-23 | ProductSpec editor UX polish: устранены пустые error-alert состояния (фильтрация пустых сообщений + defensive 404-handling), блок `Копирование из аналога` переведён в accordion, а зона `Чертежи` — в режим `thumbnail + upload + очистка` без ручных URL-полей |
+| 2026-04-23 | ProductSpec Inspector pass: в `Products` вход `Тех. паспорт` усилен состоянием по `specId` (table + card), редактор переведён из modal в правый `ui-drawer` c двухколоночным inspector-layout (groups + drawings + preview/actions), а backend получил endpoint `GET /api/product-specs/templates` (settings key `product_spec_templates_v1` + fallback templates) |
+| 2026-04-23 | KP Builder right-panel density refactor: `Состав КП` переведён с крупных блоков на компактные горизонтальные `selected-row` (40x40 thumb, name/meta, iOS-stepper, line total), а controls `Наценка/Скидка + Итого` собраны в sticky `sidebar-footer` для постоянной видимости итогов |
+| 2026-04-23 | KP Builder right-column UX: блок `bulk-adjustments` (наценка/скидка) в секции `Состав КП` переведён в sticky-footer режим (`position: sticky; bottom: 0`) с мягким top-shadow, чтобы controls оставались доступными при длинном списке товаров |
+| 2026-04-23 | KP Builder scroll containment fix: колонки `left/right` переведены на внутренний scroll-контейнер (`builder__sidebar-scroll` / `builder__right-scroll`) при фиксированной высоте тела билдера (`height:100%`, `align-items:stretch`, `overflow:hidden`), чтобы страница не растягивалась вниз при длинных списках |
+| 2026-04-23 | KP Catalog micro-polish: дополнительно снижена визуальная контрастность `status-dot` и смягчён `spec` badge (цвет/тень/hover) для более тихой Apple-style карточки без лишнего акцента |
+| 2026-04-23 | KP Catalog item visual refactor: `KpCatalogItem` приведён к Apple-style карточке (удалены внутренние разделители, усилена иерархия `title/sku`, скрытие пустого description, iOS-pill кнопка `Добавить`, мягкие тени + hover-depth, badge-индикатор `specId`) |
+| 2026-04-23 | ProductSpec UX fallback: `GET /api/product-specs/:productId` при отсутствии профиля теперь возвращает `200 null` (вместо `404`), frontend `ApiService.getProductSpecByProductId` обрабатывает `404` как `null`, а в `ProductSpecEditor` убран error-alert для сценария «профиль еще не создан» |
+| 2026-04-23 | ProductSpec backend hardening: введён controller-слой `product-spec.controller`, сервис унифицирован до `getSpecByProductId/upsertSpec` с `runValidators`, API приведён к `GET/PUT /api/product-specs/:productId` + `POST /api/product-specs/upload-drawing` (с alias-совместимостью), а write-операции по спецификациям ограничены ролями `owner/admin`; добавлен canonical тип `shared/types/ProductSpec.ts` |
+| 2026-04-23 | Implemented polished entry phase: добавлен статический Apple-style splash в `frontend/src/index.html` (матовый фон + тонкий indeterminate bar), в `AuthService.logout()` выполнена явная cross-storage очистка (`localStorage` + `sessionStorage`) и полный reset auth-signals, а `KP Builder` получил плавный fade-in переход после skeleton; в root app добавлен деликатный текст `Restoring session...` при долгом init (>500ms) |
+| 2026-04-23 | Auth persistence pass: в `KP Builder` исправлен help-блок шаблонных переменных (`{{token}}` как literal text) и hotkeys undo/redo; в auth-слое добавлены `initSession` + storage-aware токены (`localStorage`/`sessionStorage`) с `remember me` на login-экране; backend `AuthService` переведен на env-config TTL (`JWT_ACCESS_EXPIRES`, `JWT_REFRESH_EXPIRES`) |
+| 2026-04-23 | Mini-sprint Polish: в `GET /api/products` добавлен фильтр `hasSpec` и возврат `specId`; на фронтенде в `Products` добавлен фильтр «Только с тех. паспортом / без», а в `KP Catalog` карточки получили индикатор наличия техпаспорта; `ProductSpecEditor` расширен flow «Копировать из аналога» (поиск товара-донора + опция копирования чертежей) |
+| 2026-04-23 | Реализован модуль `ProductSpec` (1:1 к `Product`): добавлены модель/сервис/CRUD + upsert endpoint `PUT /api/product-specs/product/:productId`, upload чертежей `POST /api/product-specs/upload` (multer, `media/specs`), и новый PDF-экспорт техпаспорта `GET /api/kp/passport/:productId/export`; на frontend в `/products` добавлен flow `Тех. паспорт` с модальным `ProductSpecEditor` и dumb-viewer `ProductSpecViewer` для Apple-style таблиц характеристик |
+| 2026-04-23 | PR1 Stabilization + PDF Polish: `KpBuilderStore` расширен history-механизмом (`undo/redo`, 10 snapshots) и local backup в `localStorage`; в `KP Builder` добавлен restore-flow после reload, skeleton loading и hotkeys `Ctrl+Z/Ctrl+Y/Ctrl+Shift+Z`; `switchKpType` переведён на optimistic update с rollback при ошибке; в `kp-pdf.service` включены Puppeteer header/footer с нумерацией страниц `Страница X из Y`; в `kp-document` добавлены utility-классы `.page-break-before` и `.avoid-break` |
+| 2026-04-23 | PDF dropdown behavior upgrade (`KP Builder`): split-button переведён с hover-модели на signal-state управление (`isPdfMenuOpen`) с `document:click` auto-close и `@if`-рендером меню, что сделало поведение предсказуемым на тач/desktop и убрало случайные закрытия при уходе курсора |
+| 2026-04-23 | Toolbar split-button pass (`KP Builder`): действия печати собраны в компактный Apple-style split (`Скачать PDF` + dropdown `Быстрая печать (Draft)`), что снизило плотность toolbar и усилило визуальную иерархию primary-action |
+| 2026-04-23 | PDF assets hardening: в `pdf-generator.service` ожидание рендера усилено до `networkidle0` + проверка полной загрузки `document.images`; добавлена опциональная `PDF_ASSET_BASE_URL` для преобразования относительных путей изображений в абсолютные при экспорте |
+| 2026-04-23 | Storybook accessibility pass: для `shared/ui` focus-ring усилен (`--ui-focus-ring-shadow`), `search-input` и `filter-select` переведены на `:focus-visible`; smoke-check `build-storybook` проходит |
+| 2026-04-23 | Hybrid PDF flow (`KP Builder`): toolbar переведён на двойной сценарий `Печать (быстро)` (`window.print`) + `Скачать PDF (HQ)` через backend export; добавлен локальный loading-state `isExporting` и user-feedback notifications для процесса генерации |
+| 2026-04-23 | Phase 4 HQ PDF export: backend `GET /api/kp/:id/export` переведён на Puppeteer-рендер существующего frontend route (`/kp/:id?pdf=1`) с пробросом user access token в `localStorage`, ожиданием `app-kp-document`, и export-флагом `data-pdf-export="true"`/`--is-pdf-export: true`; на фронте добавлена кнопка `Скачать PDF (HQ)` рядом с `PDF / Печать` |
+| 2026-04-23 | Phase 3.1 UI DRY cleanup: в `styles/_global.scss` введены shared-утилиты `--ui-focus-ring-shadow` и `.ui-required`; `button/search-input/filter-select/form-field` переведены на единый focus ring, а дубли `.required` удалены из feature-форм |
+| 2026-04-23 | Phase 3 Storybook foundation: инициализирован Storybook для Angular (`storybook`/`build-storybook` targets), добавлены истории для `button`, `form-field`, `status-badge`, `kp-catalog-item`; stories ограничены `src/app/**/*.stories.ts`, чтобы исключить template/demo шум и держать UI governance в границах продуктовых компонентов |
+| 2026-04-23 | Phase 2 PDF Export MVP: добавлен серверный экспорт `GET /api/kp/:id/export` (controller + route + Puppeteer-сервис) как база для дальнейшего HQ-рендера |
+| 2026-04-23 | PR1 Smart Variables refactor: логика подстановки `{{token}}` вынесена из локальных util-функций `kp-document` в `KpTemplateService` (`KpBuilderStore` как источник данных) и standalone pipe `kpTemplate`; рендер шаблонов в `kp-document`/`kp-table` унифицирован, legacy `kp-template.utils.ts` удалён |
+| 2026-04-23 | Phase 1 Smart Variables (`KP Builder`/`KP Document`): добавлена безопасная Mustache-подстановка (`{{client_name}}`, `{{kp_number}}`, `{{total_price}}`, `{{date}}`) для `headerNote/intro/closing/footer` и `conditions`, неизвестные токены сохраняются как есть; в правой панели `Условия` добавлен helper-блок «Доступные переменные» |
+| 2026-04-23 | Toolbar premium refactor (`KP Builder`): верхняя панель приведена к Apple-style композиции из 3 логических зон (left/context, center/status, right/actions), заголовок КП переведён в edit-in-place паттерн (без постоянной рамки), вторичные действия стали ghost-only с hover-подсветкой, а технический save-status уменьшен и вынесен в нейтральный центр |
+| 2026-04-23 | Super-refactor scroll+composition (`KP Builder`): закреплена модель независимого скролла колонок (общий контейнер без сквозного scroll, `min-height:0` + `overflow-y:auto` внутри левой/центральной/правой зон, тонкие кастомные скроллбары), а правая панель `Состав КП` перевёрстана в горизонтальные строки (без чекбоксов/блока «Выбрано», qty-stepper + total, удаление по hover), bulk-поля перенесены вниз рядом с итоговым контекстом |
+| 2026-04-23 | Ultra-clean pass (`KP Builder`): в правой панели дополнительно ослаблены вторичные контейнеры (`bulk-adjustments`, `condition-templates`, row dividers), у catalog tools смягчены input/select borders, а в карточках каталога приглушены вторичные тексты (`sku/price-label`) для более «невидимого» интерфейса и фокуса на данных |
+| 2026-04-23 | Apple-style visual de-noise pass (`KP Builder`): снижена визуальная «рамочность» (lighter panel dividers, plain-text section headers), сужены левые/правые панели для доминанты документа, ослаблены карточечные тени в каталоге, смягчён status-dot, уплотнены toolbar secondary-actions и переработана плотность правой панели (`qty`, bulk-inputs, icon-buttons) для более спокойной иерархии |
+| 2026-04-23 | Product-form micro-polish (Apple-style): в compact-модалке добавления товара выровнены высоты контролов через единый `--compact-control-height`, лейблы переведены в normal case (без uppercase), а `focus-visible` приведён к мягкому Apple glow (`0 0 0 3px var(--ui-primary-focus)`) |
+| 2026-04-23 | KP Builder UX hotfix: в compact-модалке `Добавить товар в КП` устранён горизонтальный скролл — grid в `product-form.component.scss` переведён на адаптивные `minmax(0, ...)` колонки без фиксированного `min-width`, добавлены брейкпоинты `2-col/1-col` для узких экранов |
+| 2026-04-23 | Catalog visual pass в `KP Builder`: внедрён standalone dumb-компонент `KpCatalogItemComponent` (Apple-style карточка товара) и каталог в левой панели переведён с legacy `product-row` на карточки с мягкой иерархией (`sku/status/title/description/price`) и `onAdd` output без сервисных зависимостей |
+| 2026-04-23 | KP Builder Holistic Refactor (implementation pass): добавлен локальный `KpBuilderStore` и `KpBuilderComponent` переведён на store-driven state updates (без прямых `kp.set/update`), `KpDocument/KpCatalog` переведены в `OnPush` dumb-контракты с inline price flow (`blur/Enter` commit, `Escape` cancel), backend `KP` переведён на service/controller слой (`KpService` + `kp.controller` + slim routes), а UI-слой приведён к Apple-style baseline (SF system stack, glass surfaces, унифицированный `focus-visible`, обновлённые button/status-badge/document surfaces) |
+| 2026-04-23 | Stage 1 Foundation (partial): в `frontend/src/styles/_tokens.scss` добавлен Apple-style baseline token-layer (`--font-family` с SF/system stack, `--ui-primary`, `--ui-bg-*`, `--ui-text-*`, `--blur-effect`, `--space-xs/md/lg`) без изменения компонентных стилей; создан `frontend/src/app/features/kp/kp-builder/kp-builder.store.ts` с локальным signal-store (`setKp`, `patchKp`, `updateMetadata`, `updateItemPrice(productId, newPrice)`, `clear`) для последующего подключения в smart-компонент |
+| 2026-04-23 | KP Builder refactor (High-risk closure): компонент переведён на `ChangeDetectionStrategy.OnPush`, добавлены immutable-хелперы `updateKp/updateKpWith`, убраны прямые мутации `kp()` в ключевых полях metadata/title/vat и добавлен inline-поток редактирования цен через `kp-document -> kp-catalog -> priceChanged` |
+| 2026-04-23 | API/валидация: `PUT /api/kp/:id` обновлён с `{ runValidators: true, context: 'query' }`; в `Kp` schema добавлены форматные проверки реквизитов (`ИНН 10/12`, `БИК 9`, `счета 20`) для `recipient` и `companySnapshot.requisitesSnapshot` |
+| 2026-04-23 | UI/Error handling: в `authInterceptor` добавлен единый error-adapter для `404/5xx/0` с toast-уведомлениями; в целевых SCSS (`kp-builder.*`, `status-badge`, `alert`) убраны raw HEX, унифицированы `:focus-visible`, удалены `9px/10px` |
+| 2026-04-23 | P0 cleanup `KP Builder` доведён до token-purity в layout: устранены последние raw-цвета (`rgba/#fff`) в `kp-builder.layout.scss`, inset-разделители и print-background переведены на semantic-переменные (`--ui-border`, `--ui-print-paper`) |
+| 2026-04-23 | Выполнен P0 cleanup `KP Builder` side-panels: в `kp-builder.sidebar.scss` убраны hardcoded section-tints (`#.../rgba`) в пользу semantic token-слоя (`--ui-*` + `color-mix`), а в `kp-builder.widgets.scss` выровнены density/focus для icon-actions, чтобы снизить визуальный шум и усилить consistency |
+| 2026-04-23 | Запущена фаза Foundations для UI/UX: токены в `styles/_tokens.scss` расширены до semantic-layer (цвета/типографика/spacing/radius), глобальные стили нормализованы под эти токены, а базовые `ui-btn`/`ui-form-field` приведены к единым состояниям `hover/active/focus-visible/disabled`; добавлен `ui-card` и документ `DESIGN_SYSTEM.md` с P0-планом очистки `KP Builder` |
 | 2026-04-23 | Deploy automation упрощена до one-command flow: добавлен wrapper `deploy/deploy` (`./deploy`), а `deploy.sh` теперь auto-clean'ит `backend/dist` перед git dirty-check, чтобы серверные build-артефакты не блокировали обычный деплой |
 | 2026-04-23 | Кнопка `Гостевая ссылка` перенесена на страницу `Роли и полномочия`: admin-flow генерации (`POST /api/guest/issue`) и копирования `previewUrl` теперь находится рядом с управлением ролями |
 | 2026-04-23 | Страница `/login` упрощена для guest-flow: добавлен быстрый вход “Гостевая ссылка/токен” прямо в форме логина (без ручного набора `/guest-preview/...` в адресной строке) |

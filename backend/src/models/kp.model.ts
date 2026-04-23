@@ -47,6 +47,8 @@ export interface IKp extends Document {
     prepaymentPercent: number;
     productionDays: number;
     tablePageBreakAfter: number;
+    tablePageBreakFirstPage?: number;
+    tablePageBreakNextPages?: number;
     photoScalePercent?: number;
     defaultMarkupPercent?: number;
     defaultDiscountPercent?: number;
@@ -76,11 +78,18 @@ export interface IKp extends Document {
       inn?: string;
       kpp?: string;
       ogrn?: string;
+      bik?: string;
+      checkingAccount?: string;
+      correspondentAccount?: string;
       phone?: string;
       email?: string;
     };
   };
 }
+
+const INN_REGEX = /^\d{10}(\d{2})?$/;
+const BIK_REGEX = /^\d{9}$/;
+const ACCOUNT_REGEX = /^\d{20}$/;
 
 const KpItemSchema = new Schema<IKpItem>({
   productId:   { type: String, required: true },
@@ -107,16 +116,16 @@ const KpSchema = new Schema<IKp>({
     name:                  { type: String, default: '' },
     shortName:             String,
     legalForm:             String,
-    inn:                   String,
+    inn:                   { type: String, match: [INN_REGEX, 'ИНН должен содержать 10 или 12 цифр'] },
     kpp:                   String,
     ogrn:                  String,
     legalAddress:          String,
     phone:                 String,
     email:                 String,
     bankName:              String,
-    bik:                   String,
-    checkingAccount:       String,
-    correspondentAccount:  String,
+    bik:                   { type: String, match: [BIK_REGEX, 'БИК должен содержать 9 цифр'] },
+    checkingAccount:       { type: String, match: [ACCOUNT_REGEX, 'Расчетный счет должен содержать 20 цифр'] },
+    correspondentAccount:  { type: String, match: [ACCOUNT_REGEX, 'Корреспондентский счет должен содержать 20 цифр'] },
     founderName:           String,
     founderNameShort:      String,
   },
@@ -126,6 +135,8 @@ const KpSchema = new Schema<IKp>({
     prepaymentPercent: { type: Number, default: 50 },
     productionDays:    { type: Number, default: 15 },
     tablePageBreakAfter: { type: Number, default: 6, min: [1, 'tablePageBreakAfter должен быть >= 1'] },
+    tablePageBreakFirstPage: { type: Number, default: 6, min: [1, 'tablePageBreakFirstPage должен быть >= 1'] },
+    tablePageBreakNextPages: { type: Number, default: 6, min: [1, 'tablePageBreakNextPages должен быть >= 1'] },
     photoScalePercent: { type: Number, default: 150, min: [150, 'photoScalePercent должен быть >= 150'], max: [350, 'photoScalePercent должен быть <= 350'] },
     defaultMarkupPercent: { type: Number, default: 0, min: [0, 'defaultMarkupPercent должен быть >= 0'], max: [500, 'defaultMarkupPercent должен быть <= 500'] },
     defaultDiscountPercent: { type: Number, default: 0, min: [0, 'defaultDiscountPercent должен быть >= 0'], max: [100, 'defaultDiscountPercent должен быть <= 100'] },
@@ -156,9 +167,12 @@ const KpSchema = new Schema<IKp>({
       closingText: { type: String, default: '' },
     },
     requisitesSnapshot: {
-      inn:   String,
+      inn:   { type: String, match: [INN_REGEX, 'ИНН должен содержать 10 или 12 цифр'] },
       kpp:   String,
       ogrn:  String,
+      bik:   { type: String, match: [BIK_REGEX, 'БИК должен содержать 9 цифр'] },
+      checkingAccount: { type: String, match: [ACCOUNT_REGEX, 'Расчетный счет должен содержать 20 цифр'] },
+      correspondentAccount: { type: String, match: [ACCOUNT_REGEX, 'Корреспондентский счет должен содержать 20 цифр'] },
       phone: String,
       email: String,
     },

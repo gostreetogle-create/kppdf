@@ -1,0 +1,66 @@
+@use '../../../../styles/tokens' as *;
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: $z-modal;
+  background: color-mix(in srgb, #0b1220 28%, transparent);
+  display: flex;
+  justify-content: flex-end;
+  padding: $space-3;
+}
+
+.drawer {
+  height: 100%;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border-light);
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-xl;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: drawerIn 0.22s ease;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+    border-bottom: 1px solid var(--ui-border-light);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-lg;
+    font-weight: 650;
+  }
+
+  &__body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: $space-4 $space-5;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: $space-3;
+    padding: $space-3 $space-5;
+    border-top: 1px solid var(--ui-border-light);
+    background: color-mix(in srgb, var(--ui-bg-soft) 72%, transparent);
+  }
+}
+
+@keyframes drawerIn {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}

@@ -1,7 +1,7 @@
 import { Component, input, booleanAttribute } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type ButtonVariant = 'default' | 'primary' | 'danger' | 'ghost';
+export type ButtonVariant = 'default' | 'primary' | 'secondary' | 'danger' | 'ghost';
 export type ButtonSize    = 'sm' | 'md' | 'lg';
 
 @Component({

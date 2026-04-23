@@ -18,6 +18,7 @@ export class LoginComponent {
 
   username = '';
   password = '';
+  rememberMe = true;
   guestLink = '';
   loading  = signal(false);
   error    = signal('');
@@ -30,7 +31,7 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
 
-    this.auth.login(this.username, this.password).subscribe({
+    this.auth.login(this.username, this.password, this.rememberMe).subscribe({
       next:  () => this.router.navigate(['/']),
       error: err => {
         this.loading.set(false);

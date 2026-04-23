@@ -1,87 +1,123 @@
 @use '../../../../styles/tokens' as *;
 
 :host {
+  --btn-bg: var(--ui-bg);
+  --btn-bg-hover: var(--ui-bg-soft);
+  --btn-bg-active: var(--ui-bg-muted);
+  --btn-border: var(--ui-border);
+  --btn-text: var(--ui-text);
+  --btn-focus: var(--ui-focus-ring);
+  --btn-disabled-bg: var(--ui-bg-soft);
+  --btn-disabled-text: var(--ui-text-muted);
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: $space-2;
-  min-height: var(--ui-btn-height, 2rem);
+  min-height: max(var(--ui-btn-height, 2rem), 2.25rem);
   padding: 0.35rem $space-4;
-  border: 1px solid var(--ui-border);
+  border: 1px solid var(--btn-border);
   border-radius: $radius-md;
-  background: var(--ui-bg);
-  color: var(--ui-text);
+  background: var(--btn-bg);
+  color: var(--btn-text);
   font-size: var(--ui-font-size-md, 0.875rem);
   font-family: inherit;
-  font-weight: 500;
-  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  cursor: default;
   text-decoration: none;
   white-space: nowrap;
-  transition: background $transition-fast, box-shadow $transition-fast, border-color $transition-fast, opacity $transition-fast;
-  line-height: 1.4;
+  transition: background-color $transition-fast, box-shadow $transition-fast, border-color $transition-fast, color $transition-fast, opacity $transition-fast;
+  line-height: var(--line-height-body);
   letter-spacing: 0.01em;
 
   &:hover {
-    background: color-mix(in srgb, var(--ui-bg-soft) 82%, var(--ui-bg));
-    border-color: color-mix(in srgb, var(--ui-border) 78%, var(--ui-primary));
+    background: var(--btn-bg-hover);
+    border-color: color-mix(in srgb, var(--btn-border) 70%, var(--ui-primary));
   }
-  &:active { opacity: 0.92; transform: translateY(0.5px); }
-  &[disabled] { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+  &:active {
+    background: var(--btn-bg-active);
+    transform: scale(0.98);
+    opacity: 0.98;
+  }
+  &[disabled] {
+    background: var(--btn-disabled-bg);
+    color: var(--btn-disabled-text);
+    border-color: color-mix(in srgb, var(--btn-border) 70%, transparent);
+    opacity: 0.72;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 22%, transparent);
+    box-shadow: var(--ui-focus-ring-shadow);
   }
 
   // ─── Variants ─────────────────────────────────────────
   &.btn--primary {
-    background: var(--ui-primary);
-    color: #fff;
-    border-color: var(--ui-primary);
-    box-shadow: 0 3px 10px color-mix(in srgb, var(--ui-primary) 24%, transparent);
-    &:hover {
-      background: color-mix(in srgb, var(--ui-primary) 82%, black 18%);
-      border-color: color-mix(in srgb, var(--ui-primary) 82%, black 18%);
-    }
+    --btn-bg: var(--ui-primary);
+    --btn-bg-hover: var(--ui-primary-hover);
+    --btn-bg-active: var(--ui-primary-active);
+    --btn-border: var(--ui-primary);
+    --btn-text: var(--ui-text-on-primary);
+    --btn-disabled-bg: var(--ui-primary-disabled);
+    --btn-disabled-text: var(--ui-text-on-primary);
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--ui-text-main) 10%, transparent);
+  }
+
+  &.btn--secondary {
+    --btn-bg: var(--ui-secondary);
+    --btn-bg-hover: var(--ui-secondary-hover);
+    --btn-bg-active: var(--ui-secondary-active);
+    --btn-border: var(--ui-secondary);
+    --btn-text: var(--ui-text-on-primary);
+    --btn-disabled-bg: color-mix(in srgb, var(--ui-secondary) 45%, var(--ui-bg));
+    --btn-disabled-text: var(--ui-text-on-primary);
   }
 
   &.btn--danger {
-    background: var(--ui-danger);
-    color: #fff;
-    border-color: var(--ui-danger);
-    &:hover {
-      background: color-mix(in srgb, var(--ui-danger) 84%, black 16%);
-      border-color: color-mix(in srgb, var(--ui-danger) 84%, black 16%);
-    }
+    --btn-bg: var(--ui-danger);
+    --btn-bg-hover: color-mix(in srgb, var(--ui-danger) 84%, black 16%);
+    --btn-bg-active: color-mix(in srgb, var(--ui-danger) 72%, black 28%);
+    --btn-border: var(--ui-danger);
+    --btn-text: var(--ui-text-on-primary);
+    --btn-disabled-bg: color-mix(in srgb, var(--ui-danger) 45%, var(--ui-bg));
+    --btn-disabled-text: var(--ui-text-on-primary);
   }
 
   &.btn--ghost {
-    background: transparent;
-    border-color: transparent;
-    color: var(--ui-text-muted);
-    &:hover { background: var(--ui-bg-soft); color: var(--ui-text); }
+    --btn-bg: transparent;
+    --btn-bg-hover: var(--ui-bg-soft);
+    --btn-bg-active: var(--ui-bg-muted);
+    --btn-border: transparent;
+    --btn-text: var(--ui-text-secondary);
+    --btn-disabled-bg: transparent;
+    --btn-disabled-text: var(--ui-text-disabled);
   }
 
   // ─── Sizes ────────────────────────────────────────────
   &.btn--sm {
-    min-height: var(--ui-btn-height, 2rem);
+    min-height: max(var(--ui-btn-height, 2rem), var(--ui-control-height-sm));
     padding: 0.25rem $space-3;
     font-size: var(--ui-font-size-md, 0.875rem);
     border-radius: $radius-sm;
   }
   &.btn--lg {
-    min-height: var(--ui-btn-height-lg, 2.25rem);
+    min-height: max(var(--ui-btn-height-lg, 2.25rem), var(--ui-control-height-lg));
     padding: 0.45rem $space-6;
     font-size: var(--ui-font-size-md, 0.875rem);
   }
 
   // ─── Icon ─────────────────────────────────────────────
   &.btn--icon {
-    min-height: var(--ui-btn-height, 2rem);
-    min-width: var(--ui-btn-height, 2rem);
+    min-height: max(var(--ui-btn-height, 2rem), var(--ui-control-hit-size));
+    min-width: max(var(--ui-btn-height, 2rem), var(--ui-control-hit-size));
     padding: $space-2;
-    border: none;
-    background: none;
-    color: var(--ui-text-muted);
-    &:hover { background: var(--ui-bg-muted); color: var(--ui-text); }
+    --btn-bg: transparent;
+    --btn-bg-hover: var(--ui-bg-muted);
+    --btn-bg-active: var(--ui-bg-soft);
+    --btn-border: transparent;
+    --btn-text: var(--ui-text-secondary);
+    --btn-disabled-bg: transparent;
+    --btn-disabled-text: var(--ui-text-disabled);
   }
 }

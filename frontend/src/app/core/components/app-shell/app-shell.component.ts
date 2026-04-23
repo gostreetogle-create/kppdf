@@ -26,4 +26,5 @@ export class AppShellComponent {
   toggleSidebar()  { this.sidebarOpen.update(v => !v); }
   closeSidebar()   { this.sidebarOpen.set(false); }
   toggleTheme()    { this.theme.toggle(); }
+  isDark()         { return this.themeMode() === 'dark'; }
 }

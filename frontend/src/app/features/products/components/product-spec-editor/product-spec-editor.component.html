@@ -1,0 +1,202 @@
+<div class="spec-editor">
+  <div class="spec-editor__actions">
+    <select [ngModel]="selectedTemplateKey()" (ngModelChange)="selectedTemplateKey.set($event)">
+      <option value="">Заполнить по шаблону...</option>
+      @for (template of templates(); track template.key) {
+        <option [value]="template.key">{{ template.name }}</option>
+      }
+    </select>
+    <button ui-btn variant="ghost" size="sm" (click)="applyTemplate()" [disabled]="templatesLoading() || loading()">
+      Заполнить по шаблону
+    </button>
+    <button ui-btn variant="ghost" size="sm" (click)="showPreview.set(!showPreview())" [disabled]="loading()">
+      {{ showPreview() ? 'Скрыть паспорт' : 'Посмотреть паспорт' }}
+    </button>
+    <button ui-btn variant="ghost" size="sm" (click)="exportPassport()" [disabled]="downloading() || loading()">
+      {{ downloading() ? 'Генерация PDF...' : 'Скачать PDF' }}
+    </button>
+    <button ui-btn variant="primary" size="sm" (click)="save()" [disabled]="saving() || loading()">
+      {{ saving() ? 'Сохранение...' : 'Сохранить' }}
+    </button>
+  </div>
+
+  @if (visibleErrors().length) {
+    <ui-alert type="error">
+      @for (error of visibleErrors(); track error) { <div>{{ error }}</div> }
+    </ui-alert>
+  }
+
+  @if (loading()) {
+    <p class="spec-editor__loading">Загрузка профиля...</p>
+  } @else {
+    @if (specMissing()) {
+      <p class="spec-editor__hint">Техпаспорт для этого товара еще не создан. Заполните данные и сохраните профиль.</p>
+    }
+    <div class="spec-editor__meta">
+      <div>
+        <p class="spec-editor__label">Товар</p>
+        <p class="spec-editor__value">{{ productName() }}</p>
+      </div>
+      <div>
+        <p class="spec-editor__label">Артикул</p>
+        <p class="spec-editor__value">{{ productCode() }}</p>
+      </div>
+    </div>
+
+    <div class="spec-editor__layout">
+      <div class="spec-editor__left">
+        <section class="spec-editor__section">
+          <div class="spec-editor__section-header">
+            <h3>Копирование из аналога</h3>
+            <button ui-btn size="sm" variant="ghost" (click)="copySectionOpen.set(!copySectionOpen())">
+              {{ copySectionOpen() ? 'Свернуть' : 'Развернуть' }}
+            </button>
+          </div>
+          @if (copySectionOpen()) {
+            <div class="copy-block">
+              <input
+                [ngModel]="copySearch()"
+                (ngModelChange)="copySearch.set($event)"
+                placeholder="Поиск товара-аналога по названию или артикулу" />
+              <select
+                [ngModel]="selectedSourceProductId()"
+                (ngModelChange)="selectedSourceProductId.set($event)">
+                <option value="">Выберите товар-источник...</option>
+                @for (candidate of copySourceCandidates(); track candidate._id) {
+                  <option [value]="candidate._id">{{ candidate.code }} — {{ candidate.name }}</option>
+                }
+              </select>
+              <label class="copy-block__checkbox">
+                <input
+                  type="checkbox"
+                  [ngModel]="copyWithDrawings()"
+                  (ngModelChange)="copyWithDrawings.set($event)" />
+                Копировать также чертежи
+              </label>
+              <button
+                ui-btn
+                size="sm"
+                variant="ghost"
+                (click)="copyFromProduct(selectedSourceProductId())"
+                [disabled]="copying() || loading()">
+                {{ copying() ? 'Копирование...' : 'Копировать из выбранного' }}
+              </button>
+            </div>
+          }
+        </section>
+
+        <section class="spec-editor__section">
+          <div class="spec-editor__section-header">
+            <h3>Группы характеристик</h3>
+            <button ui-btn size="sm" variant="ghost" (click)="addGroup()">+ Добавить группу</button>
+          </div>
+          @if (!groups.length) {
+            <p class="spec-editor__hint">Добавьте первую группу: например, «Габариты» или «Материалы каркаса».</p>
+          } @else {
+            @for (group of groups; track $index; let groupIndex = $index) {
+              <article class="group-editor">
+                <div class="group-editor__head">
+                  <input [(ngModel)]="group.title" placeholder="Название группы" />
+                  <button ui-btn size="sm" variant="danger" (click)="removeGroup(groupIndex)">Удалить группу</button>
+                </div>
+                <div class="group-editor__rows">
+                  @for (param of group.params; track $index; let paramIndex = $index) {
+                    <div class="group-editor__row">
+                      <input [(ngModel)]="param.name" placeholder="Наименование показателя" />
+                      <input [(ngModel)]="param.value" placeholder="Значение" />
+                      <button ui-btn size="sm" variant="ghost" (click)="removeParam(groupIndex, paramIndex)">✕</button>
+                    </div>
+                  }
+                </div>
+                <button ui-btn size="sm" variant="ghost" (click)="addParam(groupIndex)">+ Параметр</button>
+              </article>
+            }
+          }
+        </section>
+      </div>
+
+      <aside class="spec-editor__right">
+        <section class="spec-editor__section">
+          <h3>Чертежи</h3>
+          <div class="drawings-grid">
+            <label class="drawings-field">
+              <span>Вид спереди</span>
+              <div class="drawings-field__preview">
+                @if (drawings.viewFront) {
+                  <img [src]="drawings.viewFront" alt="Вид спереди" />
+                } @else {
+                  <span class="drawings-field__placeholder">Нет изображения</span>
+                }
+              </div>
+              <input #frontFileInput class="drawings-field__file-input" type="file" accept="image/*" (change)="onUploadDrawing('viewFront', $event)" />
+              <div class="drawings-field__actions">
+                <button ui-btn size="sm" variant="ghost" (click)="frontFileInput.click()">Загрузить</button>
+                @if (drawings.viewFront) {
+                  <button ui-btn size="sm" variant="ghost" (click)="clearDrawing('viewFront')">Очистить</button>
+                }
+              </div>
+            </label>
+            <label class="drawings-field">
+              <span>Вид сбоку</span>
+              <div class="drawings-field__preview">
+                @if (drawings.viewSide) {
+                  <img [src]="drawings.viewSide" alt="Вид сбоку" />
+                } @else {
+                  <span class="drawings-field__placeholder">Нет изображения</span>
+                }
+              </div>
+              <input #sideFileInput class="drawings-field__file-input" type="file" accept="image/*" (change)="onUploadDrawing('viewSide', $event)" />
+              <div class="drawings-field__actions">
+                <button ui-btn size="sm" variant="ghost" (click)="sideFileInput.click()">Загрузить</button>
+                @if (drawings.viewSide) {
+                  <button ui-btn size="sm" variant="ghost" (click)="clearDrawing('viewSide')">Очистить</button>
+                }
+              </div>
+            </label>
+            <label class="drawings-field">
+              <span>Вид сверху</span>
+              <div class="drawings-field__preview">
+                @if (drawings.viewTop) {
+                  <img [src]="drawings.viewTop" alt="Вид сверху" />
+                } @else {
+                  <span class="drawings-field__placeholder">Нет изображения</span>
+                }
+              </div>
+              <input #topFileInput class="drawings-field__file-input" type="file" accept="image/*" (change)="onUploadDrawing('viewTop', $event)" />
+              <div class="drawings-field__actions">
+                <button ui-btn size="sm" variant="ghost" (click)="topFileInput.click()">Загрузить</button>
+                @if (drawings.viewTop) {
+                  <button ui-btn size="sm" variant="ghost" (click)="clearDrawing('viewTop')">Очистить</button>
+                }
+              </div>
+            </label>
+            <label class="drawings-field">
+              <span>3D вид</span>
+              <div class="drawings-field__preview">
+                @if (drawings.view3D) {
+                  <img [src]="drawings.view3D" alt="3D вид" />
+                } @else {
+                  <span class="drawings-field__placeholder">Нет изображения</span>
+                }
+              </div>
+              <input #threeDFileInput class="drawings-field__file-input" type="file" accept="image/*" (change)="onUploadDrawing('view3D', $event)" />
+              <div class="drawings-field__actions">
+                <button ui-btn size="sm" variant="ghost" (click)="threeDFileInput.click()">Загрузить</button>
+                @if (drawings.view3D) {
+                  <button ui-btn size="sm" variant="ghost" (click)="clearDrawing('view3D')">Очистить</button>
+                }
+              </div>
+            </label>
+          </div>
+        </section>
+
+        @if (showPreview()) {
+          <section class="spec-editor__section">
+            <h3>Превью паспорта</h3>
+            <app-product-spec-viewer [groups]="normalizedGroups()" />
+          </section>
+        }
+      </aside>
+    </div>
+  }
+</div>

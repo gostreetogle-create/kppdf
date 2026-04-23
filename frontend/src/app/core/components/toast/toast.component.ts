@@ -11,4 +11,9 @@ import { NotificationService } from '../../services/notification.service';
 })
 export class ToastComponent {
   readonly ns = inject(NotificationService);
+
+  dismissToast(id: number, event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.ns.dismiss(id);
+  }
 }

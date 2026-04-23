@@ -1,5 +1,6 @@
 import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { KpTemplatePipe } from '../template-pipe/template.pipe';
 
 export interface KpTotals {
   subtotal: number;
@@ -11,7 +12,7 @@ export interface KpTotals {
 @Component({
   selector: 'app-kp-table',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, KpTemplatePipe],
   templateUrl: './kp-table.component.html',
   styleUrl: './kp-table.component.scss'
 })

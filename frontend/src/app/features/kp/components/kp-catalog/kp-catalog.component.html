@@ -21,7 +21,7 @@
     </thead>
     <tbody>
       @for (item of items(); track item.id; let i = $index) {
-        <tr class="kp-row">
+        <tr class="kp-row avoid-break">
           <td class="kp-cell-num">{{ displayOffset() + i + 1 }}</td>
           @if (showPhotoColumn()) {
             <td class="kp-cell-photo" [style.width.px]="photoColWidthPx()">
@@ -51,8 +51,22 @@
           <td class="kp-cell-qty">{{ item.qty }}</td>
           <td class="kp-cell-unit">{{ item.unit }}</td>
           <td class="kp-cell-price">
-            <span class="kp-price">{{ item.price | number:'1.0-0' }}</span>
-            <span class="kp-currency">₽</span>
+            @if (editablePrices()) {
+              <input
+                type="number"
+                class="kp-inline-price"
+                min="0"
+                step="1"
+                [value]="item.price"
+                (blur)="onPriceCommit($event, item)"
+                (keydown.enter)="onPriceCommit($event, item)"
+                (keydown.escape)="onPriceCancel($event, item)"
+              />
+              <span class="kp-currency">₽</span>
+            } @else {
+              <span class="kp-price">{{ item.price | number:'1.0-0' }}</span>
+              <span class="kp-currency">₽</span>
+            }
           </td>
           <td class="kp-cell-sum">
             <span class="kp-sum">{{ (item.price * item.qty) | number:'1.0-0' }}</span>

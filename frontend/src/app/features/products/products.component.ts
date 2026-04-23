@@ -7,7 +7,8 @@ import { take } from 'rxjs';
 import { ApiService, Product } from '../../core/services/api.service';
 import { ProductFormComponent } from './components/product-form/product-form.component';
 import { ProductCardComponent } from './components/product-card/product-card.component';
-import { ButtonComponent, SearchInputComponent, FilterSelectComponent } from '../../shared/ui/index';
+import { ProductSpecEditorComponent } from './components/product-spec-editor/product-spec-editor.component';
+import { ButtonComponent, SearchInputComponent, FilterSelectComponent, DrawerComponent } from '../../shared/ui/index';
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalService } from '../../core/services/modal.service';
 
@@ -20,6 +21,8 @@ import { ModalService } from '../../core/services/modal.service';
     RouterLink,
     ProductFormComponent,
     ProductCardComponent,
+    ProductSpecEditorComponent,
+    DrawerComponent,
     ButtonComponent,
     SearchInputComponent,
     FilterSelectComponent
@@ -41,10 +44,12 @@ export class ProductsComponent implements OnInit {
   loading         = signal(true);
   search          = signal('');
   filterCategory  = signal('');
+  filterHasSpec   = signal<boolean | null>(null);
   view            = signal<'grid' | 'table'>('grid');
   formOpen        = signal(false);
   editTarget      = signal<Product | null>(null);
   deleteTarget    = signal<Product | null>(null);
+  specTarget      = signal<Product | null>(null);
   categories      = signal<string[]>([]);
 
   readonly filtered = computed(() => {
@@ -56,7 +61,10 @@ export class ProductsComponent implements OnInit {
         p.code.toLowerCase().includes(q) ||
         p.description.toLowerCase().includes(q);
       const matchCat = !cat || p.category === cat;
-      return matchSearch && matchCat;
+      const matchSpec = this.filterHasSpec() == null
+        ? true
+        : this.filterHasSpec() ? !!p.specId : !p.specId;
+      return matchSearch && matchCat && matchSpec;
     });
   });
 
@@ -69,7 +77,7 @@ export class ProductsComponent implements OnInit {
 
   load() {
     this.loading.set(true);
-    this.api.getProducts()
+    this.api.getProducts(this.filterHasSpec() == null ? undefined : { hasSpec: this.filterHasSpec() })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: list => { this.products.set(list); this.loading.set(false); },
@@ -77,9 +85,20 @@ export class ProductsComponent implements OnInit {
       });
   }
 
+  setHasSpecFilter(value: string) {
+    this.filterHasSpec.set(value === '' ? null : value === 'true');
+    this.load();
+  }
+
   openCreate() { this.editTarget.set(null); this.formOpen.set(true); }
   openEdit(p: Product) { this.editTarget.set(p); this.formOpen.set(true); }
   closeForm() { this.formOpen.set(false); this.editTarget.set(null); }
+  openSpecEditor(product: Product) { this.specTarget.set(product); }
+  closeSpecEditor() { this.specTarget.set(null); }
+  onSpecSaved() {
+    this.notification.success('Технический профиль сохранён');
+    this.load();
+  }
 
   onSaved(product: Product) {
     const isEdit = !!this.editTarget();

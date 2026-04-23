@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import path from 'path';
 import productRoutes from './routes/product.routes';
+import productSpecRoutes from './routes/product-spec.routes';
 import kpRoutes from './routes/kp.routes';
 import authRoutes from './routes/auth.routes';
 import counterpartyRoutes from './routes/counterparty.routes';
@@ -69,6 +70,7 @@ app.use('/api/settings',        authGuard, guestReadonlyGuard, enforcePasswordCh
 app.use('/api/dictionaries',    authGuard, guestReadonlyGuard, enforcePasswordChange, dictionaryRoutes);
 app.use('/api/counterparties',  authGuard, guestReadonlyGuard, enforcePasswordChange, counterpartyRoutes);
 app.use('/api/products',        authGuard, guestReadonlyGuard, enforcePasswordChange, productRoutes);
+app.use('/api/product-specs',   authGuard, guestReadonlyGuard, enforcePasswordChange, productSpecRoutes);
 app.use('/api/kp',              authGuard, guestReadonlyGuard, enforcePasswordChange, kpRoutes);
 app.use('/api/users',           authGuard, guestReadonlyGuard, enforcePasswordChange, requirePermission('users.manage'), usersRoutes);
 app.use('/api/roles',           authGuard, guestReadonlyGuard, enforcePasswordChange, requirePermission('users.manage'), rolesRoutes);

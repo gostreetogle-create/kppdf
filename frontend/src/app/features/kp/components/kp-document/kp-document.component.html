@@ -1,5 +1,5 @@
 <div class="kp-stack">
-  @for (chunk of pageChunks(); track $index; let pageIndex = $index) {
+  @for (chunk of pageChunks(); track chunk.displayOffset; let pageIndex = $index) {
     <app-kp-background 
       [imageUrl]="backgroundForPage(pageIndex)"
       [class.kp-page--continuation]="!chunk.useFirstBackground">
@@ -20,7 +20,7 @@
             [kpType]="companySnapshot().kpType">
           </app-kp-header>
           @if (headerNote()) {
-            <p class="kp-brand-note">{{ headerNote() }}</p>
+            <p class="kp-brand-note">{{ headerNote() | kpTemplate }}</p>
           }
         </section>
       }
@@ -28,18 +28,20 @@
       <!-- Основной контент -->
       <main class="kp-content" [class.kp-content--continuation]="!chunk.showHeader">
         @if (chunk.showHeader && introText()) {
-          <section class="kp-content__intro">{{ introText() }}</section>
+          <section class="kp-content__intro">{{ introText() | kpTemplate }}</section>
         }
         <section class="kp-content__main-block">
           <!-- Таблица товаров для текущей страницы -->
           <app-kp-catalog 
             [items]="chunk.items"
+            [editablePrices]="editablePrices()"
             [vatPercent]="vatPercent()"
             [showPhotoColumn]="hasPhotoColumn()"
             [showCodeColumn]="hasCodeColumn()"
             [showDescriptionColumn]="hasDescriptionColumn()"
             [photoScalePercent]="metadata().photoScalePercent || 150"
-            [displayOffset]="chunk.displayOffset">
+            [displayOffset]="chunk.displayOffset"
+            (priceChanged)="priceChanged.emit($event)">
           </app-kp-catalog>
         </section>
 
@@ -59,10 +61,10 @@
             </app-kp-table>
           </section>
           @if (closingText()) {
-            <section class="kp-content__closing">{{ closingText() }}</section>
+            <section class="kp-content__closing">{{ closingText() | kpTemplate }}</section>
           }
           @if (documentFooter()) {
-            <footer class="kp-footer-note" [innerHTML]="documentFooter()"></footer>
+            <footer class="kp-footer-note" [innerHTML]="documentFooter() | kpTemplate"></footer>
           }
         }
       </main>

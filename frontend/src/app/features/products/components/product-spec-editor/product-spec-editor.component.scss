@@ -1,0 +1,230 @@
+@use '../../../../../styles/tokens' as *;
+
+.spec-editor {
+  display: grid;
+  gap: $space-4;
+
+  &__actions {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+    padding: $space-2;
+    border: 1px solid var(--ui-border-light);
+    border-radius: $radius-lg;
+    background: color-mix(in srgb, var(--ui-bg-soft) 84%, transparent);
+    backdrop-filter: blur(8px);
+
+    select {
+      min-width: 220px;
+      padding: 8px 10px;
+      border: 1px solid var(--ui-border);
+      border-radius: $radius-sm;
+      background: var(--ui-bg);
+      color: var(--ui-text);
+      font: inherit;
+    }
+  }
+
+  &__loading {
+    margin: 0;
+    color: var(--ui-text-muted);
+  }
+
+  &__meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-3;
+    padding: $space-3;
+    border: 1px solid var(--ui-border-light);
+    border-radius: $radius-md;
+    background: var(--ui-bg-soft);
+  }
+
+  &__label {
+    margin: 0 0 4px;
+    font-size: $font-xs;
+    color: var(--ui-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__value {
+    margin: 0;
+    font-size: $font-base;
+    font-weight: 600;
+  }
+
+  &__section {
+    display: grid;
+    gap: $space-3;
+    align-content: start;
+  }
+
+  &__section h3 {
+    margin: 0;
+    font-size: $font-md;
+  }
+
+  &__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--ui-text-muted);
+    font-size: $font-sm;
+  }
+
+  &__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
+    gap: $space-4;
+    align-items: start;
+  }
+
+  &__left,
+  &__right {
+    display: grid;
+    gap: $space-4;
+    align-content: start;
+  }
+}
+
+.drawings-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-3;
+}
+
+.copy-block {
+  display: grid;
+  gap: $space-2;
+  padding: $space-3;
+  border: 1px solid var(--ui-border-light);
+  border-radius: $radius-md;
+  background: var(--ui-bg-soft);
+
+  input,
+  select {
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--ui-border);
+    border-radius: $radius-sm;
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    font: inherit;
+  }
+
+  &__checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: $font-sm;
+    color: var(--ui-text-muted);
+  }
+}
+
+.drawings-field {
+  display: grid;
+  gap: 6px;
+
+  span {
+    font-size: $font-xs;
+    color: var(--ui-text-muted);
+    font-weight: 600;
+  }
+
+  &__preview {
+    min-height: 96px;
+    border: 1px solid var(--ui-border-light);
+    border-radius: $radius-md;
+    background: var(--ui-bg-soft);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 100%;
+      height: 100%;
+      min-height: 96px;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  &__placeholder {
+    font-size: $font-xs;
+    color: var(--ui-text-muted);
+  }
+
+  &__file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+  }
+
+  &__actions {
+    display: inline-flex;
+    gap: $space-2;
+  }
+}
+
+.group-editor {
+  border: 1px solid var(--ui-border-light);
+  border-radius: $radius-md;
+  padding: $space-3;
+  display: grid;
+  gap: $space-2;
+
+  &__head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: $space-2;
+  }
+
+  &__rows {
+    display: grid;
+    gap: $space-2;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: $space-2;
+  }
+
+  input {
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--ui-border);
+    border-radius: $radius-sm;
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    font: inherit;
+  }
+}
+
+@media (max-width: 880px) {
+  .spec-editor__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .drawings-grid,
+  .group-editor__row,
+  .group-editor__head,
+  .spec-editor__meta {
+    grid-template-columns: 1fr;
+  }
+}

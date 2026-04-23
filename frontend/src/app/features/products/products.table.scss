@@ -1,6 +1,26 @@
 @use '../../../styles/tokens' as *;
 
 .products-table {
+  .btn-spec-entry {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+
+    &__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border: 1px solid currentColor;
+      border-radius: 3px;
+      font-size: 8px;
+      line-height: 1;
+      opacity: 0.75;
+    }
+  }
+
   .col-img {
     width: 56px;
     padding: $space-2 $space-4;

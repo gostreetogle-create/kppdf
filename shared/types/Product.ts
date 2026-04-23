@@ -23,6 +23,7 @@ export function createImage(
 
 export interface IProduct {
   _id:          string;
+  specId?:      string;
   code:         string;
   name:         string;
   description:  string;

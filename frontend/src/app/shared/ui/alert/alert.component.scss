@@ -8,8 +8,12 @@
   margin-bottom: $space-4;
   line-height: 1.5;
 
-  &.alert--error   { background: $color-danger-light;  color: $color-danger-dark;  border: 1px solid #ffcdd2; }
-  &.alert--success { background: $color-success-light; color: $color-success;      border: 1px solid #c8e6c9; }
-  &.alert--warning { background: $color-warning-light; color: $color-warning;      border: 1px solid #ffe0b2; }
-  &.alert--info    { background: $color-primary-light; color: $color-primary-dark; border: 1px solid #bbdefb; }
+  &.alert--error   { background: $color-danger-light;  color: $color-danger-dark;  border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border)); }
+  &.alert--success { background: $color-success-light; color: $color-success;      border: 1px solid color-mix(in srgb, var(--ui-success) 30%, var(--ui-border)); }
+  &.alert--warning { background: $color-warning-light; color: $color-warning;      border: 1px solid color-mix(in srgb, var(--ui-warning) 30%, var(--ui-border)); }
+  &.alert--info    { background: $color-primary-light; color: $color-primary-dark; border: 1px solid color-mix(in srgb, var(--ui-primary) 30%, var(--ui-border)); }
+}
+
+:host:empty {
+  display: none;
 }
