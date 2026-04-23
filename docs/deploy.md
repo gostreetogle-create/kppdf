@@ -5,6 +5,7 @@
 ```
 deploy/
 ├── .env.example      # шаблон переменных для deploy.sh
+├── deploy            # удобный wrapper: one-command запуск
 └── deploy.sh         # нативный деплой: npm + systemd + nginx
 ```
 
@@ -37,8 +38,9 @@ cd /opt/kppdf
 cp deploy/.env.example deploy/.env
 nano deploy/.env
 
-# 3) Запустить деплой
-sudo bash deploy/deploy.sh
+# 3) Запустить деплой одной командой
+cd deploy
+./deploy
 ```
 
 ---
@@ -64,13 +66,14 @@ sudo bash deploy/deploy.sh
 ## Что делает `deploy.sh`
 
 1. Валидирует `deploy/.env`
-2. Делает `git pull --ff-only`
-3. Выполняет `npm ci` + `npm run build` в `backend` и `frontend`
-4. Генерирует `backend/.env`
-5. Создает/обновляет `kppdf-backend.service` и перезапускает сервис
-6. Копирует фронт-статику в `/var/www/kppdf`
-7. Создает/обновляет nginx site, проверяет `nginx -t`, reload
-8. Проверяет `GET /health` и доступность веба
+2. Автоматически очищает auto-generated git-артефакты в `backend/dist` (чтобы сборка на сервере не делала дерево dirty)
+3. Делает `git pull --ff-only`
+4. Выполняет `npm ci` + `npm run build` в `backend` и `frontend`
+5. Генерирует `backend/.env`
+6. Создает/обновляет `kppdf-backend.service` и перезапускает сервис
+7. Копирует фронт-статику в `/var/www/kppdf`
+8. Создает/обновляет nginx site, проверяет `nginx -t`, reload
+9. Проверяет `GET /health` и доступность веба
 
 Важно: в nginx для `/api` и `/media` используются префиксные proxy location, чтобы запросы к API/медиа не перехватывались regex-правилом статики (`png/jpg/css/js`).
 Legacy-алиасы `/products/*` и `/kp/*` проксируются только для файловых URL (с расширением изображения), чтобы не ломать SPA роуты `/products` и `/kp/:id`.
@@ -81,17 +84,21 @@ Legacy-алиасы `/products/*` и `/kp/*` проксируются тольк
 
 ```bash
 cd /opt/kppdf
-sudo bash deploy/deploy.sh
+cd deploy
+./deploy
 ```
 
 Опционально:
 
 ```bash
 # без git pull (если код уже обновили вручную)
-sudo bash deploy/deploy.sh --skip-pull
+./deploy --skip-pull
 
 # разрешить деплой при локальных изменениях в репозитории
-sudo bash deploy/deploy.sh --allow-dirty
+./deploy --allow-dirty
+
+# отключить авто-очистку backend/dist перед проверкой dirty-tree
+./deploy --no-auto-clean-generated
 ```
 
 ---
@@ -102,6 +109,7 @@ sudo bash deploy/deploy.sh --allow-dirty
 - Веб-статика обновляется через `rsync --delete` только в `WEB_ROOT` (`/var/www/kppdf`).
 - Добавлена защита от опасного удаления: скрипт остановится, если `WEB_ROOT` похож на критический путь (`/`, `/var`, `/root`, пустой путь).
 - По умолчанию `git pull` блокируется при dirty-дереве, чтобы не потерять локальные незакоммиченные правки.
+- Перед этой проверкой автоматически очищаются только safe auto-generated файлы `backend/dist/*`.
 - Для осознанного обхода проверки используйте `--allow-dirty`.
 
 ---

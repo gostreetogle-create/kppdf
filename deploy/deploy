@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TARGET_SCRIPT="${SCRIPT_DIR}/deploy.sh"
+
+if [[ ! -f "${TARGET_SCRIPT}" ]]; then
+  echo "[deploy-wrapper] ОШИБКА: не найден ${TARGET_SCRIPT}" >&2
+  exit 1
+fi
+
+if [[ "$(id -u)" -ne 0 ]]; then
+  echo "[deploy-wrapper] Запускаю через sudo..."
+  exec sudo bash "${TARGET_SCRIPT}" "$@"
+fi
+
+exec bash "${TARGET_SCRIPT}" "$@"

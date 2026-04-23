@@ -7,6 +7,7 @@
 
 ## 2026-04-23
 
+- Deploy UX: добавлен wrapper `deploy/deploy` для запуска одной командой `./deploy`; `deploy.sh` автоматически очищает `backend/dist` перед проверкой dirty-tree, чтобы generated build-файлы не стопорили `git pull`.
 - Roles & Permissions UX: кнопка `Гостевая ссылка` перенесена в шапку страницы `Роли и полномочия`; ссылка генерируется через `POST /api/guest/issue` и сразу копируется в буфер.
 - Login UX: добавлен максимально простой guest-вход на экране логина — можно вставить полную гостевую ссылку или JWT-токен и перейти в режим просмотра одной кнопкой.
 - Guest preview: добавлен безопасный read-only режим по ссылке — `POST /api/guest/issue` (генерация ссылки для `users.manage`) и `POST /api/guest/enter/:token` (вход гостя), плюс backend guard, который запрещает гостю любые write-операции.

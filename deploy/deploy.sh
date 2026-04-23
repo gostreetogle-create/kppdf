@@ -4,6 +4,7 @@ set -euo pipefail
 SKIP_PULL=0
 ALLOW_DIRTY=0
 SHOW_HELP=0
+AUTO_CLEAN_GENERATED=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -13,6 +14,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --allow-dirty)
       ALLOW_DIRTY=1
+      shift
+      ;;
+    --no-auto-clean-generated)
+      AUTO_CLEAN_GENERATED=0
       shift
       ;;
     -h|--help)
@@ -29,12 +34,13 @@ done
 if [[ "${SHOW_HELP}" -eq 1 ]]; then
   cat <<'EOF'
 Usage:
-  sudo bash deploy/deploy.sh [--skip-pull] [--allow-dirty]
+  sudo bash deploy/deploy.sh [--skip-pull] [--allow-dirty] [--no-auto-clean-generated]
   sudo bash deploy/deploy.sh --help
 
 Опции:
   --skip-pull    не выполнять git pull
   --allow-dirty  разрешить деплой при незакоммиченных изменениях в репозитории
+  --no-auto-clean-generated  не очищать авто-генерируемые git-артефакты (backend/dist)
 
 Что делает:
   1. Проверяет deploy/.env и обязательные переменные
@@ -106,6 +112,14 @@ log "  CORS_ORIGIN  = ${CORS_ORIGIN}"
 log "  JWT_SECRET   = [set]"
 
 if git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if [[ "${AUTO_CLEAN_GENERATED}" -eq 1 ]]; then
+    if [[ -d "${REPO_ROOT}/backend/dist" ]]; then
+      log "Очищаю auto-generated артефакты backend/dist перед проверкой git..."
+      git -C "${REPO_ROOT}" restore --source=HEAD --worktree --staged backend/dist >/dev/null 2>&1 || true
+      git -C "${REPO_ROOT}" clean -fd backend/dist >/dev/null 2>&1 || true
+    fi
+  fi
+
   if [[ "${SKIP_PULL}" -eq 1 ]]; then
     log "git pull пропущен (--skip-pull)."
   else
