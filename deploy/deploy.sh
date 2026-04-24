@@ -61,6 +61,9 @@ BACKEND_SERVICE_FILE="/etc/systemd/system/kppdf-backend.service"
 NGINX_SITE_FILE="/etc/nginx/sites-available/kppdf.conf"
 NGINX_SITE_LINK="/etc/nginx/sites-enabled/kppdf.conf"
 WEB_ROOT="/var/www/kppdf"
+LE_LIVE_DIR=""
+SSL_FULLCHAIN=""
+SSL_PRIVKEY=""
 
 log() { echo "[deploy] $*"; }
 err() { echo "[deploy] ОШИБКА: $*" >&2; exit 1; }
@@ -83,12 +86,16 @@ fi
 source "${ENV_FILE}"
 
 DOMAIN="${DOMAIN:-_}"
+PRIMARY_DOMAIN="$(awk '{print $1}' <<<"${DOMAIN}")"
 WEB_PORT="${WEB_PORT:-80}"
 BACKEND_PORT="${BACKEND_PORT:-3000}"
 MONGO_DB="${MONGO_DB:-kp-app}"
 MONGO_URI="${MONGO_URI:-mongodb://127.0.0.1:27017/${MONGO_DB}}"
 MEDIA_ROOT="${MEDIA_ROOT:-${REPO_ROOT}/media}"
 DADATA_TOKEN="${DADATA_TOKEN:-}"
+LE_LIVE_DIR="/etc/letsencrypt/live/${PRIMARY_DOMAIN}"
+SSL_FULLCHAIN="${LE_LIVE_DIR}/fullchain.pem"
+SSL_PRIVKEY="${LE_LIVE_DIR}/privkey.pem"
 
 [[ -n "${CORS_ORIGIN:-}" ]] || err "CORS_ORIGIN не задан в deploy/.env"
 [[ "${CORS_ORIGIN}" != "*" ]] || err "CORS_ORIGIN='*' запрещён в production."
@@ -201,11 +208,27 @@ is_dangerous_path "${WEB_ROOT}" && err "WEB_ROOT имеет опасный пу�
 mkdir -p "${WEB_ROOT}"
 rsync -a --delete "${REPO_ROOT}/frontend/dist/kppdf-frontend/browser/" "${WEB_ROOT}/"
 
-cat > "${NGINX_SITE_FILE}" <<EOF
+if [[ -f "${SSL_FULLCHAIN}" && -f "${SSL_PRIVKEY}" ]]; then
+  log "Найден TLS-сертификат (${SSL_FULLCHAIN}). Публикую HTTPS и HTTP->HTTPS redirect."
+  cat > "${NGINX_SITE_FILE}" <<EOF
 server {
   listen ${WEB_PORT};
   server_name ${DOMAIN};
+  return 301 https://\$host\$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name ${DOMAIN};
   client_max_body_size 100m;
+
+  ssl_certificate ${SSL_FULLCHAIN};
+  ssl_certificate_key ${SSL_PRIVKEY};
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_tickets off;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
 
   root ${WEB_ROOT};
   index index.html;
@@ -229,8 +252,6 @@ server {
     proxy_set_header X-Forwarded-Proto \$scheme;
   }
 
-  # Legacy media aliases for old DB links.
-  # IMPORTANT: match only file-like URLs to avoid intercepting SPA routes /products and /kp/:id.
   location ~* ^/products/.+\.(?:png|jpg|jpeg|gif|svg|webp)$ {
     proxy_pass http://127.0.0.1:${BACKEND_PORT};
     proxy_http_version 1.1;
@@ -266,6 +287,72 @@ server {
   }
 }
 EOF
+else
+  log "TLS-сертификат не найден (${SSL_FULLCHAIN}). Публикую HTTP-only конфиг."
+  cat > "${NGINX_SITE_FILE}" <<EOF
+server {
+  listen ${WEB_PORT};
+  server_name ${DOMAIN};
+  client_max_body_size 100m;
+
+  root ${WEB_ROOT};
+  index index.html;
+  charset utf-8;
+
+  location ^~ /api/ {
+    proxy_pass http://127.0.0.1:${BACKEND_PORT}/api/;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location ^~ /media/ {
+    proxy_pass http://127.0.0.1:${BACKEND_PORT}/media/;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location ~* ^/products/.+\.(?:png|jpg|jpeg|gif|svg|webp)$ {
+    proxy_pass http://127.0.0.1:${BACKEND_PORT};
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location ~* ^/kp/.+\.(?:png|jpg|jpeg|gif|svg|webp)$ {
+    proxy_pass http://127.0.0.1:${BACKEND_PORT};
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location ~* \.(?:js|mjs|css|map|woff2?|ico|png|jpg|jpeg|gif|svg|webp)$ {
+    try_files \$uri =404;
+    expires 1y;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+  }
+
+  location = /index.html {
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+    try_files \$uri =404;
+  }
+
+  location / {
+    try_files \$uri \$uri/ /index.html;
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+  }
+}
+EOF
+fi
 
 [[ -L "${NGINX_SITE_LINK}" ]] || ln -s "${NGINX_SITE_FILE}" "${NGINX_SITE_LINK}"
 [[ -f /etc/nginx/sites-enabled/default ]] && rm -f /etc/nginx/sites-enabled/default
@@ -274,6 +361,7 @@ systemctl reload nginx
 
 BACKEND_URL="http://127.0.0.1:${BACKEND_PORT}/health"
 WEB_URL="http://127.0.0.1:${WEB_PORT}/"
+HTTPS_WEB_URL="https://127.0.0.1/"
 
 log "Жду готовности backend (${BACKEND_URL})..."
 for i in $(seq 1 30); do
@@ -295,8 +383,20 @@ else
   log "ПРЕДУПРЕЖДЕНИЕ: web не ответил."
 fi
 
+if [[ -f "${SSL_FULLCHAIN}" && -f "${SSL_PRIVKEY}" ]]; then
+  log "Проверяю HTTPS web (${HTTPS_WEB_URL})..."
+  if curl -kfsS --connect-timeout 3 --max-time 8 "${HTTPS_WEB_URL}" >/dev/null 2>&1; then
+    log "HTTPS web отвечает."
+  else
+    log "ПРЕДУПРЕЖДЕНИЕ: HTTPS web не ответил."
+  fi
+fi
+
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 log "Деплой выполнен успешно!"
 log "  Web: http://<IP-сервера>:${WEB_PORT}"
+if [[ -f "${SSL_FULLCHAIN}" && -f "${SSL_PRIVKEY}" ]]; then
+  log "  Web (HTTPS): https://<домен>"
+fi
 log "  API: http://<IP-сервера>:${WEB_PORT}/api"
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

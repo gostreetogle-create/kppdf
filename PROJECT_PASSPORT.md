@@ -190,6 +190,7 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-04-24 | Deploy TLS resilience upgrade: `deploy/deploy.sh` больше не затирает HTTPS-конфигурацию при каждом релизе — при наличии Let's Encrypt сертификатов (`/etc/letsencrypt/live/<domain>/fullchain.pem|privkey.pem`) автоматически генерирует `80->301` + `443 ssl` server blocks и добавляет HTTPS smoke-check в финальный отчёт |
 | 2026-04-24 | KP Builder settings style wiring fix: у `KpBuilderSettingsComponent` подключён локальный `kp-builder-settings.component.scss` в `styleUrls` (вместе с `kp-builder.sidebar.scss`), из-за чего 2-колоночная сетка `kp-params-grid` и icon-only toggle `Колонка фото` начали применяться фактически, а не только существовать в коде |
 | 2026-04-24 | KP Builder params grid fix: стили `kp-params-grid`/`photo-scale-control`/`kp-photo-toggle` перенесены в `kp-builder-settings.component.scss` (локальный стиль-компонент), из-за чего 2-колоночная раскладка секции `Параметры КП` начала применяться стабильно; breakpoint single-column оставлен только для узких экранов (`<=760px`) |
 | 2026-04-24 | KP Builder params layout polish: секция `Параметры КП` удерживается в 2-колоночной сетке до tablet-ширин (single-column fallback только на узких экранах), а toggle `Колонка фото` переведён в icon-only UI-kit кнопку (без текстовой подписи внутри кнопки, с `title/aria-label`) |

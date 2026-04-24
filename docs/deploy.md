@@ -73,7 +73,13 @@ cd deploy
 6. Создает/обновляет `kppdf-backend.service` и перезапускает сервис
 7. Копирует фронт-статику в `/var/www/kppdf`
 8. Создает/обновляет nginx site, проверяет `nginx -t`, reload
-9. Проверяет `GET /health` и доступность веба
+9. Проверяет `GET /health` и доступность веба по HTTP; при наличии сертификата Let's Encrypt автоматически публикует HTTPS-блок и проверяет HTTPS-loopback
+
+Важно по HTTPS:
+- если найдены файлы `/etc/letsencrypt/live/<primary-domain>/fullchain.pem` и `privkey.pem`, `deploy.sh` генерирует nginx-конфиг с:
+  - `80 -> 301 https://$host$request_uri`
+  - отдельным `server` на `443 ssl http2` с теми же proxy/static правилами;
+- если сертификата нет, деплой остаётся в HTTP-only режиме (без падения скрипта).
 
 Важно: в nginx для `/api` и `/media` используются префиксные proxy location, чтобы запросы к API/медиа не перехватывались regex-правилом статики (`png/jpg/css/js`).
 Legacy-алиасы `/products/*` и `/kp/*` проксируются только для файловых URL (с расширением изображения), чтобы не ломать SPA роуты `/products` и `/kp/:id`.
