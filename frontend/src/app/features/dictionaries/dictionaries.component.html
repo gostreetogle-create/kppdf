@@ -1,12 +1,12 @@
-<div class="page">
-  <div class="page-header">
-    <h1>Справочники</h1>
-    <div class="page-header__actions">
+<ui-page-layout>
+  <ui-page-header page-header>
+    <h1 page-title>Справочники</h1>
+    <div page-actions>
       <a routerLink="/" ui-btn>← Назад</a>
     </div>
-  </div>
+  </ui-page-header>
 
-  <div class="page-toolbar">
+  <div page-toolbar class="page-toolbar">
     <ui-filter-select
       [value]="filterType()"
       [options]="[
@@ -38,7 +38,7 @@
   @if (loading()) {
     <div class="loading-state">Загрузка...</div>
   } @else if (items().length === 0) {
-    <div class="empty-state">Справочник пуст</div>
+    <ui-empty-state><p empty-title>Справочник пуст</p></ui-empty-state>
   } @else {
     <div class="table-scroll">
       <table class="dict-table data-table">
@@ -92,4 +92,4 @@
       </table>
     </div>
   }
-</div>
+</ui-page-layout>

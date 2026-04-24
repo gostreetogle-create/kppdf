@@ -1,10 +1,10 @@
-<div class="page">
-  <div class="page-header users-header">
-    <h1>Пользователи</h1>
-    <div class="users-header__actions">
+<ui-page-layout>
+  <ui-page-header page-header>
+    <h1 page-title>Пользователи</h1>
+    <div page-actions class="users-header__actions">
       <button ui-btn variant="ghost" (click)="loadUsers()">Обновить</button>
     </div>
-  </div>
+  </ui-page-header>
 
   <section class="users-create">
     <div class="users-section__head">
@@ -48,9 +48,9 @@
     @if (loading()) {
       <div class="loading-state">Загрузка...</div>
     } @else if (users().length === 0) {
-      <div class="empty-state users-empty">
-        <p>Пока нет пользователей</p>
-      </div>
+      <ui-empty-state class="users-empty">
+        <p empty-title>Пока нет пользователей</p>
+      </ui-empty-state>
     } @else {
       <div class="users-table-wrap">
       <table class="data-table users-table">
@@ -140,7 +140,7 @@
       </div>
     }
   </section>
-</div>
+</ui-page-layout>
 
 @if (resettingUser()) {
   <ui-modal title="Сбросить пароль" maxWidth="460px" (closed)="closeResetPasswordModal()">

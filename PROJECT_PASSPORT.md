@@ -99,6 +99,10 @@
 ### 10) UI governance (Storybook + shared focus/required)
 - Storybook используется как контрольный слой для `shared/ui` (базовые компоненты должны рендериться в изоляции и на тех же токенах, что runtime).
 - Унифицированы кросс-компонентные паттерны: `--ui-focus-ring-shadow` (focus) и `.ui-required` (required marker) в глобальном style-layer.
+- Для `KP Builder` верхняя action-иерархия фиксируется как `Сохранить = primary`, `Скачать PDF = secondary/quiet`, чтобы toolbar не конкурировал с центральным документом.
+- Карточки каталога `kp-catalog-item` держат low-noise surface: мягкая тень `--shadow-sm`, приглушённые метаданные (`sku/price` через `--ui-text-muted`) и `Добавить` через `ui-btn` (variant `secondary`, size `sm`).
+- Правая панель `KP Builder` (`Параметры КП`, `Состав КП`, `Условия`) придерживается typography-first секций: без тяжёлых подложек, с увеличенным межсекционным интервалом и акцентом на заголовках.
+- Для `KP Builder` в правой панели все input/select в параметрах и bulk/conditions используют `form-control`; нативные `range` и row-checkbox рендерятся кастомно через token-driven SCSS.
 
 ### 11) KP Builder resilience and instant UX
 - `KpBuilderStore` поддерживает snapshot-history (`past/future`, лимит 10) для `undo/redo`.
@@ -184,6 +188,12 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-04-24 | Phase 4 audit + UX validation pass: подтверждена pure-граница `kp-document/kp-header/kp-table` (без `ApiService/Router/localStorage` и без side-effect subscriptions), проверено безопасное использование `innerHTML` в footer (`bypassSecurityTrustHtml` отсутствует, работает стандартная Angular sanitization), а в частых consumer-формах усилена RxJS hygiene (`login` переведён на `takeUntilDestroyed`, `product-form` подписки на upload/save переведены на `takeUntil(destroy$)`); в `ui-form-field` добавлен реактивный триггер пересчёта ошибок от `statusChanges/valueChanges`, чтобы ошибки стабильно появлялись на blur/submit |
+| 2026-04-24 | Phase 3 form validation automation finalized: `ui-form-field` переведен на auto-error pipeline через `control`/`@ContentChild(NgControl)` + `computed errorText` (invalid + touched/dirty, ручной `error` сохраняет приоритет), добавлен `form-error-messages.ts` с RU-маппингом `required/email/minlength/pattern`, выполнена пилотная миграция template-driven валидаторов в `auth login`, `product-form`, `counterparty-form` без поломки обратной совместимости |
+| 2026-04-24 | KP Document final visual polish (Step 4): усилена типографическая иерархия документной таблицы (`name` -> `600`, code/meta -> muted), для денежных значений закреплены `tabular-nums` + более уверенный вес, увеличен вертикальный ритм между `header/table/summary/footer` в `kp-document`, добавлен screen-adaptive fit для `kp-sheet` на `<1024/<768` без горизонтального скролла, при этом print-геометрия A4 сохранена принудительными `@media print` размерами (`210x296mm`) для стабильного Puppeteer-экспорта |
+| 2026-04-24 | Architecture refactor implementation pass: `KP Builder` правая колонка декомпозирована на dumb-компоненты `app-kp-builder-settings` и `app-kp-builder-cart` (container/store/business side-effects сохранены в `KpBuilderComponent`), в shared UI добавлены `ui-empty-state`, `ui-page-layout`, `ui-page-header`, а feature-страницы (`home/products/dictionaries/counterparties/users/roles-permissions/settings`) переведены на slot-композицию; `ui-form-field` расширен auto-validation режимом (`control`/projected `NgControl` + centralized error mapping), проведен аудит PDF purity и RxJS-подписок в `ui-modal`/`ui-drawer` (подписок внутри нет) |
+| 2026-04-24 | KP Builder redesign step 1-2 (toolbar + catalog cards): в toolbar `kp-builder` action-вес перераспределён (`Сохранить` оставлен `primary`, split `Скачать PDF` переведён в `secondary`), у каталожных карточек `kp-catalog-item` убраны жёсткие бордеры в пользу мягкой тени `--shadow-sm`, увеличен вертикальный ритм сетки, `sku/price` приглушены до `--ui-text-muted`, кнопка `Добавить` переведена на UI-kit (`ui-btn`, `secondary`, `sm`) |
+| 2026-04-24 | KP Builder redesign step 3 (right panel): в секциях `Параметры КП / Состав КП / Условия` убраны тяжёлые секционные подложки и усилен вертикальный ритм (больше воздуха между секциями/заголовками); в `kp-builder-settings` поля переведены на `form-control`, `photo-scale` range стилизован через token-layer (`track: --ui-border-subtle`, light thumb), в `kp-builder-cart` чекбоксы переведены на custom `appearance:none`-контрол (`checked` через `--ui-primary`), stepper собран в единый pill-блок с мягким hover, разделители строк корзины зафиксированы как `1px solid var(--ui-border-subtle)` |
 | 2026-04-24 | Apple-style craft pass для shared UI и global token-layer: в `styles/_tokens.scss/_global.scss/_forms.scss` зафиксированы iOS-палитра light/dark, системный `--ui-font-family`, единый `--ui-focus-ring-shadow`, `--ui-control-height:36px`, `.ui-required::after` и унифицированный `.form-control`; обновлены `button/form-field/search-input/filter-select/badge/status-badge/card/modal/drawer` (soft badges через `color-mix`, pill geometry, focus/accessibility states, modal/drawer blur-backdrop + depth shadows + refined enter animations, interactive card lift) без изменения бизнес-логики компонентов |
 | 2026-04-24 | KP Builder targeted bulk adjustments: в `Состав КП` добавлены чекбоксы по строкам для участия в массовых `Наценка/Скидка`; bulk-операции применяются только к отмеченным товарам, при загрузке/добавлении/переключении КП по умолчанию все позиции автоматически отмечены |
 | 2026-04-24 | KP Builder toolbar dead-action cleanup: удалена кнопка `Доп. действия` как заглушка без рабочего сценария (`openMoreActions` показывал только info-toast); из компонента убран мёртвый обработчик для соответствия toolbar реальным действиям |
@@ -389,6 +399,30 @@
 - `settings.model.ts` содержит только 4 системных ключа; `backup_retention_days` как отдельный key в модели сейчас отсутствует.
 - В бэкенде уже есть валидация `photoScalePercent` (`min=150`, `max=350`) в `backend/src/models/kp.model.ts`.
 - Исторический фикс по дублированию `ИП` считается закрытым и вынесен из активных проблем.
+
+---
+
+## Refactoring Summary (Apple-level Craft)
+
+Проведен комплексный рефакторинг архитектуры и визуальной системы проекта. Проект переведен на рельсы "Apple-level craft" с акцентом на стабильность, чистоту кода и Developer Experience (DX).
+
+### 1) UI/UX (Apple-level Craft)
+- **Design System**: внедрена семантическая система токенов (`--ui-*`) в `styles/_tokens.scss`; отказ от хардкода цветов и размеров в пользу CSS-переменных.
+- **Components**: `shared/ui` приведен к единому iOS-like стилю: тактильные отклики, `focus-visible`, адаптивность.
+- **KP Builder Layout**: экран редактора переработан; документ в центре закреплен как главный визуальный фокус; боковые панели приведены к low-noise стилю.
+
+### 2) Архитектура и DX
+- **Reactive Forms UX**: `ui-form-field` поддерживает авто-маппинг ошибок по контролу без ручного дублирования `[error]`.
+- **Decoupling**: `KpBuilderComponent` разделен на container/presentational (`kp-builder-settings`, `kp-builder-cart`), логика сохранена в store/container.
+- **Hygiene & Safety**:
+  - PDF-компоненты (`kp-document`, `kp-header`, `kp-table`) остаются pure-presentational.
+  - RxJS-подписки в частых consumer-компонентах приведены к безопасному управлению жизненным циклом (`takeUntilDestroyed`/`takeUntil`).
+
+### 3) Финансовая и техническая стабильность
+- **PDF Export**: print-слой изолирован через `@media print`, что стабилизирует соответствие экрана и печатной версии.
+- **Zero-Regressions**: изменения проходят `npx tsc --noEmit` и линтер-проверки без нарушения бизнес-логики.
+
+Текущий статус: проект находится в архитектурно стабильном состоянии. Дальнейшее развитие следует паттерну: UI-Kit токены -> Dumb-компоненты -> Container-логика.
 
 ---
 

@@ -70,6 +70,7 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
 
   form       = emptyForm();
   saving     = signal(false);
+  submitAttempted = signal(false);
   lookingUp  = signal(false);
   formError  = signal('');
   lookupError = signal('');
@@ -185,6 +186,7 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
   }
 
   submit() {
+    this.submitAttempted.set(true);
     if (!this.validate()) return;
     this.saving.set(true);
     this.formError.set('');

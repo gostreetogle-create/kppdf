@@ -239,6 +239,10 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+    padding: $space-3 0 $space-4;
   }
 }
 
@@ -301,13 +305,13 @@
   align-items: stretch;
   border-radius: $radius-md;
   overflow: visible;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
-.builder__pdf-main[ui-btn].btn--primary {
+.builder__pdf-main[ui-btn].btn--secondary {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-  border-right: 1px solid color-mix(in srgb, var(--ui-text-on-primary) 20%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--ui-text-main) 12%, transparent);
   padding-right: $space-3;
 }
 
@@ -316,7 +320,7 @@
   display: inline-flex;
 }
 
-.builder__pdf-arrow[ui-btn].btn--primary {
+.builder__pdf-arrow[ui-btn].btn--secondary {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   min-width: 2rem;

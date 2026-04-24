@@ -1,10 +1,10 @@
-<div class="page">
-  <div class="page-header">
-    <h1>Контрагенты</h1>
-    <button ui-btn variant="primary" (click)="openCreate()">+ Создать</button>
-  </div>
+<ui-page-layout>
+  <ui-page-header page-header>
+    <h1 page-title>Контрагенты</h1>
+    <button page-actions ui-btn variant="primary" (click)="openCreate()">+ Создать</button>
+  </ui-page-header>
 
-  <div class="page-toolbar">
+  <div page-toolbar class="page-toolbar">
     <ui-search-input
       [value]="search()"
       placeholder="Поиск по названию или ИНН..."
@@ -38,10 +38,10 @@
   @if (loading()) {
     <div class="loading-state">Загрузка...</div>
   } @else if (counterparties().length === 0) {
-    <div class="empty-state">
-      <p>Контрагенты не найдены</p>
-      <button ui-btn variant="primary" (click)="openCreate()">Создать первого</button>
-    </div>
+    <ui-empty-state>
+      <p empty-title>Контрагенты не найдены</p>
+      <button empty-actions ui-btn variant="primary" (click)="openCreate()">Создать первого</button>
+    </ui-empty-state>
   } @else {
     <div class="counterparties-grid">
       <section class="counterparties-grid__column">
@@ -86,7 +86,7 @@
       </section>
     </div>
   }
-</div>
+</ui-page-layout>
 
 @if (formOpen()) {
   <app-counterparty-form

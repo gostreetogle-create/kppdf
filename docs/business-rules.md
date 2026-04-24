@@ -116,12 +116,16 @@ UI-отображение в таблице КП:
 - Undo/Redo: редактор хранит до 10 последних снапшотов состояния КП; hotkeys `Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`.
 - Блок `Параметры КП` в `KpBuilder` редактирует `metadata.number`, `metadata.validityDays`, `metadata.prepaymentPercent`, `metadata.productionDays`, `vatPercent`
 - В `Параметры КП` доступно переключение `kpType` и выбор шаблона брендирования для текущего документа (`PUT /api/kp/:id/switch-type`); товарные позиции сохраняются, а зависимые snapshot-поля пересобираются сервером.
+- `KpBuilderComponent` используется как container: правая панель вынесена в dumb-компоненты `app-kp-builder-settings` и `app-kp-builder-cart`; side effects и HTTP остаются в container/store.
 - Для `switch-type` действует optimistic flow: UI обновляется мгновенно; при backend-ошибке состояние откатывается к последнему валидному snapshot и показывается уведомление.
 - Поле `metadata.tablePageBreakAfter` задаёт, после какой строки таблицы делать перенос на новую страницу (используется как `itemsPerPage` в документе)
 - `metadata.defaultMarkupPercent/defaultDiscountPercent` — source defaults для bulk-полей наценки/скидки в редакторе; значения приходят из карточки нашей компании и сохраняются в КП.
 - Для нового КП значения по умолчанию берутся из `Settings` на бэкенде (frontend не должен подставлять локальные дефолты)
 - Резервные копии (MongoDB + media) управляются централизованно через `/settings` (раздел "Бэкапы"): ручной запуск, поиск/фильтрация, скачивание, удаление и очистка старше N дней; операции требуют `backups.manage`
 - Разрушительные действия в UI (`удаление записи справочника`, `удаление/cleanup бэкапов`) подтверждаются только через `ModalService` + `ui-modal`; системный `window.confirm` не допускается.
+- PDF-компоненты (`kp-document`, `kp-header`, `kp-table`) должны оставаться pure-presentational: без `ApiService`, `Router`, `localStorage`.
+- Для footer в `kp-document` разрешён только `[innerHTML]` с обычной Angular sanitization (без `bypassSecurityTrustHtml`).
+- В `ui-modal` и `ui-drawer` подписки `.subscribe()` не используются; если добавляются в будущем, обязательна отписка через `takeUntilDestroyed`.
 - Новый получатель из редактора КП: кнопка «+» открывает ту же форму контрагента в модальном окне на странице КП (`shared/components/counterparty-form`); после сохранения контрагент попадает в локальный список сайдбара и сразу выбирается как получатель (`Kp.recipient` — snapshot). Уход со страницы при несохранённом КП — через `ui-modal`, не системный `confirm`
 - Snapshot получателя в KP Builder отображается как readonly-блок с пояснением; замена получателя разрешена только в статусе `draft` и применяется сразу при выборе в `select` (без дополнительного confirm-диалога).
 - Смена статуса КП из toolbar подтверждается модальным диалогом; в UI подсказки переходов завязаны на разрешённые status transitions.

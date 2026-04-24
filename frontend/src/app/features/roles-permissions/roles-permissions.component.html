@@ -1,10 +1,10 @@
-<div class="page roles-page">
-  <div class="page-header roles-page__header">
-    <div>
+<ui-page-layout>
+  <ui-page-header page-header>
+    <div page-title>
       <h1>Роли и полномочия</h1>
       <p>Управление ролями и назначением прав доступа.</p>
     </div>
-    <div class="roles-page__header-actions">
+    <div page-actions class="roles-page__header-actions">
       <button
         ui-btn
         variant="ghost"
@@ -24,7 +24,7 @@
       </button>
       <button ui-btn variant="ghost" (click)="cancelPermissionChanges()" [disabled]="!hasDirtyChanges()">Отменить</button>
     </div>
-  </div>
+  </ui-page-header>
 
   @if (loading()) {
     <div class="loading-state">Загрузка ролей и полномочий...</div>
@@ -131,7 +131,7 @@
             }
           </div>
         } @else {
-          <div class="empty-state">Выберите роль в таблице слева.</div>
+          <ui-empty-state><p empty-title>Выберите роль в таблице слева.</p></ui-empty-state>
         }
       </div>
     </section>
@@ -145,4 +145,4 @@
     (close)="closeCreateRoleModal()"
     (submitRole)="createRole($event)"
   />
-</div>
+</ui-page-layout>

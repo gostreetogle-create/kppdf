@@ -34,7 +34,8 @@
 .kp-recipient__details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  color: var(--ui-text-muted);
 }
 
 .kp-recipient__line {
@@ -46,6 +47,7 @@
 .kp-recipient__label {
   font-weight: 600;
   min-width: 40px;
+  color: var(--ui-text-main);
 }
 
 /* Метаданные КП */
@@ -72,12 +74,14 @@
 .kp-meta__label {
   font-weight: 600;
   white-space: nowrap;
+  color: var(--ui-text-main);
 }
 
 .kp-meta__value {
   font-variant-numeric: tabular-nums;
   text-align: right;
   justify-self: end;
+  color: var(--ui-text-muted);
 }
 
 /* === Печать === */

@@ -1,0 +1,15 @@
+<section class="ui-empty-state" [class.ui-empty-state--compact]="compact()" [class.ui-empty-state--muted]="tone() === 'muted'">
+  <div class="ui-empty-state__icon">
+    <ng-content select="[empty-icon]"></ng-content>
+  </div>
+  <div class="ui-empty-state__title">
+    <ng-content select="[empty-title]"></ng-content>
+  </div>
+  <div class="ui-empty-state__description">
+    <ng-content select="[empty-description]"></ng-content>
+    <ng-content></ng-content>
+  </div>
+  <div class="ui-empty-state__actions">
+    <ng-content select="[empty-actions]"></ng-content>
+  </div>
+</section>

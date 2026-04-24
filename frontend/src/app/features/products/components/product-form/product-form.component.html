@@ -13,11 +13,11 @@
         <div class="compact-kp-table__row">
           <label class="compact-kp-table__cell">
             <span>Арт.</span>
-            <input type="text" [(ngModel)]="form.code" placeholder="АРТ-001" />
+            <input type="text" [(ngModel)]="form.code" required minlength="2" placeholder="АРТ-001" />
           </label>
           <label class="compact-kp-table__cell">
             <span>Наименование *</span>
-            <input type="text" [(ngModel)]="form.name" placeholder="Наименование" />
+            <input type="text" [(ngModel)]="form.name" required minlength="2" placeholder="Наименование" />
           </label>
           <label class="compact-kp-table__cell">
             <span>Описание</span>
@@ -25,7 +25,7 @@
           </label>
           <label class="compact-kp-table__cell">
             <span>Ед. *</span>
-            <select [(ngModel)]="form.unit">
+            <select [(ngModel)]="form.unit" required>
               <option value="" disabled>Ед.</option>
               @for (unit of units(); track unit) {
                 <option [value]="unit">{{ unit }}</option>
@@ -34,18 +34,18 @@
           </label>
           <label class="compact-kp-table__cell">
             <span>Цена (₽) *</span>
-            <input type="number" [(ngModel)]="form.price" placeholder="0" min="0" />
+            <input type="number" [(ngModel)]="form.price" required placeholder="0" min="0" />
           </label>
         </div>
       </div>
     } @else {
       <!-- Строка 1: Артикул + Тип -->
       <div class="form-row">
-        <ui-form-field label="Артикул" [required]="true">
-          <input type="text" [(ngModel)]="form.code" placeholder="АРТ-001" />
+        <ui-form-field label="Артикул" [required]="true" [submitted]="submitAttempted()">
+          <input name="code" type="text" [(ngModel)]="form.code" required minlength="2" placeholder="АРТ-001" />
         </ui-form-field>
-        <ui-form-field label="Тип">
-          <select [(ngModel)]="form.kind">
+        <ui-form-field label="Тип" [submitted]="submitAttempted()">
+          <select name="kind" [(ngModel)]="form.kind">
             @for (k of kinds; track k.value) {
               <option [value]="k.value">{{ k.label }}</option>
             }
@@ -54,40 +54,40 @@
       </div>
 
       <!-- Название -->
-      <ui-form-field label="Название" [required]="true">
-        <input type="text" [(ngModel)]="form.name" placeholder="Металлоконструкция стальная" />
+      <ui-form-field label="Название" [required]="true" [submitted]="submitAttempted()">
+        <input name="name" type="text" [(ngModel)]="form.name" required minlength="2" placeholder="Металлоконструкция стальная" />
       </ui-form-field>
 
       <!-- Описание -->
-      <ui-form-field label="Описание">
-        <textarea [(ngModel)]="form.description" rows="2" placeholder="Краткое описание"></textarea>
+      <ui-form-field label="Описание" [submitted]="submitAttempted()">
+        <textarea name="description" [(ngModel)]="form.description" rows="2" placeholder="Краткое описание"></textarea>
       </ui-form-field>
 
       <!-- Категория + Подкатегория -->
       <div class="form-row">
-        <ui-form-field label="Категория">
-          <input type="text" [(ngModel)]="form.category" placeholder="Воркаут" list="categories-list" />
+        <ui-form-field label="Категория" [submitted]="submitAttempted()">
+          <input name="category" type="text" [(ngModel)]="form.category" placeholder="Воркаут" list="categories-list" />
           <datalist id="categories-list">
             @for (cat of categories(); track cat) {
               <option [value]="cat">{{ cat }}</option>
             }
           </datalist>
         </ui-form-field>
-        <ui-form-field label="Подкатегория">
-          <input type="text" [(ngModel)]="form.subcategory" placeholder="Уличные тренажёры" />
+        <ui-form-field label="Подкатегория" [submitted]="submitAttempted()">
+          <input name="subcategory" type="text" [(ngModel)]="form.subcategory" placeholder="Уличные тренажёры" />
         </ui-form-field>
       </div>
 
       <!-- Цена + Себестоимость + Единица -->
       <div class="form-row form-row--3">
-        <ui-form-field label="Цена (₽)" [required]="true">
-          <input type="number" [(ngModel)]="form.price" placeholder="0" min="0" />
+        <ui-form-field label="Цена (₽)" [required]="true" [submitted]="submitAttempted()">
+          <input name="price" type="number" [(ngModel)]="form.price" required placeholder="0" min="0" />
         </ui-form-field>
-        <ui-form-field label="Себестоимость (₽)">
-          <input type="number" [(ngModel)]="form.costRub" placeholder="0" min="0" />
+        <ui-form-field label="Себестоимость (₽)" [submitted]="submitAttempted()">
+          <input name="costRub" type="number" [(ngModel)]="form.costRub" placeholder="0" min="0" />
         </ui-form-field>
-        <ui-form-field label="Единица" [required]="true">
-          <select [(ngModel)]="form.unit">
+        <ui-form-field label="Единица" [required]="true" [submitted]="submitAttempted()">
+          <select name="unit" [(ngModel)]="form.unit" required>
             <option value="" disabled>Выберите...</option>
             @for (unit of units(); track unit) {
               <option [value]="unit">{{ unit }}</option>
@@ -153,12 +153,12 @@
 
       <!-- Заметки + Активен -->
       <div class="form-row">
-        <ui-form-field label="Внутренние заметки">
-          <textarea [(ngModel)]="form.notes" rows="2" placeholder="Только для внутреннего использования"></textarea>
+        <ui-form-field label="Внутренние заметки" [submitted]="submitAttempted()">
+          <textarea name="notes" [(ngModel)]="form.notes" rows="2" placeholder="Только для внутреннего использования"></textarea>
         </ui-form-field>
         <div class="form-checkbox">
           <label>
-            <input type="checkbox" [(ngModel)]="form.isActive" />
+            <input name="isActive" type="checkbox" [(ngModel)]="form.isActive" />
             Активен (показывать в каталоге)
           </label>
         </div>

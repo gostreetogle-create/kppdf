@@ -8,13 +8,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Setting, SettingsMap, Product, Counterparty, BackupItem } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalService } from '../../core/services/modal.service';
-import { ButtonComponent, SearchInputComponent, FilterSelectComponent } from '../../shared/ui/index';
+import { ButtonComponent, SearchInputComponent, FilterSelectComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared/ui/index';
 import { ModalComponent } from '../../shared/ui/modal/modal.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent, SearchInputComponent, FilterSelectComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent, SearchInputComponent, FilterSelectComponent, ModalComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })

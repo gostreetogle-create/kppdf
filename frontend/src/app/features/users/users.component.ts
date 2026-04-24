@@ -4,13 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService, type AppUser, type Role } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ButtonComponent, StatusBadgeComponent } from '../../shared/ui';
+import { ButtonComponent, StatusBadgeComponent, EmptyStateComponent, PageLayoutComponent, PageHeaderComponent } from '../../shared/ui';
 import { ModalComponent } from '../../shared/ui/modal/modal.component';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent, StatusBadgeComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, StatusBadgeComponent, ModalComponent, EmptyStateComponent, PageLayoutComponent, PageHeaderComponent],
   templateUrl: './users.component.html',
   styleUrl: './users.component.scss'
 })

@@ -7,7 +7,7 @@ import { take } from 'rxjs';
 import { ApiService, Dictionary, DictionaryType } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalService } from '../../core/services/modal.service';
-import { ButtonComponent, FilterSelectComponent } from '../../shared/ui/index';
+import { ButtonComponent, FilterSelectComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared/ui/index';
 
 type DictionaryForm = {
   type: DictionaryType;
@@ -19,7 +19,7 @@ type DictionaryForm = {
 @Component({
   selector: 'app-dictionaries',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent, FilterSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonComponent, FilterSelectComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent],
   templateUrl: './dictionaries.component.html',
   styleUrl: './dictionaries.component.scss'
 })

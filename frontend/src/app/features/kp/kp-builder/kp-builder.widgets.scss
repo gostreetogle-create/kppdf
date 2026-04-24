@@ -55,7 +55,8 @@
 .product-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $space-3;
+  column-gap: $space-3;
+  row-gap: $space-4;
 }
 
 .catalog-tools {
@@ -87,7 +88,7 @@
   align-items: center;
   gap: $space-2;
   padding: $space-2 0;
-  border-bottom: 1px solid var(--ui-border-subtle, color-mix(in srgb, var(--ui-text-main) 8%, transparent));
+  border-bottom: 1px solid var(--ui-border-subtle);
   transition: background-color $transition-fast;
   min-width: 0;
   background: transparent;
@@ -105,11 +106,42 @@
   flex: 0 0 18px;
 
   input[type='checkbox'] {
-    width: 14px;
-    height: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
     margin: 0;
-    accent-color: var(--ui-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 4px;
+    background: var(--ui-bg);
+    display: inline-grid;
+    place-content: center;
     cursor: pointer;
+    transition: border-color $transition-fast, background-color $transition-fast, box-shadow $transition-fast;
+
+    &::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 2px;
+      transform: scale(0);
+      transition: transform $transition-fast;
+      background: #fff;
+    }
+
+    &:checked {
+      border-color: var(--ui-primary);
+      background: var(--ui-primary);
+    }
+
+    &:checked::after {
+      transform: scale(1);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--ui-focus-ring-shadow);
+    }
   }
 }
 
@@ -216,10 +248,10 @@
   align-items: stretch;
   width: 92px;
   height: 30px;
-  background: color-mix(in srgb, var(--ui-bg-card) 96%, var(--ui-text-main) 1%);
-  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-bg-card) 96%, var(--ui-bg-soft));
+  border-radius: 999px;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
+  border: 1px solid var(--ui-border-subtle);
   overflow: hidden;
 
   & &__btn[ui-btn].btn--icon {
@@ -241,16 +273,8 @@
     box-shadow: none;
     transition: background-color $transition-fast, color $transition-fast;
 
-    &:first-child {
-      border-right: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
-    }
-
-    &:last-child {
-      border-left: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
-    }
-
     &:hover {
-      background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
+      background: var(--ui-bg-hover);
       color: color-mix(in srgb, var(--ui-primary) 85%, var(--ui-text-main));
     }
 
@@ -283,9 +307,7 @@
   width: 100%;
   height: 100%;
   border: none;
-  border-left: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
-  border-right: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
-  background: color-mix(in srgb, var(--ui-bg) 96%, var(--ui-bg-soft));
+  background: transparent;
   color: var(--ui-text-main);
   text-align: center;
   font-size: 15px;
@@ -301,6 +323,8 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
+  -moz-appearance: textfield;
 }
 
 .total-price {
@@ -640,31 +664,46 @@
 
   &__range {
     appearance: none;
+    -webkit-appearance: none;
     height: 0.375rem;
     border: none !important;
     border-radius: 999px !important;
-    background: color-mix(in srgb, var(--ui-primary) 22%, var(--ui-bg-soft));
+    background: var(--ui-border-subtle);
     padding: 0 !important;
     margin: 0;
 
+    &::-webkit-slider-runnable-track {
+      height: 0.375rem;
+      border-radius: 999px;
+      background: var(--ui-border-subtle);
+    }
+
     &::-webkit-slider-thumb {
       appearance: none;
+      -webkit-appearance: none;
       width: 1rem;
       height: 1rem;
       border-radius: 50%;
-      background: var(--ui-primary);
-      border: 2px solid var(--ui-bg);
-      box-shadow: 0 1px 4px color-mix(in srgb, var(--ui-primary) 42%, transparent);
+      background: #fff;
+      border: 1px solid color-mix(in srgb, var(--ui-primary) 45%, var(--ui-border));
+      box-shadow: var(--shadow-sm);
       cursor: pointer;
+      margin-top: -0.3125rem;
+    }
+
+    &::-moz-range-track {
+      height: 0.375rem;
+      border-radius: 999px;
+      background: var(--ui-border-subtle);
     }
 
     &::-moz-range-thumb {
       width: 1rem;
       height: 1rem;
       border-radius: 50%;
-      background: var(--ui-primary);
-      border: 2px solid var(--ui-bg);
-      box-shadow: 0 1px 4px color-mix(in srgb, var(--ui-primary) 42%, transparent);
+      background: #fff;
+      border: 1px solid color-mix(in srgb, var(--ui-primary) 45%, var(--ui-border));
+      box-shadow: var(--shadow-sm);
       cursor: pointer;
     }
   }

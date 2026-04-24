@@ -11,7 +11,7 @@ import {
 } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalService } from '../../core/services/modal.service';
-import { ButtonComponent } from '../../shared/ui';
+import { ButtonComponent, EmptyStateComponent, PageLayoutComponent, PageHeaderComponent } from '../../shared/ui';
 import { PermissionGroupComponent } from './permission-group.component';
 import { CreateRoleModalComponent } from './create-role-modal.component';
 
@@ -31,6 +31,9 @@ const MODULE_TITLES: Record<PermissionModule, string> = {
     CommonModule,
     FormsModule,
     ButtonComponent,
+    EmptyStateComponent,
+    PageLayoutComponent,
+    PageHeaderComponent,
     PermissionGroupComponent,
     CreateRoleModalComponent
   ],

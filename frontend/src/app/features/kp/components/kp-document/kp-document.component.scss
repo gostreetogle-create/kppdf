@@ -2,6 +2,7 @@
   display: block;
   background: var(--ui-bg-main, var(--ui-bg-muted));
   padding: 0 1.25rem 1.25rem;
+  overflow-x: hidden;
 }
 
 /* === Основной контент === */
@@ -18,7 +19,7 @@
 }
 
 .kp-content__header-block {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .kp-brand-note {
@@ -30,7 +31,7 @@
 
 .kp-content__intro,
 .kp-content__closing {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 0.8rem;
   line-height: 1.4;
   color: color-mix(in srgb, var(--ui-text) 88%, transparent);
@@ -38,7 +39,7 @@
 }
 
 .kp-content__closing {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .kp-content__main-block {
@@ -49,16 +50,16 @@
 }
 
 .kp-content__summary-block {
-  margin-top: 6px;
+  margin-top: 12px;
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--ui-border) 66%, transparent);
   border-radius: 6px;
   background: transparent;
-  padding: 6px 8px 5px;
+  padding: 8px 10px 7px;
 }
 
 .kp-footer-note {
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 0.75rem;
   line-height: 1.35;
   color: color-mix(in srgb, var(--ui-text) 76%, transparent);
@@ -131,13 +132,37 @@
 
 /* Подсказка о продолжении таблицы */
 .kp-table-continues {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   padding: 0;
   align-self: center;
   text-align: center;
   font-size: var(--kp-continues-size);
   line-height: 1.35;
   color: color-mix(in srgb, var(--ui-text) 62%, transparent);
+}
+
+@media (max-width: 1024px) {
+  :host {
+    padding-inline: 0.75rem;
+  }
+
+  :host ::ng-deep .kp-sheet {
+    width: min(210mm, calc(100vw - 1.5rem));
+    min-height: unset;
+    height: auto;
+    aspect-ratio: 210 / 296;
+  }
+}
+
+@media (max-width: 768px) {
+  :host {
+    padding-inline: 0.5rem;
+    padding-bottom: 0.75rem;
+  }
+
+  :host ::ng-deep .kp-sheet {
+    width: min(210mm, calc(100vw - 1rem));
+  }
 }
 
 /* === Печать === */
@@ -167,6 +192,13 @@
 
   .kp-stack {
     gap: 0;
+  }
+
+  :host ::ng-deep .kp-sheet {
+    width: 210mm;
+    height: 296mm;
+    min-height: 296mm;
+    max-height: 296mm;
   }
 
   .kp-page--continuation {

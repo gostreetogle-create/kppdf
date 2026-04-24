@@ -19,11 +19,13 @@ import { KpTemplateService } from './kp-template.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PermissionsService } from '../../../core/services/permissions.service';
 import { ModalService } from '../../../core/services/modal.service';
+import { KpBuilderSettingsComponent } from './components/kp-builder-settings/kp-builder-settings.component';
+import { KpBuilderCartComponent } from './components/kp-builder-cart/kp-builder-cart.component';
 
 @Component({
   selector: 'app-kp-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, KpDocumentComponent, KpCatalogItemComponent, ButtonComponent, ModalComponent, StatusBadgeComponent, CounterpartyFormComponent, ProductFormComponent],
+  imports: [CommonModule, FormsModule, DragDropModule, KpDocumentComponent, KpCatalogItemComponent, ButtonComponent, ModalComponent, StatusBadgeComponent, CounterpartyFormComponent, ProductFormComponent, KpBuilderSettingsComponent, KpBuilderCartComponent],
   providers: [AutosaveService, KpBuilderStore, KpTemplateService],   // scope — только этот компонент
   templateUrl: './kp-builder.component.html',
   styleUrls: [
@@ -147,6 +149,8 @@ export class KpBuilderComponent implements OnInit {
 
   /** Есть ли несохранённые изменения — используется в CanDeactivate guard */
   readonly isDirty = computed(() => this.autosave.status() === 'unsaved');
+  readonly normalizeImageUrlResolver = (url?: string) => this.normalizeImageUrl(url);
+  readonly itemUnitPriceResolver = (item: KpItem) => this.itemUnitPrice(item);
 
   /** Флаг: данные уже загружены (чтобы effect не триггерил autosave при первой загрузке) */
   private initialized = false;

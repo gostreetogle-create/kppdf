@@ -7,14 +7,14 @@
 
     <!-- Орг. форма + Статус -->
     <div class="form-row">
-      <ui-form-field label="Орг. форма" [required]="true">
+      <ui-form-field label="Орг. форма" [required]="true" [submitted]="submitAttempted()">
         <select [ngModel]="form.legalForm" (ngModelChange)="onLegalFormChanged($event)">
           @for (lf of legalForms; track lf) {
             <option [value]="lf">{{ lf }}</option>
           }
         </select>
       </ui-form-field>
-      <ui-form-field label="Статус" [required]="true">
+      <ui-form-field label="Статус" [required]="true" [submitted]="submitAttempted()">
         <select [(ngModel)]="form.status">
           <option value="active">Активен</option>
           <option value="inactive">Неактивен</option>
@@ -38,18 +38,18 @@
     </div>
 
     <!-- Название -->
-    <ui-form-field [label]="nameLabel" [required]="true">
-      <input type="text" [(ngModel)]="form.name" [placeholder]="namePlaceholder" />
+    <ui-form-field [label]="nameLabel" [required]="true" [submitted]="submitAttempted()">
+      <input type="text" [(ngModel)]="form.name" required minlength="2" [placeholder]="namePlaceholder" />
     </ui-form-field>
 
-    <ui-form-field [label]="shortNameLabel">
-      <input type="text" [(ngModel)]="form.shortName" [placeholder]="shortNamePlaceholder" />
+    <ui-form-field [label]="shortNameLabel" [submitted]="submitAttempted()">
+      <input type="text" [(ngModel)]="form.shortName" minlength="2" [placeholder]="shortNamePlaceholder" />
     </ui-form-field>
 
     <!-- ИНН + поиск -->
     <div class="inn-row">
-      <ui-form-field label="ИНН" [required]="!isPersonLike">
-        <input type="text" [(ngModel)]="form.inn" [placeholder]="innPlaceholder" />
+      <ui-form-field label="ИНН" [required]="!isPersonLike" [submitted]="submitAttempted()">
+        <input type="text" [(ngModel)]="form.inn" [required]="!isPersonLike" pattern="^[0-9]{10,12}$" [placeholder]="innPlaceholder" />
       </ui-form-field>
       <button ui-btn size="sm" (click)="lookupByInn()" [disabled]="lookingUp() || !form.inn">
         {{ lookingUp() ? '...' : '🔍 Найти' }}
@@ -61,11 +61,11 @@
 
     <!-- Контакты -->
     <div class="form-row">
-      <ui-form-field label="Телефон">
-        <input type="text" [(ngModel)]="form.phone" placeholder="+7 (___) ___-__-__" />
+      <ui-form-field label="Телефон" [submitted]="submitAttempted()">
+        <input type="text" [(ngModel)]="form.phone" pattern="^[0-9+()\\-\\s]{6,}$" placeholder="+7 (___) ___-__-__" />
       </ui-form-field>
-      <ui-form-field label="Email">
-        <input type="email" [(ngModel)]="form.email" />
+      <ui-form-field label="Email" [submitted]="submitAttempted()">
+        <input type="email" [(ngModel)]="form.email" email />
       </ui-form-field>
     </div>
 
@@ -85,16 +85,16 @@
     @if (!isPersonLike || showAdditional()) {
       <!-- КПП + ОГРН -->
       <div class="form-row">
-        <ui-form-field label="КПП">
-          <input type="text" [(ngModel)]="form.kpp" placeholder="9 цифр" />
+        <ui-form-field label="КПП" [submitted]="submitAttempted()">
+          <input type="text" [(ngModel)]="form.kpp" pattern="^[0-9]{9}$" placeholder="9 цифр" />
         </ui-form-field>
-        <ui-form-field label="ОГРН / ОГРНИП">
+        <ui-form-field label="ОГРН / ОГРНИП" [submitted]="submitAttempted()">
           <input type="text" [(ngModel)]="form.ogrn" />
         </ui-form-field>
       </div>
 
       <!-- Адреса -->
-      <ui-form-field label="Юридический адрес">
+      <ui-form-field label="Юридический адрес" [submitted]="submitAttempted()">
         <input type="text" [(ngModel)]="form.legalAddress" />
       </ui-form-field>
 
@@ -103,37 +103,37 @@
       </div>
 
       @if (!form.sameAddress) {
-        <ui-form-field label="Фактический адрес">
+        <ui-form-field label="Фактический адрес" [submitted]="submitAttempted()">
           <input type="text" [(ngModel)]="form.actualAddress" />
         </ui-form-field>
       }
 
-      <ui-form-field label="Сайт">
+      <ui-form-field label="Сайт" [submitted]="submitAttempted()">
         <input type="text" [(ngModel)]="form.website" placeholder="https://..." />
       </ui-form-field>
 
       <!-- Банковские реквизиты -->
       <div class="section-title">Банковские реквизиты</div>
-      <ui-form-field label="Название банка">
+      <ui-form-field label="Название банка" [submitted]="submitAttempted()">
         <input type="text" [(ngModel)]="form.bankName" />
       </ui-form-field>
       <div class="form-row">
-        <ui-form-field label="БИК">
+        <ui-form-field label="БИК" [submitted]="submitAttempted()">
           <input type="text" [(ngModel)]="form.bik" />
         </ui-form-field>
-        <ui-form-field label="Расчётный счёт">
+        <ui-form-field label="Расчётный счёт" [submitted]="submitAttempted()">
           <input type="text" [(ngModel)]="form.checkingAccount" />
         </ui-form-field>
       </div>
-      <ui-form-field label="Корреспондентский счёт">
+      <ui-form-field label="Корреспондентский счёт" [submitted]="submitAttempted()">
         <input type="text" [(ngModel)]="form.correspondentAccount" />
       </ui-form-field>
 
       <!-- Заметки + теги -->
-      <ui-form-field label="Заметки">
+      <ui-form-field label="Заметки" [submitted]="submitAttempted()">
         <textarea [(ngModel)]="form.notes" rows="2"></textarea>
       </ui-form-field>
-      <ui-form-field label="Теги" hint="Через запятую">
+      <ui-form-field label="Теги" hint="Через запятую" [submitted]="submitAttempted()">
         <input type="text" [(ngModel)]="form.tags" placeholder="тег1, тег2" />
       </ui-form-field>
     }
@@ -143,10 +143,10 @@
         <label><input type="checkbox" [(ngModel)]="form.isDefaultInitiator" /> Компания по умолчанию для создания КП</label>
       </div>
       <div class="form-row">
-        <ui-form-field label="Наценка по умолчанию (%)">
+        <ui-form-field label="Наценка по умолчанию (%)" [submitted]="submitAttempted()">
           <input type="number" min="0" max="500" [(ngModel)]="form.defaultMarkupPercent" />
         </ui-form-field>
-        <ui-form-field label="Скидка по умолчанию (%)">
+        <ui-form-field label="Скидка по умолчанию (%)" [submitted]="submitAttempted()">
           <input type="number" min="0" max="100" [(ngModel)]="form.defaultDiscountPercent" />
         </ui-form-field>
       </div>

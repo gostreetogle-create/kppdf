@@ -49,6 +49,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   saving     = signal(false);
   uploadingImage = signal(false);
   selectedImageName = signal('');
+  submitAttempted = signal(false);
   errors     = signal<string[]>([]);
   categories = signal<string[]>([]);
   units      = signal<string[]>(['шт.', 'м²', 'м.п.', 'кг', 'т', 'комплект', 'рейс', 'услуга']);
@@ -121,7 +122,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     this.selectedImageName.set(file.name);
     this.uploadingImage.set(true);
-    this.api.uploadProductImage(file).subscribe({
+    this.api.uploadProductImage(file)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
       next: ({ url }) => {
         const isFirst = this.form.images.length === 0;
         this.form.images = [
@@ -140,7 +143,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         this.selectedImageName.set(file.name);
         if (input) input.value = '';
       }
-    });
+      });
   }
 
   removeImage(index: number) {
@@ -167,6 +170,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   submit() {
+    this.submitAttempted.set(true);
     if (!this.validate()) return;
     this.saving.set(true);
     this.errors.set([]);
@@ -190,7 +194,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       ? this.api.updateProduct(this.product()!._id, payload)
       : this.api.createProduct(payload);
 
-    req$.subscribe({
+    req$.pipe(takeUntil(this.destroy$)).subscribe({
       next:  p => { this.saving.set(false); this.saved.emit(p); },
       error: err => {
         this.saving.set(false);

@@ -37,6 +37,7 @@
   justify-self: end;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   font-weight: 600;
   line-height: 1.1;
 }

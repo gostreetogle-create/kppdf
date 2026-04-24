@@ -4,14 +4,14 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService, Kp, CreateKpPayload } from '../../core/services/api.service';
 import { take } from 'rxjs';
-import { ButtonComponent, AlertComponent, StatusBadgeComponent } from '../../shared/ui/index';
+import { ButtonComponent, AlertComponent, StatusBadgeComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared/ui/index';
 import { ModalService } from '../../core/services/modal.service';
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent, StatusBadgeComponent, AlertComponent],
+  imports: [CommonModule, RouterLink, ButtonComponent, StatusBadgeComponent, AlertComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })

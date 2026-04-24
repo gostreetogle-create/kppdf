@@ -1,11 +1,11 @@
-<div class="page">
-  <div class="page-header">
-    <h1>Коммерческие предложения</h1>
-    <div class="home-actions">
+<ui-page-layout>
+  <ui-page-header page-header>
+    <h1 page-title>Коммерческие предложения</h1>
+    <div page-actions class="home-actions">
       <a routerLink="/products" ui-btn>Каталог товаров</a>
       <button ui-btn variant="primary" (click)="createNew()">+ Создать КП</button>
     </div>
-  </div>
+  </ui-page-header>
 
   @if (error()) {
     <ui-alert type="error">{{ error() }}</ui-alert>
@@ -14,10 +14,10 @@
   @if (loading()) {
     <div class="loading-state">Загрузка...</div>
   } @else if (kpList().length === 0) {
-    <div class="empty-state">
-      <p>Нет ни одного КП</p>
-      <button ui-btn variant="primary" (click)="createNew()">Создать первое КП</button>
-    </div>
+    <ui-empty-state>
+      <p empty-title>Нет ни одного КП</p>
+      <button empty-actions ui-btn variant="primary" (click)="createNew()">Создать первое КП</button>
+    </ui-empty-state>
   } @else {
     <div class="table-scroll kp-table-wrap">
       <table class="kp-table data-table">
@@ -68,4 +68,4 @@
       </table>
     </div>
   }
-</div>
+</ui-page-layout>

@@ -1,13 +1,13 @@
-<div class="page">
-  <div class="page-header">
-    <h1>Каталог товаров</h1>
-    <div class="page-header__actions">
+<ui-page-layout>
+  <ui-page-header page-header>
+    <h1 page-title>Каталог товаров</h1>
+    <div page-actions>
       <a routerLink="/" ui-btn>← Назад</a>
       <button ui-btn variant="primary" (click)="openCreate()">+ Добавить товар</button>
     </div>
-  </div>
+  </ui-page-header>
 
-  <div class="page-toolbar">
+  <div page-toolbar class="page-toolbar">
     <ui-search-input
       [value]="search()"
       placeholder="Поиск по названию, артикулу, описанию..."
@@ -48,14 +48,14 @@
   @if (loading()) {
     <div class="loading-state">Загрузка...</div>
   } @else if (filtered().length === 0) {
-    <div class="empty-state">
+    <ui-empty-state>
       @if (search()) {
-        <p>Ничего не найдено по запросу "{{ search() }}"</p>
+        <p empty-title>Ничего не найдено по запросу "{{ search() }}"</p>
       } @else {
-        <p>Каталог пуст</p>
-        <button ui-btn variant="primary" (click)="openCreate()">Добавить первый товар</button>
+        <p empty-title>Каталог пуст</p>
+        <button empty-actions ui-btn variant="primary" (click)="openCreate()">Добавить первый товар</button>
       }
-    </div>
+    </ui-empty-state>
   } @else if (view() === 'grid') {
     <div class="products-grid">
       @for (product of filtered(); track product._id) {
@@ -115,7 +115,7 @@
       </table>
     </div>
   }
-</div>
+</ui-page-layout>
 
 @if (formOpen()) {
   <app-product-form

@@ -1,4 +1,5 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, DestroyRef, signal, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,6 +16,7 @@ import { FormFieldComponent, AlertComponent, ButtonComponent } from '../../share
 export class LoginComponent {
   private readonly auth   = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   username = '';
   password = '';
@@ -31,13 +33,15 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
 
-    this.auth.login(this.username, this.password, this.rememberMe).subscribe({
+    this.auth.login(this.username, this.password, this.rememberMe)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next:  () => this.router.navigate(['/']),
       error: err => {
         this.loading.set(false);
         this.error.set(err.error?.message ?? 'Ошибка входа');
       }
-    });
+      });
   }
 
   enterGuest(): void {

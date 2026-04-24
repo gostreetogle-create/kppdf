@@ -1,13 +1,13 @@
-<div class="page">
-  <div class="page-header settings-header">
-    <h1>Настройки</h1>
-    <div class="settings-header__actions">
+<ui-page-layout>
+  <ui-page-header page-header class="settings-header">
+    <h1 page-title>Настройки</h1>
+    <div page-actions class="settings-header__actions">
       <a routerLink="/" ui-btn>← Назад</a>
       <button ui-btn variant="primary" (click)="save()" [disabled]="saving()">
         {{ saving() ? 'Сохранение...' : 'Сохранить' }}
       </button>
     </div>
-  </div>
+  </ui-page-header>
 
   @if (loading()) {
     <div class="loading-state">Загрузка...</div>
@@ -126,7 +126,7 @@
         @if (backupsLoading()) {
           <div class="loading-state">Загрузка списка бэкапов...</div>
         } @else if (filteredBackups().length === 0) {
-          <div class="empty-state">Архивы пока не найдены</div>
+          <ui-empty-state [compact]="true"><p empty-title>Архивы пока не найдены</p></ui-empty-state>
         } @else {
           <div class="backup-list">
             @for (backup of filteredBackups(); track backup.filename) {
@@ -176,4 +176,4 @@ curl -I http://127.0.0.1:3000/health</code></pre>
       </ng-container>
     </ui-modal>
   }
-</div>
+</ui-page-layout>

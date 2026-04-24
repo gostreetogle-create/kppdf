@@ -65,7 +65,7 @@
           <button
             ui-btn
             class="builder__toolbar-btn builder__pdf-main"
-            variant="primary"
+            variant="secondary"
             [disabled]="isExporting()"
             (click)="onExportHQ()">
             @if (isExporting()) { Генерация... } @else { Скачать PDF }
@@ -74,7 +74,7 @@
             <button
               ui-btn
               class="builder__toolbar-btn builder__pdf-arrow"
-              variant="primary"
+              variant="secondary"
               [disabled]="isExporting()"
               (click)="togglePdfMenu($event)"
               aria-label="Дополнительные действия PDF">
@@ -219,310 +219,62 @@
       @if (!focusCatalog()) {
       <aside class="builder__right builder__slot builder__slot--right no-print">
         <div class="builder__right-scroll">
-        <div class="sidebar-section sidebar-section--params" [class.sidebar-section--open]="!paramsCollapsed()">
-          <button class="sidebar-section__title-btn" (click)="toggleSection('params')">
-            <span class="sidebar-section__title">Параметры КП</span>
-            <span class="sidebar-section__chevron">{{ paramsCollapsed() ? '▸' : '▾' }}</span>
-          </button>
-          @if (!paramsCollapsed()) {
-          <div class="kp-params-grid">
-            <label class="kp-params-grid__field">
-              <span>Номер</span>
-              <input
-                type="text"
-                [value]="kp()!.metadata.number"
-                [disabled]="isReadOnly()"
-                (input)="onMetadataNumberChange($any($event.target).value)"
-              />
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Наша компания</span>
-              <select
-                [ngModel]="selectedCompanyId()"
-                [disabled]="isReadOnly() || switchingType()"
-                (ngModelChange)="onCompanySelectionChange($event)">
-                @for (company of companyOptions(); track company._id) {
-                  <option [value]="company._id">{{ company.shortName || company.name }}</option>
-                }
-              </select>
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Тип документа</span>
-              <select
-                [ngModel]="selectedKpType()"
-                [disabled]="isReadOnly() || switchingType()"
-                (ngModelChange)="onKpTypeSelectionChange($event)">
-                @for (item of kpTypeOptions(); track item.value) {
-                  <option [value]="item.value">{{ item.label }}</option>
-                }
-              </select>
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Шаблон брендирования</span>
-              <div class="template-picker">
-                @if (showBrandingTemplateSelect()) {
-                  <select
-                    [ngModel]="selectedTemplateKey()"
-                    [disabled]="isReadOnly() || switchingType()"
-                    (ngModelChange)="onTemplateSelectionChange($event)">
-                    <option value="auto">По умолчанию для типа</option>
-                    @for (template of templatesForSelectedType(); track template.key) {
-                      <option [value]="template.key">
-                        {{ template.name }} @if (template.isDefault) { (default) }
-                      </option>
-                    }
-                  </select>
-                } @else {
-                  <input type="text" value="По умолчанию для типа" disabled />
-                }
-                <button
-                  type="button"
-                  ui-btn
-                  size="sm"
-                  variant="ghost"
-                  class="template-picker__open-btn"
-                  title="Открыть шаблоны компании"
-                  [disabled]="switchingType() || !selectedCompanyId()"
-                  (click)="openCompanyBranding()">
-                  +
-                </button>
-              </div>
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Срок действия (дни)</span>
-              <input
-                type="number"
-                min="1"
-                [value]="kp()!.metadata.validityDays"
-                [disabled]="isReadOnly()"
-                (change)="onValidityDaysChange(+$any($event.target).value)"
-              />
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Предоплата (%)</span>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                [value]="kp()!.metadata.prepaymentPercent"
-                [disabled]="isReadOnly()"
-                (change)="onPrepaymentPercentChange(+$any($event.target).value)"
-              />
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Срок изготовления (дни)</span>
-              <input
-                type="number"
-                min="1"
-                [value]="kp()!.metadata.productionDays"
-                [disabled]="isReadOnly()"
-                (change)="onProductionDaysChange(+$any($event.target).value)"
-              />
-            </label>
-            <label class="kp-params-grid__field">
-              <span>НДС (%)</span>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                [value]="kp()!.vatPercent"
-                [disabled]="isReadOnly()"
-                (change)="onVatPercentChange(+$any($event.target).value)"
-              />
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Перенос строк (1-я стр.)</span>
-              <input
-                type="number"
-                min="1"
-                [value]="kp()!.metadata.tablePageBreakFirstPage ?? kp()!.metadata.tablePageBreakAfter"
-                [disabled]="isReadOnly()"
-                (change)="updateTablePageBreakFirstPage(+$any($event.target).value)"
-              />
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Перенос (след. стр.)</span>
-              <input
-                type="number"
-                min="1"
-                [value]="kp()!.metadata.tablePageBreakNextPages ?? kp()!.metadata.tablePageBreakAfter"
-                [disabled]="isReadOnly()"
-                (change)="updateTablePageBreakNextPages(+$any($event.target).value)"
-              />
-            </label>
-            <label class="kp-params-grid__field">
-              <span>Размер фото (%)</span>
-              <div class="photo-scale-control">
-                <input
-                  class="photo-scale-control__range"
-                  type="range"
-                  min="0"
-                  max="400"
-                  step="5"
-                  [value]="photoScaleUiValue()"
-                  [disabled]="isReadOnly()"
-                  (input)="updatePhotoScalePercent(+$any($event.target).value)"
-                />
-                <span class="photo-scale-control__value">{{ photoScaleUiValue() }}%</span>
-                <input
-                  class="photo-scale-control__number"
-                  type="number"
-                  min="0"
-                  max="400"
-                  [value]="photoScaleUiValue()"
-                  [disabled]="isReadOnly()"
-                  (change)="updatePhotoScalePercent(+$any($event.target).value)"
-                />
-              </div>
-            </label>
-            <div class="kp-params-grid__field kp-params-grid__field--checkbox">
-              <span>Колонка фото</span>
-              <button
-                type="button"
-                class="kp-photo-toggle"
-                [class.kp-photo-toggle--active]="isPhotoColumnVisible()"
-                [attr.aria-pressed]="isPhotoColumnVisible()"
-                [disabled]="isReadOnly()"
-                (click)="togglePhotoColumnVisibility()">
-                <span class="kp-photo-toggle__icon" aria-hidden="true">{{ isPhotoColumnVisible() ? '👁' : '◌' }}</span>
-                <span>{{ isPhotoColumnVisible() ? 'Фото видно в таблице' : 'Фото скрыто в таблице' }}</span>
-              </button>
-            </div>
-          </div>
-          }
-        </div>
+        <app-kp-builder-settings
+          [collapsed]="paramsCollapsed()"
+          [isReadOnly]="isReadOnly()"
+          [switchingType]="switchingType()"
+          [metadata]="kp()!.metadata"
+          [vatPercent]="kp()!.vatPercent"
+          [selectedCompanyId]="selectedCompanyId()"
+          [companyOptions]="companyOptions()"
+          [selectedKpType]="selectedKpType()"
+          [kpTypeOptions]="kpTypeOptions()"
+          [selectedTemplateKey]="selectedTemplateKey()"
+          [templatesForSelectedType]="templatesForSelectedType()"
+          [showBrandingTemplateSelect]="showBrandingTemplateSelect()"
+          [photoScaleUiValue]="photoScaleUiValue()"
+          [photoColumnVisible]="isPhotoColumnVisible()"
+          (toggleCollapsed)="toggleSection('params')"
+          (metadataNumberChange)="onMetadataNumberChange($event)"
+          (companySelectionChange)="onCompanySelectionChange($event)"
+          (kpTypeSelectionChange)="onKpTypeSelectionChange($event)"
+          (templateSelectionChange)="onTemplateSelectionChange($event)"
+          (openCompanyBranding)="openCompanyBranding()"
+          (validityDaysChange)="onValidityDaysChange($event)"
+          (prepaymentPercentChange)="onPrepaymentPercentChange($event)"
+          (productionDaysChange)="onProductionDaysChange($event)"
+          (vatPercentChange)="onVatPercentChange($event)"
+          (tablePageBreakFirstPageChange)="updateTablePageBreakFirstPage($event)"
+          (tablePageBreakNextPagesChange)="updateTablePageBreakNextPages($event)"
+          (photoScaleChange)="updatePhotoScalePercent($event)"
+          (photoColumnVisibilityToggle)="togglePhotoColumnVisibility()">
+        </app-kp-builder-settings>
 
-        <div class="sidebar-section sidebar-section--items" [class.sidebar-section--open]="!itemsCollapsed()">
-          <button class="sidebar-section__title-btn" (click)="toggleSection('items')">
-            <span class="sidebar-section__title">Состав КП</span>
-            <span class="sidebar-section__chevron">{{ itemsCollapsed() ? '▸' : '▾' }}</span>
-          </button>
-          @if (!itemsCollapsed()) {
-          <div class="manual-item-form">
-            <button
-              ui-btn
-              size="sm"
-              variant="ghost"
-              class="manual-item-form__add"
-              [disabled]="isReadOnly()"
-              (click)="openCreateProductForm()">
-              + Добавить товар
-            </button>
-          </div>
-          <div
-            class="items-drop-list"
-            cdkDropList
-            cdkDropListLockAxis="y"
-            [cdkDropListData]="kp()!.items"
-            (cdkDropListDropped)="reorderItems($event)">
-          @for (item of kp()!.items; track item.productId) {
-            <div class="selected-row" cdkDrag>
-              <label class="item-select" title="Применять массовую наценку/скидку к этому товару">
-                <input
-                  type="checkbox"
-                  [checked]="isItemSelected(item)"
-                  [disabled]="isReadOnly()"
-                  (change)="toggleItemSelection(item, $any($event.target).checked)"
-                />
-              </label>
-              <div class="item-handle" cdkDragHandle aria-hidden="true">⋮⋮</div>
-              <div class="item-thumb">
-                @if (normalizeImageUrl(item.imageUrl)) {
-                  <img [src]="normalizeImageUrl(item.imageUrl)" [alt]="item.name" loading="lazy" />
-                } @else {
-                  <div class="no-photo"></div>
-                }
-              </div>
-              <div class="item-info">
-                <span class="name">{{ item.name }}</span>
-                <span class="meta">
-                  Арт: @if (item.code) { {{ item.code }} } @else { — }
-                  · База: {{ item.price | number:'1.0-0' }} ₽
-                </span>
-              </div>
-              <div class="item-actions">
-                <div class="stepper">
-                  <button ui-btn icon class="stepper__btn stepper__btn--minus" [disabled]="isReadOnly()" (click)="decrementQty(item)">
-                    <span class="stepper__glyph" aria-hidden="true">-</span>
-                  </button>
-                  <input
-                    type="number"
-                    [value]="item.qty"
-                    [disabled]="isReadOnly()"
-                    (change)="updateQty(item, +$any($event.target).value)"
-                    class="qty-input"
-                    min="1"
-                  />
-                  <button ui-btn icon class="stepper__btn stepper__btn--plus" [disabled]="isReadOnly()" (click)="incrementQty(item)">
-                    <span class="stepper__glyph" aria-hidden="true">+</span>
-                  </button>
-                </div>
-                <span class="total-price">{{ (itemUnitPrice(item) * item.qty) | number:'1.0-0' }} ₽</span>
-              </div>
-              <div class="item-remove-slot">
-                <button
-                  class="remove-btn"
-                  type="button"
-                  [disabled]="isReadOnly()"
-                  (click)="removeItem(item)"
-                  aria-label="Удалить товар">
-                  ×
-                </button>
-              </div>
-            </div>
-          }
-          </div>
-          <div class="sidebar-footer">
-            <div class="bulk-adjustments">
-              <div class="bulk-adjustments__row">
-                <label>
-                  <span>Наценка (%)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="500"
-                    step="1"
-                    [disabled]="isReadOnly() || kp()!.items.length === 0"
-                    [value]="bulkMarkupPercent()"
-                    (input)="onBulkMarkupInput($any($event.target).value)"
-                  />
-                </label>
-                <label>
-                  <span>Скидка (%)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="1"
-                    [disabled]="isReadOnly() || kp()!.items.length === 0"
-                    [value]="bulkDiscountPercent()"
-                    (input)="onBulkDiscountInput($any($event.target).value)"
-                  />
-                </label>
-              </div>
-              <div class="bulk-adjustments__actions">
-                <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly() || kp()!.items.length === 0" (click)="clearBulkAdjustments()">
-                  Сбросить наценку/скидку
-                </button>
-              </div>
-            </div>
-            @if (kp()!.items.length > 0) {
-              <div class="sidebar-total">
-                <span>Итого с НДС {{ kp()!.vatPercent }}%:</span>
-                <strong>{{ total() | number:'1.0-0' }} ₽</strong>
-              </div>
-            }
-          </div>
-          @if (lastRemovedItem()) {
-            <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly()" (click)="undoRemoveItem()">
-              Вернуть удалённый товар
-            </button>
-          }
-          @if (kp()!.items.length === 0) {
-            <p class="sidebar-empty">Добавьте товары из каталога</p>
-          }
-          }
-        </div>
+        <app-kp-builder-cart
+          [collapsed]="itemsCollapsed()"
+          [isReadOnly]="isReadOnly()"
+          [items]="kp()!.items"
+          [selectedItemIds]="selectedItemIds()"
+          [bulkMarkupPercent]="bulkMarkupPercent()"
+          [bulkDiscountPercent]="bulkDiscountPercent()"
+          [vatPercent]="kp()!.vatPercent"
+          [total]="total()"
+          [lastRemovedItem]="lastRemovedItem()"
+          [imageUrlResolver]="normalizeImageUrlResolver"
+          [itemUnitPriceResolver]="itemUnitPriceResolver"
+          (toggleCollapsed)="toggleSection('items')"
+          (openCreateProduct)="openCreateProductForm()"
+          (reorder)="reorderItems($event)"
+          (itemSelectionChange)="toggleItemSelection($event.item, $event.checked)"
+          (qtyChange)="updateQty($event.item, $event.qty)"
+          (incrementQty)="incrementQty($event)"
+          (decrementQty)="decrementQty($event)"
+          (removeItem)="removeItem($event)"
+          (bulkMarkupInput)="onBulkMarkupInput($event)"
+          (bulkDiscountInput)="onBulkDiscountInput($event)"
+          (clearBulkAdjustments)="clearBulkAdjustments()"
+          (undoRemoveItem)="undoRemoveItem()">
+        </app-kp-builder-cart>
 
         <div class="sidebar-section sidebar-section--conditions" [class.sidebar-section--open]="!conditionsCollapsed()">
           <button class="sidebar-section__title-btn" (click)="toggleSection('conditions')">
@@ -549,6 +301,7 @@
           @for (condition of kp()!.conditions; track condition + '-' + $index) {
             <div class="condition-row">
               <input
+                class="form-control"
                 [value]="condition"
                 [disabled]="isReadOnly()"
                 placeholder="Условие"
@@ -561,6 +314,7 @@
           }
           <div class="condition-row">
             <input
+              class="form-control"
               [value]="conditionDraft"
               [disabled]="isReadOnly()"
               placeholder="Добавить условие..."

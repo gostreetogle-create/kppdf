@@ -8,7 +8,7 @@ import { ApiService, Product } from '../../core/services/api.service';
 import { ProductFormComponent } from './components/product-form/product-form.component';
 import { ProductCardComponent } from './components/product-card/product-card.component';
 import { ProductSpecEditorComponent } from './components/product-spec-editor/product-spec-editor.component';
-import { ButtonComponent, SearchInputComponent, FilterSelectComponent, DrawerComponent } from '../../shared/ui/index';
+import { ButtonComponent, SearchInputComponent, FilterSelectComponent, DrawerComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared/ui/index';
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalService } from '../../core/services/modal.service';
 
@@ -25,7 +25,10 @@ import { ModalService } from '../../core/services/modal.service';
     DrawerComponent,
     ButtonComponent,
     SearchInputComponent,
-    FilterSelectComponent
+    FilterSelectComponent,
+    PageLayoutComponent,
+    PageHeaderComponent,
+    EmptyStateComponent
   ],
   templateUrl: './products.component.html',
   styleUrls: [

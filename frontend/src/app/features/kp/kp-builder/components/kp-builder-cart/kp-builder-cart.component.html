@@ -1,0 +1,85 @@
+<div class="sidebar-section sidebar-section--items" [class.sidebar-section--open]="!collapsed()">
+  <button class="sidebar-section__title-btn" (click)="toggleCollapsed.emit()">
+    <span class="sidebar-section__title">Состав КП</span>
+    <span class="sidebar-section__chevron">{{ collapsed() ? '▸' : '▾' }}</span>
+  </button>
+  @if (!collapsed()) {
+    <div class="manual-item-form">
+      <button ui-btn size="sm" variant="ghost" class="manual-item-form__add" [disabled]="isReadOnly()" (click)="openCreateProduct.emit()">
+        + Добавить товар
+      </button>
+    </div>
+    <div class="items-drop-list" cdkDropList cdkDropListLockAxis="y" [cdkDropListData]="items()" (cdkDropListDropped)="reorder.emit($event)">
+      @for (item of items(); track item.productId) {
+        <div class="selected-row" cdkDrag>
+          <label class="item-select" title="Применять массовую наценку/скидку к этому товару">
+            <input type="checkbox" [checked]="selectedItemIds().includes(item.productId)" [disabled]="isReadOnly()" (change)="itemSelectionChange.emit({ item, checked: $any($event.target).checked })" />
+          </label>
+          <div class="item-handle" cdkDragHandle aria-hidden="true">⋮⋮</div>
+          <div class="item-thumb">
+            @if (imageUrlResolver()(item.imageUrl)) {
+              <img [src]="imageUrlResolver()(item.imageUrl)" [alt]="item.name" loading="lazy" />
+            } @else {
+              <div class="no-photo"></div>
+            }
+          </div>
+          <div class="item-info">
+            <span class="name">{{ item.name }}</span>
+            <span class="meta">
+              Арт: @if (item.code) { {{ item.code }} } @else { — }
+              · База: {{ item.price | number:'1.0-0' }} ₽
+            </span>
+          </div>
+          <div class="item-actions">
+            <div class="stepper">
+              <button ui-btn icon class="stepper__btn stepper__btn--minus" [disabled]="isReadOnly()" (click)="decrementQty.emit(item)">
+                <span class="stepper__glyph" aria-hidden="true">-</span>
+              </button>
+              <input type="number" [value]="item.qty" [disabled]="isReadOnly()" (change)="qtyChange.emit({ item, qty: +$any($event.target).value })" class="qty-input" min="1" />
+              <button ui-btn icon class="stepper__btn stepper__btn--plus" [disabled]="isReadOnly()" (click)="incrementQty.emit(item)">
+                <span class="stepper__glyph" aria-hidden="true">+</span>
+              </button>
+            </div>
+            <span class="total-price">{{ (itemUnitPriceResolver()(item) * item.qty) | number:'1.0-0' }} ₽</span>
+          </div>
+          <div class="item-remove-slot">
+            <button class="remove-btn" type="button" [disabled]="isReadOnly()" (click)="removeItem.emit(item)" aria-label="Удалить товар">×</button>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="sidebar-footer">
+      <div class="bulk-adjustments">
+        <div class="bulk-adjustments__row">
+          <label>
+            <span>Наценка (%)</span>
+            <input class="form-control" type="number" min="0" max="500" step="1" [disabled]="isReadOnly() || items().length === 0" [value]="bulkMarkupPercent()" (input)="bulkMarkupInput.emit($any($event.target).value)" />
+          </label>
+          <label>
+            <span>Скидка (%)</span>
+            <input class="form-control" type="number" min="0" max="100" step="1" [disabled]="isReadOnly() || items().length === 0" [value]="bulkDiscountPercent()" (input)="bulkDiscountInput.emit($any($event.target).value)" />
+          </label>
+        </div>
+        <div class="bulk-adjustments__actions">
+          <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly() || items().length === 0" (click)="clearBulkAdjustments.emit()">
+            Сбросить наценку/скидку
+          </button>
+        </div>
+      </div>
+      @if (items().length > 0) {
+        <div class="sidebar-total">
+          <span>Итого с НДС {{ vatPercent() }}%:</span>
+          <strong>{{ total() | number:'1.0-0' }} ₽</strong>
+        </div>
+      }
+    </div>
+    @if (lastRemovedItem()) {
+      <button ui-btn size="sm" variant="ghost" [disabled]="isReadOnly()" (click)="undoRemoveItem.emit()">
+        Вернуть удалённый товар
+      </button>
+    }
+    @if (items().length === 0) {
+      <p class="sidebar-empty">Добавьте товары из каталога</p>
+    }
+  }
+</div>

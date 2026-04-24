@@ -13,6 +13,9 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { SearchInputComponent } from '../../shared/ui/search-input/search-input.component';
 import { FilterSelectComponent } from '../../shared/ui/filter-select/filter-select.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { PageLayoutComponent } from '../../shared/ui/page-layout/page-layout.component';
+import { PageHeaderComponent } from '../../shared/ui/page-layout/page-header.component';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
@@ -22,7 +25,8 @@ import { ActivatedRoute, Router } from '@angular/router';
     CommonModule, FormsModule,
     CounterpartyTableComponent, CounterpartyFormComponent,
     BrandingTemplatesManagerComponent,
-    ButtonComponent, AlertComponent, SearchInputComponent, FilterSelectComponent
+    ButtonComponent, AlertComponent, SearchInputComponent, FilterSelectComponent,
+    EmptyStateComponent, PageLayoutComponent, PageHeaderComponent
   ],
   templateUrl: './counterparties.component.html',
   styleUrls: [

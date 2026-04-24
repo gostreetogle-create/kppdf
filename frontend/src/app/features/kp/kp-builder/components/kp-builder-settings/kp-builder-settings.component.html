@@ -1,0 +1,95 @@
+<div class="sidebar-section sidebar-section--params" [class.sidebar-section--open]="!collapsed()">
+  <button class="sidebar-section__title-btn" (click)="toggleCollapsed.emit()">
+    <span class="sidebar-section__title">Параметры КП</span>
+    <span class="sidebar-section__chevron">{{ collapsed() ? '▸' : '▾' }}</span>
+  </button>
+  @if (!collapsed()) {
+    <div class="kp-params-grid">
+      <label class="kp-params-grid__field">
+        <span>Номер</span>
+        <input class="form-control" type="text" [value]="metadata().number" [disabled]="isReadOnly()" (input)="metadataNumberChange.emit($any($event.target).value)" />
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Наша компания</span>
+        <select class="form-control" [ngModel]="selectedCompanyId()" [disabled]="isReadOnly() || switchingType()" (ngModelChange)="companySelectionChange.emit($event)">
+          @for (company of companyOptions(); track company._id) {
+            <option [value]="company._id">{{ company.shortName || company.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Тип документа</span>
+        <select class="form-control" [ngModel]="selectedKpType()" [disabled]="isReadOnly() || switchingType()" (ngModelChange)="kpTypeSelectionChange.emit($event)">
+          @for (item of kpTypeOptions(); track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Шаблон брендирования</span>
+        <div class="template-picker">
+          @if (showBrandingTemplateSelect()) {
+            <select class="form-control" [ngModel]="selectedTemplateKey()" [disabled]="isReadOnly() || switchingType()" (ngModelChange)="templateSelectionChange.emit($event)">
+              <option value="auto">По умолчанию для типа</option>
+              @for (template of templatesForSelectedType(); track template.key) {
+                <option [value]="template.key">{{ template.name }} @if (template.isDefault) { (default) }</option>
+              }
+            </select>
+          } @else {
+            <input class="form-control" type="text" value="По умолчанию для типа" disabled />
+          }
+          <button
+            type="button"
+            ui-btn
+            size="sm"
+            variant="ghost"
+            class="template-picker__open-btn"
+            title="Открыть шаблоны компании"
+            [disabled]="switchingType() || !selectedCompanyId()"
+            (click)="openCompanyBranding.emit()">
+            +
+          </button>
+        </div>
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Срок действия (дни)</span>
+        <input class="form-control" type="number" min="1" [value]="metadata().validityDays" [disabled]="isReadOnly()" (change)="validityDaysChange.emit(+$any($event.target).value)" />
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Предоплата (%)</span>
+        <input class="form-control" type="number" min="0" max="100" [value]="metadata().prepaymentPercent" [disabled]="isReadOnly()" (change)="prepaymentPercentChange.emit(+$any($event.target).value)" />
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Срок изготовления (дни)</span>
+        <input class="form-control" type="number" min="1" [value]="metadata().productionDays" [disabled]="isReadOnly()" (change)="productionDaysChange.emit(+$any($event.target).value)" />
+      </label>
+      <label class="kp-params-grid__field">
+        <span>НДС (%)</span>
+        <input class="form-control" type="number" min="0" max="100" [value]="vatPercent()" [disabled]="isReadOnly()" (change)="vatPercentChange.emit(+$any($event.target).value)" />
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Перенос строк (1-я стр.)</span>
+        <input class="form-control" type="number" min="1" [value]="metadata().tablePageBreakFirstPage ?? metadata().tablePageBreakAfter" [disabled]="isReadOnly()" (change)="tablePageBreakFirstPageChange.emit(+$any($event.target).value)" />
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Перенос (след. стр.)</span>
+        <input class="form-control" type="number" min="1" [value]="metadata().tablePageBreakNextPages ?? metadata().tablePageBreakAfter" [disabled]="isReadOnly()" (change)="tablePageBreakNextPagesChange.emit(+$any($event.target).value)" />
+      </label>
+      <label class="kp-params-grid__field">
+        <span>Размер фото (%)</span>
+        <div class="photo-scale-control">
+          <input class="photo-scale-control__range" type="range" min="0" max="400" step="5" [value]="photoScaleUiValue()" [disabled]="isReadOnly()" (input)="photoScaleChange.emit(+$any($event.target).value)" />
+          <span class="photo-scale-control__value">{{ photoScaleUiValue() }}%</span>
+          <input class="photo-scale-control__number form-control" type="number" min="0" max="400" [value]="photoScaleUiValue()" [disabled]="isReadOnly()" (change)="photoScaleChange.emit(+$any($event.target).value)" />
+        </div>
+      </label>
+      <div class="kp-params-grid__field kp-params-grid__field--checkbox">
+        <span>Колонка фото</span>
+        <button type="button" class="kp-photo-toggle" [class.kp-photo-toggle--active]="photoColumnVisible()" [attr.aria-pressed]="photoColumnVisible()" [disabled]="isReadOnly()" (click)="photoColumnVisibilityToggle.emit()">
+          <span class="kp-photo-toggle__icon" aria-hidden="true">{{ photoColumnVisible() ? '👁' : '◌' }}</span>
+          <span>{{ photoColumnVisible() ? 'Фото видно в таблице' : 'Фото скрыто в таблице' }}</span>
+        </button>
+      </div>
+    </div>
+  }
+</div>

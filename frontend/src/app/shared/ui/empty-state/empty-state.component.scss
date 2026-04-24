@@ -1,0 +1,25 @@
+.ui-empty-state {
+  padding: var(--ui-space-5, 1.25rem);
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--ui-radius-md, 0.75rem);
+  color: var(--ui-text-muted);
+  background: var(--ui-bg-soft);
+  display: grid;
+  gap: var(--ui-space-2, 0.5rem);
+}
+
+.ui-empty-state--compact {
+  padding: var(--ui-space-3, 0.75rem);
+}
+
+.ui-empty-state__title {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+
+.ui-empty-state__icon:empty,
+.ui-empty-state__title:empty,
+.ui-empty-state__description:empty,
+.ui-empty-state__actions:empty {
+  display: none;
+}

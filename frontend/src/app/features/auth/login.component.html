@@ -1,5 +1,5 @@
 <div class="login-page">
-  <div class="login-card">
+  <form class="login-card" #loginForm="ngForm" (ngSubmit)="submit()" novalidate>
     <div class="login-card__logo">КП</div>
     <h1 class="login-card__title">Вход в систему</h1>
 
@@ -7,20 +7,27 @@
       <ui-alert type="error">{{ error() }}</ui-alert>
     }
 
-    <ui-form-field label="Логин" [required]="true">
+    <ui-form-field label="Логин" [required]="true" [submitted]="loginForm.submitted">
       <input
+        name="username"
         type="text"
         [(ngModel)]="username"
+        required
+        minlength="3"
+        pattern="^[a-zA-Z0-9._-]+$"
         placeholder="owner"
         (keydown.enter)="submit()"
         autocomplete="username"
       />
     </ui-form-field>
 
-    <ui-form-field label="Пароль" [required]="true">
+    <ui-form-field label="Пароль" [required]="true" [submitted]="loginForm.submitted">
       <input
+        name="password"
         type="password"
         [(ngModel)]="password"
+        required
+        minlength="8"
         placeholder="••••••••"
         (keydown.enter)="submit()"
         autocomplete="current-password"
@@ -28,23 +35,24 @@
     </ui-form-field>
 
     <label class="remember-me">
-      <input type="checkbox" [(ngModel)]="rememberMe" />
+      <input name="rememberMe" type="checkbox" [(ngModel)]="rememberMe" />
       <span>Запомнить меня</span>
     </label>
 
     <button
+      type="submit"
       ui-btn
       variant="primary"
       class="login-card__submit"
-      (click)="submit()"
       [disabled]="loading()">
       {{ loading() ? 'Вход...' : 'Войти' }}
     </button>
 
     <div class="login-card__divider">или</div>
 
-    <ui-form-field label="Гостевая ссылка">
+    <ui-form-field label="Гостевая ссылка" [submitted]="loginForm.submitted">
       <input
+        name="guestLink"
         type="text"
         [(ngModel)]="guestLink"
         placeholder="Вставьте ссылку или токен"
@@ -60,5 +68,5 @@
       (click)="enterGuest()">
       Войти как гость
     </button>
-  </div>
+  </form>
 </div>

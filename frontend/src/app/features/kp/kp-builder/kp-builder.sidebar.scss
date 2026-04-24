@@ -1,15 +1,13 @@
 @use '../../../../styles/tokens' as *;
 
 .sidebar-section {
-  --section-bg: var(--ui-bg-soft);
-  --section-border: color-mix(in srgb, var(--ui-border) 76%, transparent);
-  --section-accent: var(--ui-primary);
-  padding: $space-3;
-  border-bottom: 1px solid var(--ui-border-light);
-  transition: background-color $transition-fast;
+  padding: 0 $space-3;
+  border-bottom: none;
+  background: transparent;
+  transition: none;
 
   &--open {
-    background: color-mix(in srgb, var(--section-bg) 28%, var(--ui-bg));
+    background: transparent;
   }
 
   &--expanded {
@@ -17,11 +15,11 @@
   }
 
   &__title {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 600;
     text-transform: none;
     letter-spacing: 0.01em;
-    color: var(--ui-text-muted);
+    color: var(--ui-text-main);
     margin: 0 0 $space-3;
   }
 
@@ -59,34 +57,12 @@
     cursor: pointer;
   }
 
-  &--recipient {
-    --section-bg: color-mix(in srgb, var(--ui-primary) 10%, var(--ui-bg));
-    --section-border: color-mix(in srgb, var(--ui-primary) 26%, var(--ui-border));
-    --section-accent: var(--ui-primary);
-  }
-
-  &--catalog {
-    --section-bg: color-mix(in srgb, var(--ui-success) 10%, var(--ui-bg));
-    --section-border: color-mix(in srgb, var(--ui-success) 26%, var(--ui-border));
-    --section-accent: var(--ui-success);
-  }
-
-  &--params {
-    --section-bg: color-mix(in srgb, var(--ui-warning) 12%, var(--ui-bg));
-    --section-border: color-mix(in srgb, var(--ui-warning) 28%, var(--ui-border));
-    --section-accent: var(--ui-warning);
-  }
-
-  &--items {
-    --section-bg: color-mix(in srgb, var(--ui-info) 10%, var(--ui-bg));
-    --section-border: color-mix(in srgb, var(--ui-info) 26%, var(--ui-border));
-    --section-accent: var(--ui-info);
-  }
-
+  &--recipient,
+  &--catalog,
+  &--params,
+  &--items,
   &--conditions {
-    --section-bg: color-mix(in srgb, var(--ui-danger) 10%, var(--ui-bg));
-    --section-border: color-mix(in srgb, var(--ui-danger) 24%, var(--ui-border));
-    --section-accent: var(--ui-danger);
+    --section-accent: var(--ui-primary);
   }
 }
 
@@ -99,7 +75,7 @@
   border: none;
   border-radius: 0;
   padding: $space-1 0;
-  margin: 0 0 $space-2;
+  margin: 0 0 $space-4;
   cursor: pointer;
   transition: box-shadow $transition-fast;
 
@@ -124,8 +100,8 @@
 }
 
 .sidebar-section__title {
-  color: color-mix(in srgb, var(--ui-text-main) 88%, var(--ui-text));
-  font-weight: 700;
+  color: var(--ui-text-main);
+  font-weight: 600;
 }
 
 .recipient-select-row {
