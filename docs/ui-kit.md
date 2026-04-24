@@ -343,15 +343,16 @@ Apple-style правила карточки:
 ## KP Builder Right Panel (`Состав КП`)
 
 UI-правила плотного списка:
-- элементы рендерятся как компактные SaaS-строки `selected-row` без карточных подложек (тонкий `border-bottom`, 40x40 thumb, name/meta, компактный stepper, итог справа);
+- элементы рендерятся через изолированный standalone-компонент `app-kp-cart-item` (локальный template+scss), чтобы глобальные стили `kp-builder`/`ui-btn` не ломали геометрию строки;
+- внутри `app-kp-cart-item` строка остается компактной SaaS-геометрией (тонкий `border-bottom`, thumb, name/meta, compact stepper, итог справа);
 - layout строки построен на `display:flex` (не grid), чтобы на узкой панели элементы сжимались предсказуемо и не наезжали друг на друга;
 - для текстового блока обязательно `item-info { flex:1; min-width:0; }` + `line-clamp/ellipsis`, чтобы длинные названия не выталкивали controls;
 - в строке есть рабочий `drag-handle` на `@angular/cdk/drag-drop` (`cdkDragHandle`), по умолчанию бледный и заметнее при hover/focus;
 - правый блок действий фиксирован (`item-actions`/`item-remove-slot` не сжимаются), а `total-price` держит `min-width` и `tabular-nums` для ровной колонки сумм;
 - drag UX: placeholder рендерится пунктиром, а dragged-preview получает мягкую тень/поднятие;
 - удаление позиции выполняется через `remove-btn`, который появляется через `opacity` на hover/focus (без layout shift);
-- stepper реализуется как единый compact-control: ширина `~76px`, высота `24px`, лёгкий token-driven фон + тонкие внутренние разделители между `- / qty / +`, `border-radius:4px`;
-- для защиты от конфликтов с глобальными кнопочными стилями `[ui-btn].btn--icon` внутри stepper используется более специфичный локальный селектор (`.stepper .stepper__btn[ui-btn].btn--icon`);
+- stepper реализуется как единый compact-control: ширина `90px`, высота `32px`, `border: 1px solid var(--ui-border)`, `border-radius: 8px`, структура `- / qty / +`;
+- кнопки stepper (`.stepper-btn`) не используют `ui-btn`, а рендерятся как локальные reset-кнопки (`all: unset`) с центрированием через `display:flex; align-items:center; justify-content:center;` и hover-подсветкой `var(--ui-bg-hover)`;
 - в правой панели `Состав КП` денежные значения (`База`, line total) отображаются в формате `47,500 ₽` (символ рубля после числа) для консистентности с документной таблицей.
 - блок пересчёта (`Наценка/Скидка` + итог) расположен в sticky-footer внизу правой колонки;
 - list area скроллится отдельно от sticky-footer (footer всегда остаётся в зоне видимости).

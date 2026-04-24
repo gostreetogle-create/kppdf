@@ -51,8 +51,11 @@
     <ui-empty-state>
       @if (search()) {
         <p empty-title>Ничего не найдено по запросу "{{ search() }}"</p>
-      } @else {
+      }
+      @if (!search()) {
         <p empty-title>Каталог пуст</p>
+      }
+      @if (!search()) {
         <button empty-actions ui-btn variant="primary" (click)="openCreate()">Добавить первый товар</button>
       }
     </ui-empty-state>

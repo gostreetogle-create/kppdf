@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { KpItem } from '../../../../../core/services/api.service';
 import { ButtonComponent } from '../../../../../shared/ui/button/button.component';
+import { KpCartItemComponent } from '../kp-cart-item/kp-cart-item.component';
 
 @Component({
   selector: 'app-kp-builder-cart',
   standalone: true,
-  imports: [CommonModule, DragDropModule, ButtonComponent],
+  imports: [CommonModule, DragDropModule, ButtonComponent, KpCartItemComponent],
   templateUrl: './kp-builder-cart.component.html',
   styleUrls: ['../../kp-builder.sidebar.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

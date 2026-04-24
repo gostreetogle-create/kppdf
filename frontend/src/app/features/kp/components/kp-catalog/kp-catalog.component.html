@@ -44,12 +44,7 @@
           }
           <td class="kp-cell-name">{{ item.name }}</td>
           @if (showDescriptionColumn()) {
-            <td class="kp-cell-description">
-              {{ item.description }}
-              @if (item.adjustmentsLabel) {
-                <div class="kp-cell-adjustments">{{ item.adjustmentsLabel }}</div>
-              }
-            </td>
+            <td class="kp-cell-description">{{ item.description }}</td>
           }
           <td class="kp-cell-qty">{{ item.qty }}</td>
           <td class="kp-cell-unit">{{ item.unit }}</td>

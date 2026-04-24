@@ -93,7 +93,6 @@ export class KpBuilderComponent implements OnInit {
       unit:        i.unit,
       price:       this.itemUnitPrice(i),
       basePrice:   i.price,
-      adjustmentsLabel: this.itemAdjustmentsLabel(i),
       qty:         i.qty,
       imageUrl:    this.normalizeImageUrl(i.imageUrl)
     }))

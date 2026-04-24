@@ -10,7 +10,6 @@ export interface KpCatalogItem {
   unit:        string;
   price:       number;
   basePrice?:  number;
-  adjustmentsLabel?: string;
   imageUrl:    string;
 }
 

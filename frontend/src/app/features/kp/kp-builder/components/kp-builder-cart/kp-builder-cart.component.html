@@ -11,41 +11,18 @@
     </div>
     <div class="items-drop-list" cdkDropList cdkDropListLockAxis="y" [cdkDropListData]="items()" (cdkDropListDropped)="reorder.emit($event)">
       @for (item of items(); track item.productId) {
-        <div class="selected-row" cdkDrag>
-          <label class="item-select" title="Применять массовую наценку/скидку к этому товару">
-            <input type="checkbox" [checked]="selectedItemIds().includes(item.productId)" [disabled]="isReadOnly()" (change)="itemSelectionChange.emit({ item, checked: $any($event.target).checked })" />
-          </label>
-          <div class="item-handle" cdkDragHandle aria-hidden="true">⋮⋮</div>
-          <div class="item-thumb">
-            @if (imageUrlResolver()(item.imageUrl)) {
-              <img [src]="imageUrlResolver()(item.imageUrl)" [alt]="item.name" loading="lazy" />
-            } @else {
-              <div class="no-photo"></div>
-            }
-          </div>
-          <div class="item-info">
-            <span class="name">{{ item.name }}</span>
-            <span class="meta">
-              Арт: @if (item.code) { {{ item.code }} } @else { — }
-              · База: {{ item.price | number:'1.0-0' }} ₽
-            </span>
-          </div>
-          <div class="item-actions">
-            <div class="stepper">
-              <button ui-btn icon class="stepper__btn stepper__btn--minus" [disabled]="isReadOnly()" (click)="decrementQty.emit(item)">
-                <span class="stepper__glyph" aria-hidden="true">-</span>
-              </button>
-              <input type="number" [value]="item.qty" [disabled]="isReadOnly()" (change)="qtyChange.emit({ item, qty: +$any($event.target).value })" class="qty-input" min="1" />
-              <button ui-btn icon class="stepper__btn stepper__btn--plus" [disabled]="isReadOnly()" (click)="incrementQty.emit(item)">
-                <span class="stepper__glyph" aria-hidden="true">+</span>
-              </button>
-            </div>
-            <span class="total-price">{{ (itemUnitPriceResolver()(item) * item.qty) | number:'1.0-0' }} ₽</span>
-          </div>
-          <div class="item-remove-slot">
-            <button class="remove-btn" type="button" [disabled]="isReadOnly()" (click)="removeItem.emit(item)" aria-label="Удалить товар">×</button>
-          </div>
-        </div>
+        <app-kp-cart-item
+          [item]="item"
+          [isSelected]="selectedItemIds().includes(item.productId)"
+          [isReadOnly]="isReadOnly()"
+          [itemUnitPrice]="itemUnitPriceResolver()(item)"
+          [imageUrl]="imageUrlResolver()(item.imageUrl)"
+          (selectionChange)="itemSelectionChange.emit({ item, checked: $event })"
+          (qtyChange)="qtyChange.emit({ item, qty: $event })"
+          (decrement)="decrementQty.emit(item)"
+          (increment)="incrementQty.emit(item)"
+          (remove)="removeItem.emit(item)"
+        />
       }
     </div>
     <div class="sidebar-footer">

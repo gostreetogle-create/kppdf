@@ -1,0 +1,30 @@
+<div class="cart-item" cdkDrag>
+  <label class="item-select">
+    <input type="checkbox" [checked]="isSelected()" [disabled]="isReadOnly()" (change)="selectionChange.emit($any($event.target).checked)" />
+  </label>
+  <div class="item-handle" cdkDragHandle>⋮⋮</div>
+  <div class="item-thumb">
+    @if (imageUrl()) {
+      <img [src]="imageUrl()" [alt]="item().name" loading="lazy" />
+    } @else {
+      <div class="no-photo"></div>
+    }
+  </div>
+  <div class="item-info">
+    <span class="name">{{ item().name }}</span>
+    <span class="meta">
+      Арт: {{ item().code || '—' }} · База: {{ item().price | number:'1.0-0' }} ₽
+    </span>
+  </div>
+  <div class="item-actions">
+    <div class="stepper">
+      <button class="stepper-btn" [disabled]="isReadOnly()" (click)="decrement.emit()">-</button>
+      <input type="number" [value]="item().qty" [disabled]="isReadOnly()" (change)="qtyChange.emit(+$any($event.target).value)" class="qty-input" min="1" />
+      <button class="stepper-btn" [disabled]="isReadOnly()" (click)="increment.emit()">+</button>
+    </div>
+    <span class="total-price">{{ itemUnitPrice() * item().qty | number:'1.0-0' }} ₽</span>
+  </div>
+  <div class="item-remove-slot">
+    <button class="remove-btn" type="button" [disabled]="isReadOnly()" (click)="remove.emit()">×</button>
+  </div>
+</div>
