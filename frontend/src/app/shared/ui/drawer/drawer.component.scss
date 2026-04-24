@@ -4,22 +4,24 @@
   position: fixed;
   inset: 0;
   z-index: $z-modal;
-  background: color-mix(in srgb, #0b1220 28%, transparent);
+  background: color-mix(in srgb, var(--ui-bg-main) 36%, transparent);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: flex-end;
   padding: $space-3;
+  animation: drawerBackdropFadeIn 180ms ease;
 }
 
 .drawer {
   height: 100%;
-  background: var(--ui-bg);
+  background: var(--ui-bg-card);
   border: 1px solid var(--ui-border-light);
-  border-radius: $radius-2xl;
-  box-shadow: $shadow-xl;
+  border-radius: var(--ui-radius-lg, 12px);
+  box-shadow: 0 20px 40px color-mix(in srgb, var(--ui-text-main) 20%, transparent);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: drawerIn 0.22s ease;
+  animation: drawerIn 220ms ease;
 
   &__header {
     display: flex;
@@ -63,4 +65,9 @@
     transform: none;
     opacity: 1;
   }
+}
+
+@keyframes drawerBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

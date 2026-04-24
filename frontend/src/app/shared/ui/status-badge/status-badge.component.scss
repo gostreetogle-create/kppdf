@@ -4,11 +4,12 @@
   display: inline-flex;
   align-items: center;
   min-height: 1.5rem;
-  padding: 0.2rem 0.625rem;
-  border-radius: var(--radius-md);
+  padding: 4px 10px;
+  border-radius: 999px;
   border: 1px solid transparent;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--ui-font-family, inherit);
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -16,37 +17,37 @@
 :host(.status-badge--draft),
 :host(.status-badge--inactive) {
   color: var(--ui-text-muted);
-  background: color-mix(in srgb, var(--ui-bg-soft) 92%, var(--ui-bg));
-  border-color: color-mix(in srgb, var(--ui-border) 90%, transparent);
+  background: color-mix(in srgb, var(--ui-text-muted) 12%, var(--ui-bg-main) 88%);
+  border-color: color-mix(in srgb, var(--ui-text-muted) 24%, transparent);
 }
 
 :host(.status-badge--sent),
 :host(.status-badge--client),
 :host(.status-badge--viewer) {
-  color: color-mix(in srgb, var(--ui-primary) 84%, var(--ui-text-main));
-  background: color-mix(in srgb, var(--ui-primary) 12%, var(--ui-bg));
-  border-color: color-mix(in srgb, var(--ui-primary) 32%, var(--ui-border));
+  color: var(--ui-primary);
+  background: color-mix(in srgb, var(--ui-primary) 15%, var(--ui-bg-main) 85%);
+  border-color: color-mix(in srgb, var(--ui-primary) 24%, transparent);
 }
 
 :host(.status-badge--accepted),
 :host(.status-badge--active),
 :host(.status-badge--company),
 :host(.status-badge--owner) {
-  color: color-mix(in srgb, var(--ui-success) 78%, black);
-  background: color-mix(in srgb, var(--ui-success) 12%, var(--ui-bg));
-  border-color: color-mix(in srgb, var(--ui-success) 30%, var(--ui-border));
+  color: var(--ui-success, #34c759);
+  background: color-mix(in srgb, var(--ui-success, #34c759) 15%, var(--ui-bg-main) 85%);
+  border-color: color-mix(in srgb, var(--ui-success, #34c759) 24%, transparent);
 }
 
 :host(.status-badge--rejected),
 :host(.status-badge--admin) {
-  color: color-mix(in srgb, var(--ui-danger) 78%, black);
-  background: color-mix(in srgb, var(--ui-danger) 10%, var(--ui-bg));
-  border-color: color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+  color: var(--ui-danger);
+  background: color-mix(in srgb, var(--ui-danger) 15%, var(--ui-bg-main) 85%);
+  border-color: color-mix(in srgb, var(--ui-danger) 24%, transparent);
 }
 
 :host(.status-badge--manager),
 :host(.status-badge--supplier) {
-  color: color-mix(in srgb, var(--ui-warning) 78%, black);
-  background: color-mix(in srgb, var(--ui-warning) 12%, var(--ui-bg));
-  border-color: color-mix(in srgb, var(--ui-warning) 30%, var(--ui-border));
+  color: var(--ui-warning);
+  background: color-mix(in srgb, var(--ui-warning) 15%, var(--ui-bg-main) 85%);
+  border-color: color-mix(in srgb, var(--ui-warning) 24%, transparent);
 }

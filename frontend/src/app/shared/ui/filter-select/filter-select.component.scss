@@ -1,20 +1,26 @@
 @use '../../../../styles/tokens' as *;
 
 .ui-filter-select {
+  appearance: none;
   border: 1px solid var(--ui-border);
-  border-radius: $radius-md;
+  border-radius: var(--ui-radius-md, 8px);
   font-size: $font-base;
-  font-family: inherit;
-  background: var(--ui-bg);
-  color: var(--ui-text);
-  min-height: var(--ui-control-height-md);
+  font-family: var(--ui-font-family, inherit);
+  background: var(--ui-bg-card);
+  color: var(--ui-text-main, var(--ui-text));
+  min-height: var(--ui-control-height, 36px);
   line-height: 1.25;
   min-width: min(100%, 11.25rem);
   padding: 0.5rem $space-3;
 
+  &:focus,
   &:focus-visible {
     outline: none;
     border-color: var(--ui-primary);
     box-shadow: var(--ui-focus-ring-shadow);
+  }
+
+  &:hover:not(:disabled):not(:focus):not(:focus-visible) {
+    border-color: color-mix(in srgb, var(--ui-border) 82%, var(--ui-text-main) 18%);
   }
 }

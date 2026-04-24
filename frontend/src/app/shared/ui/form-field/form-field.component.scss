@@ -16,23 +16,29 @@
     ::ng-deep input,
     ::ng-deep textarea,
     ::ng-deep select {
+      appearance: none;
       width: 100%;
-      min-height: var(--ui-control-height, 2.25rem);
+      min-height: var(--ui-control-height, 36px);
       padding: 0.5rem $space-3;
       border: 1px solid var(--ui-border);
-      border-radius: $radius-md;
+      border-radius: var(--ui-radius-md, 8px);
       font-size: var(--ui-font-size-md, 0.875rem);
-      font-family: inherit;
+      font-family: var(--ui-font-family, inherit);
       line-height: var(--line-height-body);
-      color: var(--ui-text);
-      background: var(--ui-bg);
+      color: var(--ui-text-main, var(--ui-text));
+      background: var(--ui-bg-card);
       transition: border-color $transition-fast, box-shadow $transition-fast;
       box-sizing: border-box;
 
+      &:focus,
       &:focus-visible {
         outline: none;
         border-color: var(--ui-primary);
         box-shadow: var(--ui-focus-ring-shadow);
+      }
+
+      &:hover:not(:disabled):not(:focus):not(:focus-visible) {
+        border-color: color-mix(in srgb, var(--ui-border) 82%, var(--ui-text-main) 18%);
       }
 
       &::placeholder { color: var(--ui-text-muted); opacity: 0.72; }
@@ -40,7 +46,8 @@
       &:disabled {
         cursor: not-allowed;
         color: var(--color-text-disabled);
-        background: var(--ui-bg-soft);
+        opacity: 0.5;
+        background: color-mix(in srgb, var(--ui-bg-card) 82%, var(--ui-bg-main) 18%);
       }
     }
 
@@ -50,9 +57,17 @@
     }
   }
 
+  &__control--error {
+    ::ng-deep input,
+    ::ng-deep textarea,
+    ::ng-deep select {
+      border-color: var(--ui-danger);
+    }
+  }
+
   &__error {
     margin: $space-1 0 0;
-    font-size: var(--font-size-caption);
+    font-size: 12px;
     line-height: var(--line-height-caption);
     color: var(--ui-danger);
   }

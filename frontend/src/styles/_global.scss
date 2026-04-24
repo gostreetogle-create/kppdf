@@ -8,6 +8,7 @@
 
 :root {
   @include theme-light-tokens();
+  --ui-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   --ui-bg: var(--color-surface);
   --ui-bg-soft: var(--color-surface-soft);
@@ -41,11 +42,12 @@
   --ui-spacing-6: var(--spacing-6);
   --ui-spacing-8: var(--spacing-8);
   --ui-font-size-md: var(--font-size-body);
+  --ui-control-height: 36px;
   --ui-control-height-sm: calc(var(--spacing-8) + var(--spacing-1));
   --ui-control-height-md: var(--spacing-10);
   --ui-control-height-lg: var(--spacing-12);
   --ui-control-hit-size: calc(var(--spacing-10) + var(--spacing-1));
-  --ui-focus-ring-shadow: 0 0 0 calc(var(--spacing-1) - 1px) color-mix(in srgb, var(--ui-focus-ring) 36%, transparent);
+  --ui-focus-ring-shadow: 0 0 0 3px rgba(0, 122, 255, 0.4);
 
   /* Layout system */
   --layout-shell-sidebar: 220px;
@@ -57,7 +59,9 @@
 
 :root[data-theme='dark'],
 :root.dark-theme,
-body.dark-theme {
+body.dark-theme,
+[data-theme='dark'],
+.dark-theme {
   @include theme-dark-tokens();
   --ui-bg: var(--color-surface);
   --ui-bg-soft: var(--color-surface-soft);
@@ -80,6 +84,7 @@ body.dark-theme {
   --ui-info: var(--color-info);
   --ui-text-on-primary: var(--color-text-on-primary);
   --ui-focus-ring: var(--color-focus-ring);
+  --ui-focus-ring-shadow: 0 0 0 3px rgba(10, 132, 255, 0.45);
   --ui-print-paper: #ffffff;
   --ui-code-bg: var(--color-background);
   --ui-code-fg: var(--color-text-primary);
@@ -118,7 +123,7 @@ body.dark-theme {
 
 body {
   margin: 0;
-  font-family: var(--font-family, var(--font-family-base));
+  font-family: var(--ui-font-family, var(--font-family, var(--font-family-base)));
   font-size: var(--font-size-body);
   color: var(--ui-text);
   background: var(--ui-bg-muted);
@@ -189,8 +194,10 @@ input, textarea, select {
 
 // ─── Utilities ────────────────────────────────────────────
 .ui-required {
-  color: var(--ui-danger);
-  margin-left: calc(var(--spacing-1) / 2);
+  &::after {
+    content: ' *';
+    color: var(--ui-danger);
+  }
 }
 
 .page {

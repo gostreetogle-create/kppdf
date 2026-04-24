@@ -11,8 +11,9 @@ export type ButtonSize    = 'sm' | 'md' | 'lg';
   template: `<ng-content />`,
   styleUrl: './button.component.scss',
   host: {
-    '[class]': '"btn btn--" + variant() + " btn--" + size()',
+    '[class]': '"btn ui-btn btn--" + variant() + " ui-btn--" + variant() + " btn--" + size() + " ui-btn--" + size()',
     '[class.btn--icon]': 'icon()',
+    '[class.ui-btn--icon]': 'icon()',
   }
 })
 export class ButtonComponent {

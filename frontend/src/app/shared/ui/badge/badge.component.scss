@@ -2,15 +2,37 @@
 
 :host {
   display: inline-block;
-  font-size: $font-xs;
+  font-size: 12px;
   font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 12px;
-  line-height: 1.6;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--ui-font-family, inherit);
+  line-height: 1.2;
+  border: 1px solid transparent;
 
-  &.badge--default { background: $color-bg-muted;      color: $color-text-muted; }
-  &.badge--blue    { background: $color-primary-light;  color: $color-primary-dark; }
-  &.badge--green   { background: $color-success-light;  color: $color-success; }
-  &.badge--red     { background: $color-danger-light;   color: $color-danger-dark; }
-  &.badge--orange  { background: $color-warning-light;  color: $color-warning; }
+  &.badge--default {
+    background: color-mix(in srgb, var(--ui-text-muted) 12%, transparent);
+    color: var(--ui-text-muted);
+    border-color: color-mix(in srgb, var(--ui-text-muted) 28%, transparent);
+  }
+  &.badge--blue {
+    background: color-mix(in srgb, var(--ui-primary) 15%, transparent);
+    color: var(--ui-primary);
+    border-color: color-mix(in srgb, var(--ui-primary) 24%, transparent);
+  }
+  &.badge--green {
+    background: color-mix(in srgb, var(--ui-success, #34c759) 15%, transparent);
+    color: var(--ui-success, #34c759);
+    border-color: color-mix(in srgb, var(--ui-success, #34c759) 24%, transparent);
+  }
+  &.badge--red {
+    background: color-mix(in srgb, var(--ui-danger) 15%, transparent);
+    color: var(--ui-danger);
+    border-color: color-mix(in srgb, var(--ui-danger) 24%, transparent);
+  }
+  &.badge--orange {
+    background: color-mix(in srgb, var(--ui-warning) 15%, transparent);
+    color: var(--ui-warning);
+    border-color: color-mix(in srgb, var(--ui-warning) 24%, transparent);
+  }
 }

@@ -184,6 +184,7 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-04-24 | Apple-style craft pass для shared UI и global token-layer: в `styles/_tokens.scss/_global.scss/_forms.scss` зафиксированы iOS-палитра light/dark, системный `--ui-font-family`, единый `--ui-focus-ring-shadow`, `--ui-control-height:36px`, `.ui-required::after` и унифицированный `.form-control`; обновлены `button/form-field/search-input/filter-select/badge/status-badge/card/modal/drawer` (soft badges через `color-mix`, pill geometry, focus/accessibility states, modal/drawer blur-backdrop + depth shadows + refined enter animations, interactive card lift) без изменения бизнес-логики компонентов |
 | 2026-04-24 | KP Builder targeted bulk adjustments: в `Состав КП` добавлены чекбоксы по строкам для участия в массовых `Наценка/Скидка`; bulk-операции применяются только к отмеченным товарам, при загрузке/добавлении/переключении КП по умолчанию все позиции автоматически отмечены |
 | 2026-04-24 | KP Builder toolbar dead-action cleanup: удалена кнопка `Доп. действия` как заглушка без рабочего сценария (`openMoreActions` показывал только info-toast); из компонента убран мёртвый обработчик для соответствия toolbar реальным действиям |
 | 2026-04-24 | KP Builder toolbar cleanup: удалена кнопка `Предпросмотр` как нефункциональная (метод `openPreview` не переключал реальный режим интерфейса); из компонента убран мёртвый обработчик, чтобы toolbar отражал только рабочие действия |
