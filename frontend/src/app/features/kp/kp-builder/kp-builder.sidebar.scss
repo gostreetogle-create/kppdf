@@ -101,9 +101,7 @@
   padding: $space-1 0;
   margin: 0 0 $space-2;
   cursor: pointer;
-  transition: background-color $transition-fast, border-color $transition-fast, box-shadow $transition-fast;
-
-  &:hover { background: transparent; }
+  transition: box-shadow $transition-fast;
 
   &:focus-visible {
     outline: none;
@@ -119,10 +117,15 @@
   justify-content: center;
   border-radius: 999px;
   background: transparent;
-  color: color-mix(in srgb, var(--ui-text-muted) 88%, var(--ui-text));
+  color: color-mix(in srgb, var(--ui-text-main) 88%, var(--ui-text));
   font-size: $font-sm;
   font-weight: 700;
   line-height: 1;
+}
+
+.sidebar-section__title {
+  color: color-mix(in srgb, var(--ui-text-main) 88%, var(--ui-text));
+  font-weight: 700;
 }
 
 .recipient-select-row {

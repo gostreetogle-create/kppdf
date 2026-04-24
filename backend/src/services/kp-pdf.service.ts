@@ -74,7 +74,8 @@ function renderKpHtml(kp: any): string {
       .kp-row { page-break-inside: avoid; break-inside: avoid; }
       .num { text-align: right; white-space: nowrap; }
       .totals { margin-top: 6mm; margin-left: auto; width: 80mm; font-size: 12px; }
-      .totals-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #e5e7eb; }
+      .totals-row { display: flex; justify-content: space-between; padding: 3px 0; line-height: 17px; border-bottom: 1px solid #e5e7eb; }
+      .totals-row:nth-child(2) { border-bottom: 0; }
       .totals-row:last-child { font-weight: 700; border-bottom: 0; padding-top: 6px; }
       .conditions { margin-top: 8mm; font-size: 12px; }
       .conditions h3 { margin: 0 0 3mm; font-size: 14px; }

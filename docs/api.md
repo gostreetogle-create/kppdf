@@ -237,6 +237,7 @@ RBAC:
     "tablePageBreakFirstPage": 6,
     "tablePageBreakNextPages": 6,
     "photoScalePercent": 150,
+    "showPhotoColumn": true,
     "defaultMarkupPercent": 0,
     "defaultDiscountPercent": 0
   },
@@ -259,6 +260,7 @@ RBAC:
 - `metadata.tablePageBreakFirstPage` — лимит строк на 1-й странице;
 - `metadata.tablePageBreakNextPages` — лимит строк на 2+ страницах;
 - `metadata.tablePageBreakAfter` остаётся как backward-compatible fallback для старых КП;
+- `metadata.showPhotoColumn` — флаг видимости колонки `Фото` в табличной части КП (`true` по умолчанию);
 - frontend `kp-document` использует детерминированное разбиение: первая/следующие страницы + баланс последней страницы (чтобы не оставлять «одинокие» 1-2 строки на финальной странице).
 
 ---

@@ -61,9 +61,6 @@
           <option value="accepted" [disabled]="!canSelectStatus('accepted')">Принят</option>
           <option value="rejected" [disabled]="!canSelectStatus('rejected')">Отклонён</option>
         </select>
-        <button ui-btn class="builder__toolbar-btn" variant="ghost" (click)="openPreview()">
-          Предпросмотр
-        </button>
         <div class="builder__pdf-split" [class.is-menu-open]="isPdfMenuOpen()">
           <button
             ui-btn
@@ -92,9 +89,6 @@
             }
           </div>
         </div>
-        <button ui-btn class="builder__toolbar-btn" variant="ghost" (click)="openMoreActions()">
-          Доп. действия
-        </button>
         <span class="builder__toolbar-divider" aria-hidden="true"></span>
         <button
           ui-btn
@@ -241,7 +235,7 @@
                 (input)="onMetadataNumberChange($any($event.target).value)"
               />
             </label>
-            <label class="kp-params-grid__field kp-params-grid__field--wide">
+            <label class="kp-params-grid__field">
               <span>Наша компания</span>
               <select
                 [ngModel]="selectedCompanyId()"
@@ -263,7 +257,7 @@
                 }
               </select>
             </label>
-            <label class="kp-params-grid__field kp-params-grid__field--wide">
+            <label class="kp-params-grid__field">
               <span>Шаблон брендирования</span>
               <div class="template-picker">
                 @if (showBrandingTemplateSelect()) {
@@ -336,8 +330,8 @@
                 (change)="onVatPercentChange(+$any($event.target).value)"
               />
             </label>
-            <label class="kp-params-grid__field kp-params-grid__field--wide">
-              <span>Перенос после строки № (1-я страница)</span>
+            <label class="kp-params-grid__field">
+              <span>Перенос строк (1-я стр.)</span>
               <input
                 type="number"
                 min="1"
@@ -346,8 +340,8 @@
                 (change)="updateTablePageBreakFirstPage(+$any($event.target).value)"
               />
             </label>
-            <label class="kp-params-grid__field kp-params-grid__field--wide">
-              <span>Перенос после строки № (следующие страницы)</span>
+            <label class="kp-params-grid__field">
+              <span>Перенос (след. стр.)</span>
               <input
                 type="number"
                 min="1"
@@ -356,7 +350,7 @@
                 (change)="updateTablePageBreakNextPages(+$any($event.target).value)"
               />
             </label>
-            <label class="kp-params-grid__field kp-params-grid__field--wide">
+            <label class="kp-params-grid__field">
               <span>Размер фото (%)</span>
               <div class="photo-scale-control">
                 <input
@@ -381,6 +375,19 @@
                 />
               </div>
             </label>
+            <div class="kp-params-grid__field kp-params-grid__field--checkbox">
+              <span>Колонка фото</span>
+              <button
+                type="button"
+                class="kp-photo-toggle"
+                [class.kp-photo-toggle--active]="isPhotoColumnVisible()"
+                [attr.aria-pressed]="isPhotoColumnVisible()"
+                [disabled]="isReadOnly()"
+                (click)="togglePhotoColumnVisibility()">
+                <span class="kp-photo-toggle__icon" aria-hidden="true">{{ isPhotoColumnVisible() ? '👁' : '◌' }}</span>
+                <span>{{ isPhotoColumnVisible() ? 'Фото видно в таблице' : 'Фото скрыто в таблице' }}</span>
+              </button>
+            </div>
           </div>
           }
         </div>
@@ -410,6 +417,14 @@
             (cdkDropListDropped)="reorderItems($event)">
           @for (item of kp()!.items; track item.productId) {
             <div class="selected-row" cdkDrag>
+              <label class="item-select" title="Применять массовую наценку/скидку к этому товару">
+                <input
+                  type="checkbox"
+                  [checked]="isItemSelected(item)"
+                  [disabled]="isReadOnly()"
+                  (change)="toggleItemSelection(item, $any($event.target).checked)"
+                />
+              </label>
               <div class="item-handle" cdkDragHandle aria-hidden="true">⋮⋮</div>
               <div class="item-thumb">
                 @if (normalizeImageUrl(item.imageUrl)) {
@@ -427,7 +442,9 @@
               </div>
               <div class="item-actions">
                 <div class="stepper">
-                  <button ui-btn icon class="stepper__btn" [disabled]="isReadOnly()" (click)="decrementQty(item)">−</button>
+                  <button ui-btn icon class="stepper__btn stepper__btn--minus" [disabled]="isReadOnly()" (click)="decrementQty(item)">
+                    <span class="stepper__glyph" aria-hidden="true">-</span>
+                  </button>
                   <input
                     type="number"
                     [value]="item.qty"
@@ -436,7 +453,9 @@
                     class="qty-input"
                     min="1"
                   />
-                  <button ui-btn icon class="stepper__btn" [disabled]="isReadOnly()" (click)="incrementQty(item)">+</button>
+                  <button ui-btn icon class="stepper__btn stepper__btn--plus" [disabled]="isReadOnly()" (click)="incrementQty(item)">
+                    <span class="stepper__glyph" aria-hidden="true">+</span>
+                  </button>
                 </div>
                 <span class="total-price">{{ (itemUnitPrice(item) * item.qty) | number:'1.0-0' }} ₽</span>
               </div>

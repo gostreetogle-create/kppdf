@@ -30,6 +30,7 @@ export interface KpMetadata {
   tablePageBreakFirstPage?: number;
   tablePageBreakNextPages?: number;
   photoScalePercent?: number;
+  showPhotoColumn?: boolean;
 }
 
 @Component({

@@ -44,6 +44,7 @@ export interface KpMetadata {
   tablePageBreakFirstPage?: number;
   tablePageBreakNextPages?: number;
   photoScalePercent?: number;
+  showPhotoColumn?: boolean;
   defaultMarkupPercent?: number;
   defaultDiscountPercent?: number;
 }

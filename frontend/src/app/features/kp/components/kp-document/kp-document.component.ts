@@ -69,7 +69,8 @@ export class KpDocumentComponent {
     tablePageBreakAfter: 6,
     tablePageBreakFirstPage: 6,
     tablePageBreakNextPages: 6,
-    photoScalePercent: 600
+    photoScalePercent: 600,
+    showPhotoColumn: true
   });
 
   items = input<KpCatalogItem[]>([]);
@@ -91,7 +92,8 @@ export class KpDocumentComponent {
   );
 
   protected readonly hasPhotoColumn = computed(() =>
-    this.items().some(item => (item.imageUrl ?? '').trim().length > 0)
+    this.metadata()?.showPhotoColumn !== false
+      && this.items().some(item => (item.imageUrl ?? '').trim().length > 0)
   );
 
   protected readonly hasCodeColumn = computed(() =>

@@ -212,6 +212,7 @@ export class KpBuilderComponent implements OnInit {
           this.counterparties.set(counterparties);
           this.ourCompanies.set(ourCompanies);
           this.setKpState(normalizedKp, false);
+          this.selectAllItems();
           this.hydrateTypeControls(normalizedKp);
           this.applyCompanyDefaultsToBulk(normalizedKp);
           if (normalizedKp.items.length > 0) this.itemsCollapsed.set(false);
@@ -372,6 +373,7 @@ export class KpBuilderComponent implements OnInit {
           discountPercent: 0
         }];
     this.setKpState({ ...kp, items });
+    this.selectedItemIds.update((ids) => (ids.includes(product._id) ? ids : [...ids, product._id]));
     if (items.length > 0) this.itemsCollapsed.set(false);
   }
 
@@ -442,10 +444,10 @@ export class KpBuilderComponent implements OnInit {
     this.selectedItemIds.set([]);
   }
 
-  private ensureAllItemsSelected(kp: Kp): Set<string> {
-    const allIds = kp.items.map((item) => item.productId);
-    this.selectedItemIds.set(allIds);
-    return new Set(allIds);
+  private selectedIdsSet(kp: Kp): Set<string> {
+    const existingIds = new Set(kp.items.map((item) => item.productId));
+    const selectedIds = this.selectedItemIds().filter((id) => existingIds.has(id));
+    return new Set(selectedIds);
   }
 
   onBulkMarkupInput(rawValue: string | number) {
@@ -477,7 +479,7 @@ export class KpBuilderComponent implements OnInit {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    const selected = this.ensureAllItemsSelected(kp);
+    const selected = this.selectedIdsSet(kp);
     const percent = this.clampPercent(this.bulkMarkupPercent(), 0, 500);
     this.bulkMarkupPercent.set(percent);
     this.setKpState({
@@ -494,7 +496,7 @@ export class KpBuilderComponent implements OnInit {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    const selected = this.ensureAllItemsSelected(kp);
+    const selected = this.selectedIdsSet(kp);
     const percent = this.clampPercent(this.bulkDiscountPercent(), 0, 100);
     this.bulkDiscountPercent.set(percent);
     this.setKpState({
@@ -511,7 +513,7 @@ export class KpBuilderComponent implements OnInit {
     if (this.isReadOnly()) return;
     const kp = this.kp();
     if (!kp) return;
-    const selected = this.ensureAllItemsSelected(kp);
+    const selected = this.selectedIdsSet(kp);
     this.setKpState({
       ...kp,
       items: kp.items.map(i =>
@@ -547,6 +549,15 @@ export class KpBuilderComponent implements OnInit {
     const uiValue = this.clampPercent(value, 0, KpBuilderComponent.PHOTO_SCALE_UI_MAX);
     const actualScale = KpBuilderComponent.PHOTO_SCALE_BASE + uiValue;
     this.updateMetadata({ photoScalePercent: this.clampPercent(actualScale, 0, 1000) });
+  }
+
+  isPhotoColumnVisible(): boolean {
+    return this.kp()?.metadata?.showPhotoColumn !== false;
+  }
+
+  togglePhotoColumnVisibility() {
+    if (this.isReadOnly()) return;
+    this.updateMetadata({ showPhotoColumn: !this.isPhotoColumnVisible() });
   }
 
   photoScaleUiValue(): number {
@@ -652,6 +663,7 @@ export class KpBuilderComponent implements OnInit {
     const kp = this.kp();
     if (!removed || !kp) return;
     this.setKpState({ ...kp, items: [...kp.items, removed] });
+    this.selectedItemIds.update((ids) => (ids.includes(removed.productId) ? ids : [...ids, removed.productId]));
     this.itemsCollapsed.set(false);
     this.lastRemovedItem.set(null);
   }
@@ -777,6 +789,7 @@ export class KpBuilderComponent implements OnInit {
               next: (fresh) => {
                 const normalizedFresh = this.normalizePaginationMetadata(fresh);
                 this.setKpState(normalizedFresh, false);
+                this.selectAllItems();
                 this.hydrateTypeControls(normalizedFresh);
                 this.applyCompanyDefaultsToBulk(normalizedFresh);
                 this.syncTemplateSelectionByKp(normalizedFresh);
@@ -789,6 +802,7 @@ export class KpBuilderComponent implements OnInit {
                 // Fallback to switch response if refresh fails.
                 const normalizedNext = this.normalizePaginationMetadata(nextKp);
                 this.setKpState(normalizedNext, false);
+                this.selectAllItems();
                 this.hydrateTypeControls(normalizedNext);
                 this.applyCompanyDefaultsToBulk(normalizedNext);
                 this.syncTemplateSelectionByKp(normalizedNext);
@@ -895,6 +909,7 @@ export class KpBuilderComponent implements OnInit {
         tablePageBreakAfter: fallback,
         tablePageBreakFirstPage: Math.max(1, Number(kp.metadata?.tablePageBreakFirstPage ?? fallback) || fallback),
         tablePageBreakNextPages: Math.max(1, Number(kp.metadata?.tablePageBreakNextPages ?? fallback) || fallback),
+        showPhotoColumn: kp.metadata?.showPhotoColumn !== false,
       }
     };
   }
@@ -926,14 +941,6 @@ export class KpBuilderComponent implements OnInit {
     'Гарантия на продукцию: 12 месяцев.',
     'Доставка рассчитывается отдельно и не входит в стоимость КП.'
   ];
-
-  openPreview() {
-    this.focusCatalog.set(false);
-  }
-
-  openMoreActions() {
-    this.ns.info('Доп. действия появятся в следующем этапе');
-  }
 
   onExportHQ() {
     const kp = this.kp();

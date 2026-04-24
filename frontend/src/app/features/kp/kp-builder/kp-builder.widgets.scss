@@ -98,6 +98,21 @@
   }
 }
 
+.item-select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 18px;
+
+  input[type='checkbox'] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--ui-primary);
+    cursor: pointer;
+  }
+}
+
 .items-drop-list .cdk-drop-list-dragging .selected-row:not(.cdk-drag-placeholder) {
   transition: transform $transition-fast;
 }
@@ -196,32 +211,32 @@
 }
 
 .stepper {
-  display: inline-flex;
-  align-items: center;
-  width: 76px;
-  height: 24px;
-  background: color-mix(in srgb, var(--ui-bg-card) 92%, var(--ui-text-main) 2%);
-  border-radius: 4px;
+  display: grid;
+  grid-template-columns: 28px 36px 28px;
+  align-items: stretch;
+  width: 92px;
+  height: 30px;
+  background: color-mix(in srgb, var(--ui-bg-card) 96%, var(--ui-text-main) 1%);
+  border-radius: 7px;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--ui-border) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
   overflow: hidden;
 
   & &__btn[ui-btn].btn--icon {
-    min-width: 22px;
-    width: 22px;
+    min-width: 28px;
+    width: 28px;
     height: 100%;
     min-height: 100%;
     border: none;
     border-radius: 0;
     background: transparent;
     color: var(--ui-text-muted);
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
     line-height: 1;
     padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-grid;
+    place-items: center;
     cursor: pointer;
     box-shadow: none;
     transition: background-color $transition-fast, color $transition-fast;
@@ -236,7 +251,7 @@
 
     &:hover {
       background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
-      color: var(--ui-primary);
+      color: color-mix(in srgb, var(--ui-primary) 85%, var(--ui-text-main));
     }
 
     &:focus-visible {
@@ -244,20 +259,40 @@
       background: color-mix(in srgb, var(--ui-primary) 12%, transparent);
     }
   }
+
+  &__btn {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  &__glyph {
+    display: inline-block;
+    line-height: 1;
+  }
+
+  &__btn--minus .stepper__glyph {
+    transform: translateY(-0.5px);
+  }
+
+  &__btn--plus .stepper__glyph {
+    transform: translateY(-0.5px);
+  }
 }
 
 .qty-input {
-  width: 30px;
+  width: 100%;
   height: 100%;
   border: none;
   border-left: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
   border-right: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
-  background: transparent;
+  background: color-mix(in srgb, var(--ui-bg) 96%, var(--ui-bg-soft));
   color: var(--ui-text-main);
   text-align: center;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   font-family: inherit;
   padding: 0;
 
@@ -369,7 +404,7 @@
 
   &__row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: $space-2;
     align-items: end;
   }
@@ -473,13 +508,15 @@
 }
 
 .kp-params-grid {
+  --kp-control-height: 2.25rem;
+  --kp-control-radius: #{$radius-md};
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: $space-2;
 
   &__field {
     display: grid;
-    gap: $space-1;
+    gap: 0.35rem;
 
     span {
       font-size: $font-xs;
@@ -488,28 +525,96 @@
       letter-spacing: 0.01em;
     }
 
-    input {
+    input,
+    select {
       margin-bottom: 0;
       width: 100%;
       border: 1px solid var(--ui-border);
-      border-radius: $radius-md;
+      border-radius: var(--kp-control-radius);
+      min-height: var(--kp-control-height);
       padding: 0.4rem $space-2;
       font-size: $font-sm;
       font-family: inherit;
       box-sizing: border-box;
+      background: var(--ui-bg);
+      color: var(--ui-text-main);
+      transition: border-color $transition-fast, box-shadow $transition-fast, background-color $transition-fast;
+
+      &:hover {
+        border-color: color-mix(in srgb, var(--ui-border) 70%, var(--ui-primary));
+      }
+
+      &:focus-visible {
+        outline: none;
+        border-color: var(--ui-primary);
+        box-shadow: var(--ui-focus-ring-shadow);
+      }
     }
   }
 
   &__field--wide {
     grid-column: 1 / -1;
   }
+
+  &__field--checkbox {
+    align-content: end;
+  }
+}
+
+.kp-photo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: var(--kp-control-height);
+  width: 100%;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--kp-control-radius);
+  padding: 0.35rem $space-2;
+  background: var(--ui-bg);
+  color: var(--ui-text-muted);
+  font-size: $font-sm;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color $transition-fast, background-color $transition-fast, color $transition-fast, box-shadow $transition-fast;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--ui-border) 68%, var(--ui-primary));
+    color: var(--ui-text-main);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--ui-primary);
+    box-shadow: var(--ui-focus-ring-shadow);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: default;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.2rem;
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+}
+
+.kp-photo-toggle--active {
+  color: color-mix(in srgb, var(--ui-primary) 84%, var(--ui-text-main));
+  border-color: color-mix(in srgb, var(--ui-primary) 46%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-bg));
 }
 
 .template-picker {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: $space-2;
-  align-items: center;
+  align-items: stretch;
 
   select,
   input {
@@ -517,13 +622,13 @@
   }
 
   &__open-btn {
-    width: 2rem;
-    min-width: 2rem !important;
-    height: 2rem;
+    width: 2.25rem;
+    min-width: 2.25rem !important;
+    height: var(--kp-control-height);
     padding: 0 !important;
     line-height: 1;
     font-size: 1rem;
-    border-radius: $radius-sm;
+    border-radius: var(--kp-control-radius);
   }
 }
 
@@ -567,7 +672,7 @@
   &__value {
     font-size: $font-xs;
     color: var(--ui-text-muted);
-    min-width: 40px;
+    min-width: 2.5rem;
     text-align: right;
     font-variant-numeric: tabular-nums;
   }

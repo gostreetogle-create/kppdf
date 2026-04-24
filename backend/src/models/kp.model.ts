@@ -50,6 +50,7 @@ export interface IKp extends Document {
     tablePageBreakFirstPage?: number;
     tablePageBreakNextPages?: number;
     photoScalePercent?: number;
+    showPhotoColumn?: boolean;
     defaultMarkupPercent?: number;
     defaultDiscountPercent?: number;
   };
@@ -138,6 +139,7 @@ const KpSchema = new Schema<IKp>({
     tablePageBreakFirstPage: { type: Number, default: 6, min: [1, 'tablePageBreakFirstPage должен быть >= 1'] },
     tablePageBreakNextPages: { type: Number, default: 6, min: [1, 'tablePageBreakNextPages должен быть >= 1'] },
     photoScalePercent: { type: Number, default: 600, min: [0, 'photoScalePercent должен быть >= 0'], max: [1000, 'photoScalePercent должен быть <= 1000'] },
+    showPhotoColumn: { type: Boolean, default: true },
     defaultMarkupPercent: { type: Number, default: 0, min: [0, 'defaultMarkupPercent должен быть >= 0'], max: [500, 'defaultMarkupPercent должен быть <= 500'] },
     defaultDiscountPercent: { type: Number, default: 0, min: [0, 'defaultDiscountPercent должен быть >= 0'], max: [100, 'defaultDiscountPercent должен быть <= 100'] },
   },
