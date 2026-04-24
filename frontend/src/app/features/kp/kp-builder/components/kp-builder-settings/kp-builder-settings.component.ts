@@ -19,7 +19,7 @@ type KpMetadata = {
   standalone: true,
   imports: [CommonModule, FormsModule, ButtonComponent],
   templateUrl: './kp-builder-settings.component.html',
-  styleUrls: ['../../kp-builder.sidebar.scss'],
+  styleUrls: ['./kp-builder-settings.component.scss', '../../kp-builder.sidebar.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class KpBuilderSettingsComponent {

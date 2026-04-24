@@ -845,34 +845,6 @@ export class KpBuilderComponent implements OnInit {
     return Math.max(0, Math.round(withDiscount));
   }
 
-  itemAdjustmentsLabel(item: KpItem): string {
-    const chunks: string[] = [];
-    if (item.markupEnabled && (item.markupPercent ?? 0) > 0) {
-      chunks.push(`Наценка +${this.clampPercent(item.markupPercent ?? 0, 0, 500)}%`);
-    }
-    if (item.discountEnabled && (item.discountPercent ?? 0) > 0) {
-      chunks.push(`Скидка -${this.clampPercent(item.discountPercent ?? 0, 0, 100)}%`);
-    }
-    return chunks.join(' · ');
-  }
-
-  itemPriceFormula(item: KpItem): string {
-    const base = Math.round(item.price);
-    const markup = item.markupEnabled ? this.clampPercent(item.markupPercent ?? 0, 0, 500) : 0;
-    const discount = item.discountEnabled ? this.clampPercent(item.discountPercent ?? 0, 0, 100) : 0;
-    const finalUnit = this.itemUnitPrice(item);
-
-    if (markup === 0 && discount === 0) {
-      return `База ${base.toLocaleString('ru-RU')} ₽`;
-    }
-
-    const parts = [`База ${base.toLocaleString('ru-RU')} ₽`];
-    if (markup > 0) parts.push(`+${markup}%`);
-    if (discount > 0) parts.push(`-${discount}%`);
-    parts.push(`= ${finalUnit.toLocaleString('ru-RU')} ₽`);
-    return parts.join(' → ');
-  }
-
   private clampPercent(value: number, min: number, max: number): number {
     const n = Number.isFinite(value) ? value : 0;
     return Math.min(max, Math.max(min, n));

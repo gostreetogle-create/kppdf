@@ -85,9 +85,19 @@
       </label>
       <div class="kp-params-grid__field kp-params-grid__field--checkbox">
         <span>Колонка фото</span>
-        <button type="button" class="kp-photo-toggle" [class.kp-photo-toggle--active]="photoColumnVisible()" [attr.aria-pressed]="photoColumnVisible()" [disabled]="isReadOnly()" (click)="photoColumnVisibilityToggle.emit()">
+        <button
+          type="button"
+          ui-btn
+          icon
+          variant="ghost"
+          class="kp-photo-toggle"
+          [class.kp-photo-toggle--active]="photoColumnVisible()"
+          [attr.aria-pressed]="photoColumnVisible()"
+          [attr.aria-label]="photoColumnVisible() ? 'Скрыть фото в таблице' : 'Показать фото в таблице'"
+          [title]="photoColumnVisible() ? 'Фото видно в таблице' : 'Фото скрыто в таблице'"
+          [disabled]="isReadOnly()"
+          (click)="photoColumnVisibilityToggle.emit()">
           <span class="kp-photo-toggle__icon" aria-hidden="true">{{ photoColumnVisible() ? '👁' : '◌' }}</span>
-          <span>{{ photoColumnVisible() ? 'Фото видно в таблице' : 'Фото скрыто в таблице' }}</span>
         </button>
       </div>
     </div>
