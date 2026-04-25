@@ -40,6 +40,7 @@
             [showCodeColumn]="hasCodeColumn()"
             [showDescriptionColumn]="hasDescriptionColumn()"
             [photoScalePercent]="metadata().photoScalePercent || 600"
+            [photoCropPercent]="metadata().photoCropPercent || 0"
             [displayOffset]="chunk.displayOffset"
             (priceChanged)="priceChanged.emit($event)">
           </app-kp-catalog>

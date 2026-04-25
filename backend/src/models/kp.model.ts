@@ -50,6 +50,7 @@ export interface IKp extends Document {
     tablePageBreakFirstPage?: number;
     tablePageBreakNextPages?: number;
     photoScalePercent?: number;
+    photoCropPercent?: number;
     showPhotoColumn?: boolean;
     defaultMarkupPercent?: number;
     defaultDiscountPercent?: number;
@@ -86,6 +87,8 @@ export interface IKp extends Document {
       email?: string;
     };
   };
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const INN_REGEX = /^\d{10}(\d{2})?$/;
@@ -139,6 +142,7 @@ const KpSchema = new Schema<IKp>({
     tablePageBreakFirstPage: { type: Number, default: 4, min: [1, 'tablePageBreakFirstPage должен быть >= 1'] },
     tablePageBreakNextPages: { type: Number, default: 6, min: [1, 'tablePageBreakNextPages должен быть >= 1'] },
     photoScalePercent: { type: Number, default: 600, min: [0, 'photoScalePercent должен быть >= 0'], max: [1000, 'photoScalePercent должен быть <= 1000'] },
+    photoCropPercent: { type: Number, default: 0, min: [0, 'photoCropPercent должен быть >= 0'], max: [50, 'photoCropPercent должен быть <= 50'] },
     showPhotoColumn: { type: Boolean, default: true },
     defaultMarkupPercent: { type: Number, default: 0, min: [0, 'defaultMarkupPercent должен быть >= 0'], max: [500, 'defaultMarkupPercent должен быть <= 500'] },
     defaultDiscountPercent: { type: Number, default: 0, min: [0, 'defaultDiscountPercent должен быть >= 0'], max: [100, 'defaultDiscountPercent должен быть <= 100'] },

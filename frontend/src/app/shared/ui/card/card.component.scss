@@ -2,23 +2,21 @@
 
 :host {
   display: block;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-lg, 12px);
+  border: 1px solid var(--ui-border-light);
+  border-radius: var(--radius-lg);
   background: var(--ui-bg-card);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--ui-text-main) 8%, transparent);
-  padding: $space-4;
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-4);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 :host(.ui-card--muted) {
-  background: color-mix(in srgb, var(--ui-bg-card) 85%, var(--ui-bg-hover) 15%);
-}
-
-:host(.ui-card--interactive) {
-  transition: border-color $transition-fast, box-shadow $transition-fast, background-color $transition-fast, transform $transition-fast;
+  background: var(--ui-bg-soft);
+  border-color: transparent;
 }
 
 :host(.ui-card--interactive:hover) {
-  border-color: color-mix(in srgb, var(--ui-border) 70%, var(--ui-primary));
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--ui-text-main) 14%, transparent);
-  transform: translateY(-1px);
+  border-color: var(--ui-primary-soft);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }

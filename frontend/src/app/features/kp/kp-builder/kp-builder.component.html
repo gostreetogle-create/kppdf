@@ -236,6 +236,7 @@
           [templatesForSelectedType]="templatesForSelectedType()"
           [showBrandingTemplateSelect]="showBrandingTemplateSelect()"
           [photoScaleUiValue]="photoScaleUiValue()"
+          [photoCropUiValue]="photoCropUiValue()"
           [photoColumnVisible]="isPhotoColumnVisible()"
           (toggleCollapsed)="toggleSection('params')"
           (metadataNumberChange)="onMetadataNumberChange($event)"
@@ -250,6 +251,7 @@
           (tablePageBreakFirstPageChange)="updateTablePageBreakFirstPage($event)"
           (tablePageBreakNextPagesChange)="updateTablePageBreakNextPages($event)"
           (photoScaleChange)="updatePhotoScalePercent($event)"
+          (photoCropChange)="updatePhotoCropPercent($event)"
           (photoColumnVisibilityToggle)="togglePhotoColumnVisibility()">
         </app-kp-builder-settings>
 
@@ -267,6 +269,7 @@
           [itemUnitPriceResolver]="itemUnitPriceResolver"
           (toggleCollapsed)="toggleSection('items')"
           (openCreateProduct)="openCreateProductForm()"
+          (openEditProduct)="openEditProductForm($event)"
           (reorder)="reorderItems($event)"
           (itemSelectionChange)="toggleItemSelection($event.item, $event.checked)"
           (qtyChange)="updateQty($event.item, $event.qty)"
@@ -345,7 +348,7 @@
 
   @if (productFormOpen()) {
     <app-product-form
-      [product]="null"
+      [product]="productToEdit()"
       [compactForKp]="true"
       (saved)="onProductFormSaved($event)"
       (cancelled)="closeProductForm()" />

@@ -1,116 +1,127 @@
 @use '../../../../styles/tokens' as *;
 
 :host {
-  --btn-bg: var(--ui-bg);
-  --btn-bg-hover: var(--ui-bg-hover, var(--ui-bg-soft));
+  --btn-bg: var(--ui-bg-card);
+  --btn-bg-hover: var(--ui-bg-hover);
   --btn-bg-active: var(--ui-bg-muted);
   --btn-border: var(--ui-border);
-  --btn-text: var(--ui-text-main, var(--ui-text));
+  --btn-text: var(--ui-text-main);
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: $space-2;
-  min-height: max(var(--ui-btn-height, 2rem), 2.25rem);
-  padding: 0.35rem $space-4;
+  min-height: 2.25rem;
+  padding: 0 1rem;
   border: 1px solid var(--btn-border);
-  border-radius: var(--ui-radius-md, 8px);
+  border-radius: var(--radius-md);
   background: var(--btn-bg);
   color: var(--btn-text);
-  font-size: var(--ui-font-size-md, 0.875rem);
+  font-size: 0.875rem;
   font-family: var(--ui-font-family, inherit);
-  font-weight: var(--font-weight-medium);
-  cursor: default;
+  font-weight: 500;
+  cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, opacity 150ms ease, transform 150ms ease;
-  line-height: var(--line-height-body);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.5;
   letter-spacing: 0.01em;
+  user-select: none;
 
   &:hover {
     background: var(--btn-bg-hover);
-    border-color: color-mix(in srgb, var(--btn-border) 70%, var(--ui-primary));
+    border-color: var(--ui-border-strong);
+    box-shadow: var(--shadow-sm);
   }
+
   &:active:not(:disabled):not([disabled]) {
     background: var(--btn-bg-active);
     transform: scale(0.97);
-    transition-duration: 50ms;
   }
+
   &:disabled,
   &[disabled] {
-    border-color: color-mix(in srgb, var(--btn-border) 70%, transparent);
     opacity: 0.5;
     cursor: not-allowed;
     pointer-events: none;
+    filter: grayscale(1);
   }
+
   &:focus-visible {
     outline: none;
     box-shadow: var(--ui-focus-ring-shadow);
   }
 
   // ─── Variants ─────────────────────────────────────────
-  &.btn--primary,
   &.ui-btn--primary {
     --btn-bg: var(--ui-primary);
     --btn-bg-hover: var(--ui-primary-hover);
-    --btn-bg-active: color-mix(in srgb, var(--ui-primary) 84%, black 16%);
+    --btn-bg-active: color-mix(in srgb, var(--ui-primary) 85%, black);
     --btn-border: var(--ui-primary);
-    --btn-text: #fff;
-    box-shadow: 0 1px 3px color-mix(in srgb, var(--ui-text-main) 10%, transparent);
+    --btn-text: #ffffff;
+    
+    &:hover {
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--ui-primary) 30%, transparent);
+    }
   }
 
-  &.btn--secondary,
   &.ui-btn--secondary {
-    --btn-bg: var(--ui-secondary);
-    --btn-bg-hover: var(--ui-secondary-hover);
-    --btn-bg-active: var(--ui-secondary-active);
-    --btn-border: var(--ui-secondary);
-    --btn-text: var(--ui-text-on-primary);
+    --btn-bg: var(--ui-bg-soft);
+    --btn-bg-hover: var(--ui-bg-hover);
+    --btn-bg-active: var(--ui-bg-muted);
+    --btn-border: var(--ui-border);
+    --btn-text: var(--ui-text-main);
   }
 
-  &.btn--danger,
   &.ui-btn--danger {
-    --btn-bg: color-mix(in srgb, var(--ui-danger) 14%, transparent);
-    --btn-bg-hover: color-mix(in srgb, var(--ui-danger) 18%, transparent);
-    --btn-bg-active: color-mix(in srgb, var(--ui-danger) 22%, transparent);
+    --btn-bg: #ffffff;
+    --btn-bg-hover: var(--ui-danger-soft);
+    --btn-bg-active: color-mix(in srgb, var(--ui-danger) 20%, transparent);
     --btn-border: var(--ui-danger);
     --btn-text: var(--ui-danger);
+    
+    &.ui-btn--solid {
+      --btn-bg: var(--ui-danger);
+      --btn-bg-hover: var(--ui-danger-hover);
+      --btn-text: #ffffff;
+    }
   }
 
-  &.btn--ghost,
   &.ui-btn--ghost {
     --btn-bg: transparent;
-    --btn-bg-hover: color-mix(in srgb, var(--ui-primary) 10%, transparent);
-    --btn-bg-active: color-mix(in srgb, var(--ui-primary) 14%, transparent);
+    --btn-bg-hover: var(--ui-primary-muted);
+    --btn-bg-active: var(--ui-primary-soft);
     --btn-border: transparent;
     --btn-text: var(--ui-primary);
+    
+    &:hover { border-color: transparent; box-shadow: none; }
   }
 
   // ─── Sizes ────────────────────────────────────────────
-  &.btn--sm,
   &.ui-btn--sm {
-    min-height: max(var(--ui-btn-height, 2rem), var(--ui-control-height-sm));
-    padding: 0.25rem $space-3;
-    font-size: var(--ui-font-size-md, 0.875rem);
-    border-radius: $radius-sm;
+    min-height: 1.85rem;
+    padding: 0 0.75rem;
+    font-size: 0.8125rem;
+    border-radius: var(--radius-sm);
   }
-  &.btn--lg,
+  
   &.ui-btn--lg {
-    min-height: max(var(--ui-btn-height-lg, 2.25rem), var(--ui-control-height-lg));
-    padding: 0.45rem $space-6;
-    font-size: var(--ui-font-size-md, 0.875rem);
+    min-height: 2.75rem;
+    padding: 0 1.5rem;
+    font-size: 1rem;
+    border-radius: var(--radius-lg);
   }
 
   // ─── Icon ─────────────────────────────────────────────
-  &.btn--icon,
   &.ui-btn--icon {
-    min-height: max(var(--ui-btn-height, 2rem), var(--ui-control-hit-size));
-    min-width: max(var(--ui-btn-height, 2rem), var(--ui-control-hit-size));
-    padding: $space-2;
-    --btn-bg: transparent;
-    --btn-bg-hover: var(--ui-bg-muted);
-    --btn-bg-active: var(--ui-bg-soft);
-    --btn-border: transparent;
-    --btn-text: var(--ui-text-secondary);
+    min-width: 2.25rem;
+    width: 2.25rem;
+    padding: 0;
+    border-radius: var(--radius-full);
+    
+    &.ui-btn--sm {
+      min-width: 1.85rem;
+      width: 1.85rem;
+    }
   }
 }

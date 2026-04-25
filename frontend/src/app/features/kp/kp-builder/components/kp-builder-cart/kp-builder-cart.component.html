@@ -21,6 +21,7 @@
           (qtyChange)="qtyChange.emit({ item, qty: $event })"
           (decrement)="decrementQty.emit(item)"
           (increment)="incrementQty.emit(item)"
+          (edit)="openEditProduct.emit(item)"
           (remove)="removeItem.emit(item)"
         />
       }

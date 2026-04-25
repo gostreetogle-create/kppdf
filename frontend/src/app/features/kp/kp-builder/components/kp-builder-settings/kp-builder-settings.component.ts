@@ -12,6 +12,7 @@ type KpMetadata = {
   tablePageBreakAfter?: number;
   tablePageBreakFirstPage?: number;
   tablePageBreakNextPages?: number;
+  photoCropPercent?: number;
 };
 
 @Component({
@@ -36,6 +37,7 @@ export class KpBuilderSettingsComponent {
   templatesForSelectedType = input<Array<{ key: string; name: string; isDefault?: boolean }>>([]);
   showBrandingTemplateSelect = input(false);
   photoScaleUiValue = input(0);
+  photoCropUiValue = input(0);
   photoColumnVisible = input(true);
 
   toggleCollapsed = output<void>();
@@ -51,5 +53,6 @@ export class KpBuilderSettingsComponent {
   tablePageBreakFirstPageChange = output<number>();
   tablePageBreakNextPagesChange = output<number>();
   photoScaleChange = output<number>();
+  photoCropChange = output<number>();
   photoColumnVisibilityToggle = output<void>();
 }

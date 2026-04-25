@@ -1,15 +1,17 @@
 @use '../../../../styles/tokens' as *;
 
-:host { display: block; margin-bottom: $space-4; }
+:host { display: block; margin-bottom: var(--spacing-4); }
 
 .ui-form-field {
   &__label {
     display: block;
     font-size: var(--font-size-caption);
-    line-height: var(--line-height-caption);
-    font-weight: var(--font-weight-medium);
-    color: var(--ui-text-secondary);
-    margin-bottom: 0.5rem;
+    line-height: 1.5;
+    font-weight: 600;
+    color: var(--ui-text-soft);
+    margin-bottom: var(--spacing-1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   &__control {
@@ -18,16 +20,16 @@
     ::ng-deep select {
       appearance: none;
       width: 100%;
-      min-height: var(--ui-control-height, 36px);
-      padding: 0.5rem $space-3;
+      min-height: var(--ui-control-height, 38px);
+      padding: 0 var(--spacing-3);
       border: 1px solid var(--ui-border);
-      border-radius: var(--ui-radius-md, 8px);
-      font-size: var(--ui-font-size-md, 0.875rem);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-body);
       font-family: var(--ui-font-family, inherit);
-      line-height: var(--line-height-body);
-      color: var(--ui-text-main, var(--ui-text));
+      line-height: 1.5;
+      color: var(--ui-text-main);
       background: var(--ui-bg-card);
-      transition: border-color $transition-fast, box-shadow $transition-fast;
+      transition: all var(--transition-base);
       box-sizing: border-box;
 
       &:focus,
@@ -38,21 +40,24 @@
       }
 
       &:hover:not(:disabled):not(:focus):not(:focus-visible) {
-        border-color: color-mix(in srgb, var(--ui-border) 82%, var(--ui-text-main) 18%);
+        border-color: var(--ui-border-strong);
+        background-color: var(--ui-bg-hover);
       }
 
-      &::placeholder { color: var(--ui-text-muted); opacity: 0.72; }
+      &::placeholder { color: var(--ui-text-muted); opacity: 0.6; }
 
       &:disabled {
         cursor: not-allowed;
-        color: var(--color-text-disabled);
-        opacity: 0.5;
-        background: color-mix(in srgb, var(--ui-bg-card) 82%, var(--ui-bg-main) 18%);
+        color: var(--ui-text-soft);
+        background: var(--ui-bg-soft);
+        border-color: var(--ui-border-light);
+        opacity: 0.7;
       }
     }
 
     ::ng-deep textarea {
-      min-height: calc(var(--ui-control-height, 2.25rem) * 2);
+      padding: var(--spacing-2) var(--spacing-3);
+      min-height: 80px;
       resize: vertical;
     }
   }
@@ -61,21 +66,27 @@
     ::ng-deep input,
     ::ng-deep textarea,
     ::ng-deep select {
-      border-color: var(--ui-danger);
+      border-color: var(--ui-danger) !important;
+      &:focus {
+        box-shadow: 0 0 0 3px var(--color-error-soft) !important;
+      }
     }
   }
 
   &__error {
-    margin: $space-1 0 0;
-    font-size: 12px;
-    line-height: var(--line-height-caption);
+    margin: var(--spacing-1) 0 0;
+    font-size: var(--font-size-caption);
+    font-weight: 500;
     color: var(--ui-danger);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    &::before { content: '●'; font-size: 8px; }
   }
 
   &__hint {
-    margin: $space-1 0 0;
+    margin: var(--spacing-1) 0 0;
     font-size: var(--font-size-caption);
-    line-height: var(--line-height-caption);
-    color: var(--ui-text-muted);
+    color: var(--ui-text-soft);
   }
 }

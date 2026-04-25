@@ -52,6 +52,8 @@
 .kp-total-line--vat .kp-total-amount {
   font-size: var(--kp-total-vat);
   color: var(--ui-text-muted);
+  border-top: none;
+  padding-top: 0;
 }
 
 .kp-total-line--final .kp-total-label,

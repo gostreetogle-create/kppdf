@@ -1,1 +1,108 @@
 @use '../../kp-builder.sidebar.scss';
+
+.manual-item-form {
+  padding: 0 4px 8px;
+  
+  &__add {
+    width: 100%;
+    justify-content: center;
+    border: 1px dashed #d1d5db !important;
+    color: #6b7280 !important;
+    font-weight: 500 !important;
+    background: #f9fafb !important;
+    transition: all 0.2s !important;
+    
+    &:hover:not(:disabled) {
+      border-color: #3b82f6 !important;
+      color: #3b82f6 !important;
+      background: #eff6ff !important;
+      border-style: solid !important;
+    }
+  }
+}
+
+.items-drop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.sidebar-footer {
+  margin-top: 12px;
+  padding: 12px 8px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #f3f4f6;
+}
+
+.bulk-adjustments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      span {
+        font-size: 11px;
+        font-weight: 600;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      input {
+        margin-bottom: 0;
+        height: 32px;
+        font-weight: 600;
+        border-radius: 8px;
+        background: white;
+      }
+    }
+  }
+
+  &__actions {
+    button {
+      font-size: 11px !important;
+      color: #9ca3af !important;
+      padding: 0 !important;
+      height: auto !important;
+      
+      &:hover {
+        color: #6b7280 !important;
+        background: transparent !important;
+        text-decoration: underline !important;
+      }
+    }
+  }
+}
+
+.sidebar-total {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+
+  span {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  strong {
+    font-size: 20px;
+    color: #111827;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+}

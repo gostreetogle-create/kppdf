@@ -39,6 +39,7 @@ import { KpBuilderCartComponent } from './components/kp-builder-cart/kp-builder-
 export class KpBuilderComponent implements OnInit {
   private static readonly PHOTO_SCALE_BASE = 600;
   private static readonly PHOTO_SCALE_UI_MAX = 400;
+  private static readonly PHOTO_CROP_UI_MAX = 50;
 
   private readonly destroyRef  = inject(DestroyRef);
   private readonly route       = inject(ActivatedRoute);
@@ -76,6 +77,7 @@ export class KpBuilderComponent implements OnInit {
   recipientFormOpen = signal(false);
   /** Модалка создания товара прямо из КП */
   productFormOpen = signal(false);
+  productToEdit = signal<Product | null>(null);
   /** Подтверждение ухода со страницы (ui-modal, не window.confirm) */
   showLeaveConfirm = signal(false);
   showRestoreBackup = signal(false);
@@ -266,15 +268,51 @@ export class KpBuilderComponent implements OnInit {
 
   closeProductForm() {
     this.productFormOpen.set(false);
+    this.productToEdit.set(null);
+  }
+
+  openEditProductForm(item: KpItem) {
+    if (this.isReadOnly()) return;
+    const p = this.products().find(p => p._id === item.productId);
+    if (p) {
+      this.productToEdit.set(p);
+      this.productFormOpen.set(true);
+    } else {
+      // Если товара нет в локальном списке (например, загружен только в КП), пробуем загрузить
+      this.api.getProduct(item.productId).subscribe({
+        next: (p: Product) => {
+          this.productToEdit.set(p);
+          this.productFormOpen.set(true);
+        },
+        error: () => this.ns.error('Не удалось загрузить данные товара')
+      });
+    }
   }
 
   onProductFormSaved(product: Product) {
+    // Обновляем в локальном списке
     this.products.update(list =>
       list.some(p => p._id === product._id) ? list.map(p => p._id === product._id ? product : p) : [product, ...list]
     );
-    this.addItem(product);
+
+    // Обновляем в составе КП
+    const kp = this.kp();
+    if (kp) {
+      const items = kp.items.map(i => i.productId === product._id ? {
+        ...i,
+        code: product.code,
+        name: product.name,
+        description: product.description,
+        unit: product.unit,
+        price: product.price,
+        imageUrl: this.normalizeImageUrl(product.images.find(im => im.isMain)?.url ?? product.images[0]?.url ?? i.imageUrl ?? '')
+      } : i);
+      this.setKpState({ ...kp, items });
+    }
+
     this.productFormOpen.set(false);
-    this.ns.success('Товар создан и добавлен в КП');
+    this.productToEdit.set(null);
+    this.ns.success('Товар обновлён');
   }
 
   onRecipientFormSaved(cp: Counterparty) {
@@ -554,6 +592,12 @@ export class KpBuilderComponent implements OnInit {
     this.updateMetadata({ photoScalePercent: this.clampPercent(actualScale, 0, 1000) });
   }
 
+  updatePhotoCropPercent(value: number) {
+    if (this.isReadOnly()) return;
+    const uiValue = this.clampPercent(value, 0, KpBuilderComponent.PHOTO_CROP_UI_MAX);
+    this.updateMetadata({ photoCropPercent: uiValue });
+  }
+
   isPhotoColumnVisible(): boolean {
     return this.kp()?.metadata?.showPhotoColumn !== false;
   }
@@ -566,6 +610,10 @@ export class KpBuilderComponent implements OnInit {
   photoScaleUiValue(): number {
     const actual = Number(this.kp()?.metadata?.photoScalePercent ?? KpBuilderComponent.PHOTO_SCALE_BASE);
     return this.clampPercent(actual - KpBuilderComponent.PHOTO_SCALE_BASE, 0, KpBuilderComponent.PHOTO_SCALE_UI_MAX);
+  }
+
+  photoCropUiValue(): number {
+    return Number(this.kp()?.metadata?.photoCropPercent ?? 0);
   }
 
   onTitleChange(newTitle: string): void {

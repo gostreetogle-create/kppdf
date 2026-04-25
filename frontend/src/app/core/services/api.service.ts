@@ -286,6 +286,7 @@ export interface Kp {
     tablePageBreakFirstPage?: number;
     tablePageBreakNextPages?: number;
     photoScalePercent?: number;
+    photoCropPercent?: number;
     showPhotoColumn?: boolean;
     defaultMarkupPercent?: number;
     defaultDiscountPercent?: number;
@@ -354,6 +355,10 @@ export class ApiService {
     if (typeof params.isActive === 'boolean') normalizedParams['isActive'] = String(params.isActive);
     if (typeof params.hasSpec === 'boolean') normalizedParams['hasSpec'] = String(params.hasSpec);
     return this.http.get<Product[]>(`${BASE}/products`, { params: normalizedParams });
+  }
+
+  getProduct(id: string): Observable<Product> {
+    return this.http.get<Product>(`${BASE}/products/${id}`);
   }
 
   getProductCategories(): Observable<string[]> {

@@ -28,6 +28,7 @@ export class KpBuilderCartComponent {
 
   toggleCollapsed = output<void>();
   openCreateProduct = output<void>();
+  openEditProduct = output<KpItem>();
   reorder = output<CdkDragDrop<KpItem[]>>();
   itemSelectionChange = output<{ item: KpItem; checked: boolean }>();
   qtyChange = output<{ item: KpItem; qty: number }>();

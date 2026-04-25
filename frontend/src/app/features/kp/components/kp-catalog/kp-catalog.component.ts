@@ -28,7 +28,7 @@ export interface PriceChangedEvent {
 })
 export class KpCatalogComponent {
   private static readonly MIN_PHOTO_SIZE_PX = 20;
-  private static readonly MAX_PHOTO_SIZE_PX = 160;
+  private static readonly MAX_PHOTO_SIZE_PX = 100;
 
   items = input.required<KpCatalogItem[]>();
   editablePrices = input(false);
@@ -38,6 +38,7 @@ export class KpCatalogComponent {
   vatPercent = input(20);
   displayOffset = input(0); // Смещение для нумерации строк
   photoScalePercent = input(600);
+  photoCropPercent = input(0);
   priceChanged = output<PriceChangedEvent>();
   private readonly brokenImageItemIds = signal(new Set<string>());
 
@@ -50,7 +51,15 @@ export class KpCatalogComponent {
   }
 
   photoColWidthPx(): number {
-    return this.photoSizePx() + 12;
+    return this.showPhotoColumn() ? this.photoSizePx() + 12 : 0;
+  }
+
+  croppedPhotoHeightPx(): number {
+    const original = this.photoSizePx();
+    const crop = this.photoCropPercent();
+    // 0% -> full height, 50% -> 0 height (effectively)
+    // Formula: original * (1 - 2 * crop / 100)
+    return Math.round(original * (1 - (crop * 2 / 100)));
   }
 
   hasRenderableImage(item: KpCatalogItem): boolean {

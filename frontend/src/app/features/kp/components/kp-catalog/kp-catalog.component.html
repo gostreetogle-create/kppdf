@@ -3,44 +3,40 @@
     <thead>
       <tr>
         <th class="kp-col-num">№</th>
-        @if (showPhotoColumn()) {
-          <th class="kp-col-photo" [style.width.px]="photoColWidthPx()">Фото</th>
-        }
-        @if (showCodeColumn()) {
-          <th class="kp-col-code">Арт.</th>
-        }
+        @if (showCodeColumn()) { <th class="kp-col-code">Арт.</th> }
+        @if (showPhotoColumn()) { <th class="kp-col-photo" [style.width.px]="photoColWidthPx()">Фото</th> }
         <th class="kp-col-name">Наименование</th>
-        @if (showDescriptionColumn()) {
-          <th class="kp-col-description">Описание</th>
-        }
+        @if (showDescriptionColumn()) { <th class="kp-col-description">Описание</th> }
         <th class="kp-col-qty">Кол-во</th>
         <th class="kp-col-unit">Ед.</th>
-        <th class="kp-col-price">Цена</th>
-        <th class="kp-col-sum">Сумма</th>
+        <th class="kp-col-price">Цена, ₽</th>
+        <th class="kp-col-sum">Сумма, ₽</th>
       </tr>
     </thead>
     <tbody>
       @for (item of items(); track item.id; let i = $index) {
         <tr class="kp-row avoid-break">
           <td class="kp-cell-num">{{ displayOffset() + i + 1 }}</td>
+          @if (showCodeColumn()) {
+            <td class="kp-cell-code">{{ item.code || '—' }}</td>
+          }
           @if (showPhotoColumn()) {
             <td class="kp-cell-photo" [style.width.px]="photoColWidthPx()">
               @if (hasRenderableImage(item)) {
-                <img
-                  [src]="item.imageUrl"
-                  alt=""
-                  class="kp-thumb"
-                  [style.width.px]="photoSizePx()"
-                  [style.height.px]="photoSizePx()"
-                  loading="lazy"
-                  decoding="async"
-                  (error)="onImageError(item.id)"
-                />
+                <div class="kp-thumb-container" [style.width.px]="photoSizePx()" [style.height.px]="croppedPhotoHeightPx()">
+                  <img
+                    [src]="item.imageUrl"
+                    alt=""
+                    class="kp-thumb"
+                    [style.width.px]="photoSizePx()"
+                    [style.height.px]="photoSizePx()"
+                    loading="lazy"
+                    decoding="async"
+                    (error)="onImageError(item.id)"
+                  />
+                </div>
               }
             </td>
-          }
-          @if (showCodeColumn()) {
-            <td class="kp-cell-code">{{ item.code || '—' }}</td>
           }
           <td class="kp-cell-name">{{ item.name }}</td>
           @if (showDescriptionColumn()) {

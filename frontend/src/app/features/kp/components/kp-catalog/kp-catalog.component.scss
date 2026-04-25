@@ -1,6 +1,6 @@
 /* === Таблица товаров === */
 .kp-table-wrap {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .kp-table {
@@ -8,35 +8,41 @@
   --kp-font-cell-sm: 0.68rem;
   --kp-font-cell-xs: 0.66rem;
   --kp-font-currency: 0.66rem;
-  --kp-row-divider: #e5e7eb;
-  --kp-head-bg: #f9fafb;
-  --kp-head-text: #6b7280;
+  --kp-row-divider: #d1d5db;
+  --kp-head-bg: #f3f4f6;
+  --kp-head-text: #4b5563;
   --kp-main-text: #111827;
-  --kp-muted-text: #4b5563;
+  --kp-muted-text: #374151;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: var(--kp-font-table);
+  table-layout: fixed;
 }
 
 .kp-table th,
 .kp-table td {
   border: none;
   border-bottom: 0.5pt solid var(--kp-row-divider);
-  padding: 5px 6px;
+  padding: 4px 4px;
   vertical-align: middle;
+  line-height: 1.2;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: normal;
 }
 
 .kp-table th {
   font-weight: 600;
-  font-size: 9px;
+  font-size: 8px;
   text-align: center;
   text-transform: uppercase;
   background: var(--kp-head-bg);
   color: var(--kp-head-text);
   letter-spacing: 0.05em;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  vertical-align: middle;
 }
 
 .kp-table tbody tr:last-child td {
@@ -53,15 +59,18 @@
   text-align: center;
 }
 
+.kp-col-code {
+  width: 45px;
+}
+
 .kp-col-name {
-  min-width: 120px;
-  text-align: center;
+  width: auto;
+  text-align: left;
 }
 
 .kp-col-description {
-  min-width: 100px;
-  max-width: 35%;
-  text-align: center;
+  width: 35%;
+  text-align: left;
 }
 
 .kp-col-qty {
@@ -87,22 +96,28 @@
 
 .kp-cell-photo {
   text-align: center;
-  vertical-align: top;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 1px;
-  padding-right: 1px;
+  vertical-align: middle;
+  padding: 2px 1px;
+}
+
+.kp-thumb-container {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 0 auto;
+  border-radius: 4px;
 }
 
 .kp-thumb {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  object-position: center;
-  border-radius: 4px;
-  border: none;
   display: block;
-  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border: none;
 }
 
 .kp-cell-code {
@@ -112,15 +127,16 @@
 
 .kp-cell-name {
   text-align: left;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--kp-main-text);
 }
 
 .kp-cell-description {
-  text-align: center;
-  font-size: var(--kp-font-cell-sm);
+  text-align: left;
+  font-size: var(--kp-font-cell-xs);
   color: var(--kp-muted-text);
-  line-height: 1.1;
+  line-height: 1.2;
+  white-space: pre-wrap;
 }
 
 .kp-cell-adjustments {

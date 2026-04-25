@@ -7,7 +7,7 @@
 
 /* === Основной контент === */
 .kp-content {
-  --kp-bottom-safe-zone: 40mm;
+  --kp-bottom-safe-zone: 20mm;
   --kp-page-mark-size: 0.8125rem;
   --kp-continues-size: 0.75rem;
   margin-top: 0;
@@ -40,6 +40,8 @@
 
 .kp-content__closing {
   margin-top: 10px;
+  position: relative;
+  z-index: 5;
 }
 
 .kp-content__main-block {
@@ -50,12 +52,12 @@
 }
 
 .kp-content__summary-block {
-  margin-top: 12px;
+  margin-top: 4px;
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--ui-border) 66%, transparent);
   border-radius: 6px;
   background: transparent;
-  padding: 8px 10px 7px;
+  padding: 4px 10px 4px;
 }
 
 .kp-footer-note {
@@ -63,6 +65,8 @@
   font-size: 0.75rem;
   line-height: 1.35;
   color: color-mix(in srgb, var(--ui-text) 76%, transparent);
+  position: relative;
+  z-index: 5;
 }
 
 /* === Многостраничность === */
@@ -187,11 +191,16 @@
   .kp-content {
     --kp-page-mark-size: 9.75pt;
     --kp-continues-size: 9pt;
-    --kp-bottom-safe-zone: 40mm;
+    --kp-bottom-safe-zone: 50mm;
   }
 
   .kp-stack {
     gap: 0;
+  }
+
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   :host ::ng-deep .kp-sheet {

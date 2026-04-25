@@ -3,14 +3,19 @@
 .ui-search-input {
   display: inline-flex;
   align-items: center;
-  gap: $space-2;
+  gap: var(--spacing-2);
   min-height: var(--ui-control-height, 36px);
-  padding: 0 0.625rem;
+  padding: 0 var(--spacing-3);
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-md, 8px);
+  border-radius: var(--radius-md);
   background: var(--ui-bg-card);
   min-width: min(100%, 17.5rem);
-  transition: border-color $transition-fast, box-shadow $transition-fast;
+  transition: all var(--transition-base);
+
+  &:hover {
+    border-color: var(--ui-border-strong);
+    background-color: var(--ui-bg-hover);
+  }
 }
 
 .ui-search-input--full {
@@ -23,21 +28,21 @@
   justify-content: center;
   width: 1rem;
   height: 1rem;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1;
-  opacity: 0.72;
-  transform: translateY(-0.5px);
+  color: var(--ui-text-soft);
+  opacity: 0.7;
 }
 
 .ui-search-input__control {
   min-height: calc(var(--ui-control-height, 36px) - 2px);
-  padding: 0.35rem 0;
+  padding: var(--spacing-2) 0;
   border: 0;
   background: transparent;
   width: 100%;
   min-width: 0;
-  color: var(--ui-text-main, var(--ui-text));
-  font-size: $font-base;
+  color: var(--ui-text-main);
+  font-size: var(--font-size-body);
   box-shadow: none;
 
   &:focus,
@@ -46,9 +51,15 @@
     border-color: transparent;
     box-shadow: none;
   }
+
+  &::placeholder {
+    color: var(--ui-text-muted);
+    opacity: 0.6;
+  }
 }
 
 .ui-search-input:focus-within {
   border-color: var(--ui-primary);
   box-shadow: var(--ui-focus-ring-shadow);
+  background-color: var(--ui-bg-card);
 }

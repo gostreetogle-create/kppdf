@@ -70,6 +70,7 @@ export class KpDocumentComponent {
     tablePageBreakFirstPage: 4,
     tablePageBreakNextPages: 6,
     photoScalePercent: 600,
+    photoCropPercent: 0,
     showPhotoColumn: true
   });
 
@@ -105,7 +106,7 @@ export class KpDocumentComponent {
     if (Number.isFinite(explicit) && explicit > 0) return Math.max(1, explicit);
     const metadataValue = Number(this.metadata()?.tablePageBreakFirstPage);
     if (Number.isFinite(metadataValue) && metadataValue > 0) return Math.max(1, metadataValue);
-    return 5;
+    return 8;
   });
 
   protected readonly resolvedNextPagesRows = computed(() => {
@@ -113,7 +114,7 @@ export class KpDocumentComponent {
     if (Number.isFinite(explicit) && explicit > 0) return Math.max(1, explicit);
     const metadataValue = Number(this.metadata()?.tablePageBreakNextPages);
     if (Number.isFinite(metadataValue) && metadataValue > 0) return Math.max(1, metadataValue);
-    return 10;
+    return 12;
   });
 
   protected readonly pageChunks = computed((): KpPageChunk[] => {

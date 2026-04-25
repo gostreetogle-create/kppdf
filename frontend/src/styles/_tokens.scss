@@ -8,21 +8,47 @@
   --ui-primary: #007aff;
   --ui-primary-hover: #0062cc;
   --ui-primary-soft: color-mix(in srgb, var(--ui-primary) 10%, transparent);
+  --ui-primary-muted: color-mix(in srgb, var(--ui-primary) 5%, transparent);
   --ui-accent: #5856d6;
+  --ui-danger: #ff3b30;
+  --ui-danger-hover: #e03127;
+  --ui-danger-soft: color-mix(in srgb, var(--ui-danger) 10%, transparent);
+  --ui-success: #34c759;
+  --ui-success-soft: color-mix(in srgb, var(--ui-success) 10%, transparent);
+  
   --ui-bg-main: #f2f2f7;
   --ui-bg-elevated: #ffffff;
   --ui-bg-card: #ffffff;
-  --ui-bg-hover: #e5e5ea;
+  --ui-bg-hover: #f3f4f6;
+  --ui-bg-soft: #f9fafb;
+  --ui-bg-muted: #e5e7eb;
   --ui-bg-glass: rgba(255, 255, 255, 0.72);
+  
   --ui-text-main: #1c1c1e;
+  --ui-text-secondary: #4b5563;
   --ui-text-muted: #8e8e93;
   --ui-text-soft: #64748b;
   --ui-text-on-primary: #ffffff;
+  
   --ui-border: #d1d1d6;
   --ui-border-subtle: #e5e5ea;
-  --ui-border-light: rgba(0, 0, 0, 0.1);
+  --ui-border-light: rgba(0, 0, 0, 0.06);
+  --ui-border-strong: #9ca3af;
+  
   --ui-primary-focus: rgba(0, 122, 255, 0.4);
   --ui-focus-ring-shadow: 0 0 0 3px rgba(0, 122, 255, 0.4);
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
   --builder-preview-bg: #f1f5f9;
   --input-bg: #ffffff;
   --kp-line-total-color: var(--ui-text-main);
@@ -100,16 +126,8 @@
   --spacing-10: 40px;
   --spacing-12: 48px;
 
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --ui-radius-md: 8px;
-  --ui-radius-lg: 12px;
-
-  /* Shadows and motion */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+  --ui-radius-md: var(--radius-md);
+  --ui-radius-lg: var(--radius-lg);
 
   --transition-fast: 120ms ease;
   --transition-base: 200ms ease;
@@ -118,6 +136,45 @@
   --z-modal: 1000;
   --z-dialog: 1100;
   --z-tooltip: 1200;
+
+  /* UI Aliases */
+  --ui-bg: var(--color-surface);
+  --ui-bg-soft: var(--color-surface-soft);
+  --ui-bg-muted: var(--color-background);
+  --ui-canvas: var(--color-surface-muted);
+  --ui-text: var(--color-text-primary);
+  --ui-text-muted: var(--color-text-secondary);
+  --ui-border: var(--color-border);
+  --ui-border-light: var(--color-border-light);
+  --ui-primary: var(--color-primary);
+  --ui-primary-hover: var(--color-primary-hover);
+  --ui-primary-active: var(--color-primary-active);
+  --ui-primary-disabled: var(--color-primary-disabled);
+  --ui-secondary: var(--color-secondary);
+  --ui-secondary-hover: var(--color-secondary-hover);
+  --ui-secondary-active: var(--color-secondary-active);
+  --ui-success: var(--color-success);
+  --ui-warning: var(--color-warning);
+  --ui-danger: var(--color-error);
+  --ui-info: var(--color-info);
+  --ui-text-on-primary: var(--color-text-on-primary);
+  --ui-focus-ring: var(--color-focus-ring);
+  --ui-print-paper: var(--color-surface);
+  --ui-code-bg: var(--color-background);
+  --ui-code-fg: var(--color-text-primary);
+  --ui-spacing-1: var(--spacing-1);
+  --ui-spacing-2: var(--spacing-2);
+  --ui-spacing-3: var(--spacing-3);
+  --ui-spacing-4: var(--spacing-4);
+  --ui-spacing-5: var(--spacing-5);
+  --ui-spacing-6: var(--spacing-6);
+  --ui-spacing-8: var(--spacing-8);
+  --ui-font-size-md: var(--font-size-body);
+  --ui-control-height: 36px;
+  --ui-control-height-sm: calc(var(--spacing-8) + var(--spacing-1));
+  --ui-control-height-md: var(--spacing-10);
+  --ui-control-height-lg: var(--spacing-12);
+  --ui-control-hit-size: calc(var(--spacing-10) + var(--spacing-1));
 }
 
 @mixin theme-dark-tokens() {
@@ -185,8 +242,34 @@
   --color-text-on-primary: #ffffff;
 
   --color-focus-ring: #0a84ff;
-  --ui-radius-md: 8px;
-  --ui-radius-lg: 12px;
+  --ui-radius-md: var(--radius-md);
+  --ui-radius-lg: var(--radius-lg);
+
+  /* UI Aliases (Dark) */
+  --ui-bg: var(--color-surface);
+  --ui-bg-soft: var(--color-surface-soft);
+  --ui-bg-muted: var(--color-background);
+  --ui-canvas: var(--color-surface-muted);
+  --ui-text: var(--color-text-primary);
+  --ui-text-muted: var(--color-text-secondary);
+  --ui-border: var(--color-border);
+  --ui-border-light: var(--color-border-light);
+  --ui-primary: var(--color-primary);
+  --ui-primary-hover: var(--color-primary-hover);
+  --ui-primary-active: var(--color-primary-active);
+  --ui-primary-disabled: var(--color-primary-disabled);
+  --ui-secondary: var(--color-secondary);
+  --ui-secondary-hover: var(--color-secondary-hover);
+  --ui-secondary-active: var(--color-secondary-active);
+  --ui-success: var(--color-success);
+  --ui-warning: var(--color-warning);
+  --ui-danger: var(--color-error);
+  --ui-info: var(--color-info);
+  --ui-text-on-primary: var(--color-text-on-primary);
+  --ui-focus-ring: var(--color-focus-ring);
+  --ui-print-paper: #ffffff;
+  --ui-code-bg: var(--color-background);
+  --ui-code-fg: var(--color-text-primary);
 }
 
 // Sass aliases for existing component styles

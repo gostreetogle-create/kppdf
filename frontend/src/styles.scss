@@ -23,7 +23,13 @@
   /* Настройки страницы A4 */
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 18mm 10mm 16mm 10mm;
+  }
+
+  /* Запрет разрыва строк таблиц */
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   /* Убираем тени и отступы у листа */

@@ -3,15 +3,21 @@
 .ui-filter-select {
   appearance: none;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-md, 8px);
-  font-size: $font-base;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-body);
   font-family: var(--ui-font-family, inherit);
   background: var(--ui-bg-card);
-  color: var(--ui-text-main, var(--ui-text));
+  color: var(--ui-text-main);
   min-height: var(--ui-control-height, 36px);
   line-height: 1.25;
   min-width: min(100%, 11.25rem);
-  padding: 0.5rem $space-3;
+  padding: 0 12px;
+  transition: all var(--transition-base);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238e8e93'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+  padding-right: 32px;
 
   &:focus,
   &:focus-visible {
@@ -21,6 +27,13 @@
   }
 
   &:hover:not(:disabled):not(:focus):not(:focus-visible) {
-    border-color: color-mix(in srgb, var(--ui-border) 82%, var(--ui-text-main) 18%);
+    border-color: var(--ui-border-strong);
+    background-color: var(--ui-bg-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--ui-bg-soft);
   }
 }

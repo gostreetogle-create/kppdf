@@ -10,15 +10,15 @@
   flex: 1;
   min-width: 0;
   overflow-x: hidden;
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-main);
 }
 
 // ─── Sidebar ──────────────────────────────────────────────
 .sidebar {
-  width: clamp(140px, 11vw, 170px);
+  width: var(--layout-shell-sidebar);
   flex-shrink: 0;
-  background: var(--ui-bg);
-  border-right: 1px solid color-mix(in srgb, var(--ui-border) 85%, transparent);
+  background: var(--ui-bg-card);
+  border-right: 1px solid var(--ui-border-subtle);
   display: flex;
   flex-direction: column;
   position: sticky;
@@ -28,66 +28,77 @@
   z-index: 200;
 
   &__brand {
-    padding: $space-4 $space-3;
-    border-bottom: 1px solid color-mix(in srgb, var(--ui-border-light) 85%, transparent);
+    padding: var(--spacing-5) var(--spacing-6);
+    border-bottom: 1px solid var(--ui-border-light);
 
     a {
       font-weight: 700;
-      font-size: $font-lg;
+      font-size: var(--font-size-h3);
       color: var(--ui-primary);
       text-decoration: none;
-      letter-spacing: -0.025em;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-2);
     }
   }
 
   &__nav {
     flex: 1;
-    padding: $space-3 $space-1;
+    padding: var(--spacing-4) var(--spacing-3);
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
 
     a {
       display: flex;
       align-items: center;
-      gap: $space-2;
-      padding: $space-2;
-      border-radius: $radius-md;
-      font-size: $font-xs;
+      gap: var(--spacing-3);
+      padding: var(--spacing-2) var(--spacing-4);
+      min-height: 40px;
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-body-sm);
       font-weight: 500;
       color: var(--ui-text-muted);
       text-decoration: none;
-      transition: background $transition-fast, color $transition-fast;
+      transition: all var(--transition-base);
 
-      &:hover  { background: color-mix(in srgb, var(--ui-bg-soft) 84%, var(--ui-bg)); color: color-mix(in srgb, var(--ui-text-muted) 88%, var(--ui-text)); }
+      &:hover {
+        background: var(--ui-bg-hover);
+        color: var(--ui-text-main);
+      }
+
       &.active {
-        background: color-mix(in srgb, var(--ui-primary) 10%, transparent);
+        background: var(--ui-primary-soft);
         color: var(--ui-primary);
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-primary) 18%, transparent);
+        font-weight: 600;
       }
     }
   }
 
-  &__icon { font-size: 0.875rem; width: 16px; text-align: center; opacity: 0.78; }
+  &__icon { font-size: 1.1rem; width: 20px; text-align: center; }
 
   &__footer {
-    padding: $space-4;
-    border-top: 1px solid color-mix(in srgb, var(--ui-border-light) 85%, transparent);
+    padding: var(--spacing-4) var(--spacing-5);
+    border-top: 1px solid var(--ui-border-light);
     display: flex;
     flex-direction: column;
-    gap: $space-2;
+    gap: var(--spacing-3);
+    background: var(--ui-bg-soft);
   }
 
   &__footer-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: $space-2;
+    gap: var(--spacing-2);
   }
 
   &__username {
-    font-size: $font-xs;
-    color: var(--ui-text-muted);
+    font-size: var(--font-size-caption);
+    color: var(--ui-text-soft);
+    font-weight: 500;
+    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

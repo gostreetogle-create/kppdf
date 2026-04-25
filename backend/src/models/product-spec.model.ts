@@ -21,6 +21,8 @@ export interface IProductSpec extends Document {
   productId: Types.ObjectId;
   drawings: IProductSpecDrawings;
   groups: IProductSpecGroup[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const ProductSpecParamSchema = new Schema<IProductSpecParam>({

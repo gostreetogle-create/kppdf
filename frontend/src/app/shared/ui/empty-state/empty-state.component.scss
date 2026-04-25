@@ -1,25 +1,32 @@
 .ui-empty-state {
-  padding: var(--ui-space-5, 1.25rem);
+  padding: var(--spacing-6);
   border: 1px dashed var(--ui-border);
-  border-radius: var(--ui-radius-md, 0.75rem);
-  color: var(--ui-text-muted);
+  border-radius: var(--radius-lg);
+  color: var(--ui-text-soft);
   background: var(--ui-bg-soft);
   display: grid;
-  gap: var(--ui-space-2, 0.5rem);
+  place-items: center;
+  text-align: center;
+  gap: var(--spacing-2);
 }
 
 .ui-empty-state--compact {
-  padding: var(--ui-space-3, 0.75rem);
+  padding: var(--spacing-4);
 }
 
 .ui-empty-state__title {
-  color: var(--ui-text);
+  color: var(--ui-text-main);
+  font-size: var(--font-size-body-lg);
   font-weight: 600;
 }
 
-.ui-empty-state__icon:empty,
-.ui-empty-state__title:empty,
-.ui-empty-state__description:empty,
-.ui-empty-state__actions:empty {
-  display: none;
+.ui-empty-state__description {
+  font-size: var(--font-size-body-sm);
+  max-width: 320px;
+}
+
+.ui-empty-state__icon {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-2);
+  opacity: 0.5;
 }

@@ -83,6 +83,14 @@
           <input class="photo-scale-control__number form-control" type="number" min="0" max="400" [value]="photoScaleUiValue()" [disabled]="isReadOnly()" (change)="photoScaleChange.emit(+$any($event.target).value)" />
         </div>
       </label>
+      <label class="kp-params-grid__field">
+        <span>Обрезка фото (Y%)</span>
+        <div class="photo-scale-control">
+          <input class="photo-scale-control__range" type="range" min="0" max="50" step="1" [value]="photoCropUiValue()" [disabled]="isReadOnly()" (input)="photoCropChange.emit(+$any($event.target).value)" />
+          <span class="photo-scale-control__value">{{ photoCropUiValue() }}%</span>
+          <input class="photo-scale-control__number form-control" type="number" min="0" max="50" [value]="photoCropUiValue()" [disabled]="isReadOnly()" (change)="photoCropChange.emit(+$any($event.target).value)" />
+        </div>
+      </label>
       <div class="kp-params-grid__field kp-params-grid__field--checkbox">
         <span>Колонка фото</span>
         <button

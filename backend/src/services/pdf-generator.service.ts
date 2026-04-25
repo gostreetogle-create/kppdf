@@ -1,5 +1,7 @@
 import { Browser } from 'puppeteer';
 import { puppeteerService } from './puppeteer.service';
+import { pdfCacheService } from './pdf-cache.service';
+import { Kp } from '../models/kp.model';
 
 interface GenerateKpPdfInput {
   kpId: string;
@@ -18,6 +20,13 @@ export class PdfGeneratorService {
   }
 
   async generateKpPdf(input: GenerateKpPdfInput): Promise<Buffer> {
+    const kp = await Kp.findById(input.kpId).select('updatedAt metadata.createdAt').lean();
+    const updatedAt = kp?.updatedAt || (kp as any)?.metadata?.createdAt || new Date();
+    const cachePath = pdfCacheService.getCachePath(input.kpId, updatedAt, 'kp-full');
+
+    const cached = await pdfCacheService.get(cachePath);
+    if (cached) return cached;
+
     const browser = await puppeteerService.getBrowser();
     const page = await browser.newPage();
     try {
@@ -76,8 +85,10 @@ export class PdfGeneratorService {
           left: '0mm'
         }
       });
-
-      return Buffer.from(pdf);
+      
+      const buffer = Buffer.from(pdf);
+      await pdfCacheService.set(cachePath, buffer);
+      return buffer;
     } finally {
       await page.close();
     }

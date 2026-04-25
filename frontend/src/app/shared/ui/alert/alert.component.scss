@@ -2,16 +2,36 @@
 
 :host {
   display: block;
-  padding: $space-3 $space-4;
-  border-radius: $radius-md;
-  font-size: $font-sm;
-  margin-bottom: $space-4;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-body-sm);
+  margin-bottom: var(--spacing-4);
   line-height: 1.5;
+  border: 1px solid transparent;
 
-  &.alert--error   { background: $color-danger-light;  color: $color-danger-dark;  border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border)); }
-  &.alert--success { background: $color-success-light; color: $color-success;      border: 1px solid color-mix(in srgb, var(--ui-success) 30%, var(--ui-border)); }
-  &.alert--warning { background: $color-warning-light; color: $color-warning;      border: 1px solid color-mix(in srgb, var(--ui-warning) 30%, var(--ui-border)); }
-  &.alert--info    { background: $color-primary-light; color: $color-primary-dark; border: 1px solid color-mix(in srgb, var(--ui-primary) 30%, var(--ui-border)); }
+  &.alert--error {
+    background: var(--ui-danger-soft);
+    color: var(--ui-danger);
+    border-color: color-mix(in srgb, var(--ui-danger) 20%, transparent);
+  }
+
+  &.alert--success {
+    background: var(--ui-success-soft);
+    color: var(--ui-success);
+    border-color: color-mix(in srgb, var(--ui-success) 20%, transparent);
+  }
+
+  &.alert--warning {
+    background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+    color: var(--color-warning);
+    border-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  }
+
+  &.alert--info {
+    background: var(--ui-primary-soft);
+    color: var(--ui-primary);
+    border-color: color-mix(in srgb, var(--ui-primary) 20%, transparent);
+  }
 }
 
 :host:empty {

@@ -22,6 +22,8 @@ export interface IProduct extends Document {
   isActive:     boolean;
   kind:         ProductKind;
   notes?:       string;
+  createdAt?:   Date;
+  updatedAt?:   Date;
 }
 
 const ProductImageSchema = new Schema<IProductImage>({
