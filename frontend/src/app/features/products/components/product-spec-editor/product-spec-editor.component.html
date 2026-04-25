@@ -12,6 +12,9 @@
     <button ui-btn variant="ghost" size="sm" (click)="showPreview.set(!showPreview())" [disabled]="loading()">
       {{ showPreview() ? 'Скрыть паспорт' : 'Посмотреть паспорт' }}
     </button>
+    <button ui-btn variant="ghost" size="sm" (click)="previewPassport()" [disabled]="loading()">
+      Превью PDF
+    </button>
     <button ui-btn variant="ghost" size="sm" (click)="exportPassport()" [disabled]="downloading() || loading()">
       {{ downloading() ? 'Генерация PDF...' : 'Скачать PDF' }}
     </button>

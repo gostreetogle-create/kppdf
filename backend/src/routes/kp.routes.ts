@@ -5,7 +5,9 @@ import {
   deleteKp,
   duplicateKp,
   exportKpPdf,
+  previewKpPdf,
   exportProductPassportPdf,
+  previewProductPassportPdf,
   getKpById,
   listKp,
   switchKpType,
@@ -36,8 +38,14 @@ router.put('/:id/switch-type', switchKpType);
 // GET /api/kp/:id/export
 router.get('/:id/export', exportKpPdf);
 
+// GET /api/kp/:id/preview
+router.get('/:id/preview', previewKpPdf);
+
 // GET /api/kp/passport/:productId/export
 router.get('/passport/:productId/export', exportProductPassportPdf);
+
+// GET /api/kp/passport/:productId/preview
+router.get('/passport/:productId/preview', previewProductPassportPdf);
 
 // GET /api/kp/:id
 router.get('/:id', getKpById);

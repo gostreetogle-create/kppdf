@@ -275,6 +275,11 @@ export class ProductSpecEditorComponent implements OnInit {
     });
   }
 
+  previewPassport() {
+    const url = this.api.getProductPassportPdfPreviewUrl(this.productId());
+    window.open(url, '_blank');
+  }
+
   private setError(error: unknown, fallback: string) {
     const message = this.extractErrorMessage(error) || fallback;
     this.errors.set([message]);

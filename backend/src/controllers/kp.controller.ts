@@ -94,6 +94,14 @@ export async function deleteKp(req: Request, res: Response) {
 }
 
 export async function exportKpPdf(req: Request, res: Response) {
+  await handlePdfExport(req, res, 'attachment');
+}
+
+export async function previewKpPdf(req: Request, res: Response) {
+  await handlePdfExport(req, res, 'inline');
+}
+
+async function handlePdfExport(req: Request, res: Response, disposition: 'attachment' | 'inline') {
   try {
     const kp = await kpService.getById(req.params.id);
     if (!kp) {
@@ -107,18 +115,27 @@ export async function exportKpPdf(req: Request, res: Response) {
     const pdfBuffer = await pdfGeneratorService.generateKpPdf({ kpId: req.params.id, accessToken });
     const docNumber = String(kp.metadata?.number ?? req.params.id).replace(/[^\w.-]+/g, '_');
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="kp-${docNumber}.pdf"`);
+    res.setHeader('Content-Disposition', `${disposition}; filename="kp-${docNumber}.pdf"`);
     res.send(pdfBuffer);
-  } catch {
+  } catch (error) {
+    console.error('PDF Generation Error:', error);
     res.status(500).json({ message: 'Не удалось сформировать PDF' });
   }
 }
 
 export async function exportProductPassportPdf(req: Request, res: Response) {
+  await handlePassportExport(req, res, 'attachment');
+}
+
+export async function previewProductPassportPdf(req: Request, res: Response) {
+  await handlePassportExport(req, res, 'inline');
+}
+
+async function handlePassportExport(req: Request, res: Response, disposition: 'attachment' | 'inline') {
   try {
     const { pdf, filename } = await productPassportPdfService.generateByProductId(req.params.productId);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
     res.send(pdf);
   } catch (error: any) {
     const message = String(error?.message ?? '');

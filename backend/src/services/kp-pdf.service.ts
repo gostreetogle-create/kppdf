@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { puppeteerService } from './puppeteer.service';
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -117,10 +117,7 @@ function renderKpHtml(kp: any): string {
 
 export class KpPdfService {
   async generatePdf(kp: any): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    const browser = await puppeteerService.getBrowser();
     try {
       const page = await browser.newPage();
       await page.setContent(renderKpHtml(kp), { waitUntil: 'networkidle0' });
@@ -151,7 +148,8 @@ export class KpPdfService {
       });
       return Buffer.from(pdf);
     } finally {
-      await browser.close();
+      // @ts-ignore
+      if (typeof page !== 'undefined') await page.close();
     }
   }
 }

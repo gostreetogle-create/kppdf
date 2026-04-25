@@ -410,6 +410,10 @@ export class ApiService {
     return this.http.get(`${BASE}/kp/passport/${productId}/export`, { responseType: 'blob' });
   }
 
+  getProductPassportPdfPreviewUrl(productId: string): string {
+    return `${BASE}/kp/passport/${productId}/preview`;
+  }
+
   bulkImportProducts(
     items: any[],
     mode: 'skip' | 'update' = 'skip'
@@ -464,6 +468,10 @@ export class ApiService {
     return this.http.get(`${BASE}/kp/${id}/export`, {
       responseType: 'blob'
     });
+  }
+
+  getKpPdfPreviewUrl(id: string): string {
+    return `${BASE}/kp/${id}/preview`;
   }
 
   issueGuestPreviewLink(ttlDays = 7): Observable<GuestPreviewIssueResponse> {

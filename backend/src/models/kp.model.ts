@@ -136,7 +136,7 @@ const KpSchema = new Schema<IKp>({
     prepaymentPercent: { type: Number, default: 50 },
     productionDays:    { type: Number, default: 15 },
     tablePageBreakAfter: { type: Number, default: 6, min: [1, 'tablePageBreakAfter должен быть >= 1'] },
-    tablePageBreakFirstPage: { type: Number, default: 6, min: [1, 'tablePageBreakFirstPage должен быть >= 1'] },
+    tablePageBreakFirstPage: { type: Number, default: 4, min: [1, 'tablePageBreakFirstPage должен быть >= 1'] },
     tablePageBreakNextPages: { type: Number, default: 6, min: [1, 'tablePageBreakNextPages должен быть >= 1'] },
     photoScalePercent: { type: Number, default: 600, min: [0, 'photoScalePercent должен быть >= 0'], max: [1000, 'photoScalePercent должен быть <= 1000'] },
     showPhotoColumn: { type: Boolean, default: true },

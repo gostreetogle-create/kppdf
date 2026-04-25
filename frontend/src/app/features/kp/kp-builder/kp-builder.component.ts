@@ -945,6 +945,13 @@ export class KpBuilderComponent implements OnInit {
     });
   }
 
+  onPreviewPdf() {
+    const kp = this.kp();
+    if (!kp) return;
+    const url = this.api.getKpPdfPreviewUrl(kp._id);
+    window.open(url, '_blank');
+  }
+
   onQuickPrint() {
     this.isPdfMenuOpen.set(false);
     window.print();

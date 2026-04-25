@@ -67,7 +67,7 @@ export class KpDocumentComponent {
     prepaymentPercent: 50,
     productionDays: 15,
     tablePageBreakAfter: 6,
-    tablePageBreakFirstPage: 6,
+    tablePageBreakFirstPage: 4,
     tablePageBreakNextPages: 6,
     photoScalePercent: 600,
     showPhotoColumn: true

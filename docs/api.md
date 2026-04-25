@@ -234,7 +234,7 @@ RBAC:
     "number": "string", "validityDays": 10,
     "prepaymentPercent": 50, "productionDays": 15,
     "tablePageBreakAfter": 6,
-    "tablePageBreakFirstPage": 6,
+    "tablePageBreakFirstPage": 4,
     "tablePageBreakNextPages": 6,
     "photoScalePercent": 150,
     "showPhotoColumn": true,

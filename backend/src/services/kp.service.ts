@@ -134,7 +134,7 @@ export class KpService {
         prepaymentPercent: s['kp_prepayment_percent'],
         productionDays: s['kp_production_days'],
         tablePageBreakAfter: body.metadata?.tablePageBreakAfter ?? 6,
-        tablePageBreakFirstPage: body.metadata?.tablePageBreakFirstPage ?? body.metadata?.tablePageBreakAfter ?? 6,
+        tablePageBreakFirstPage: body.metadata?.tablePageBreakFirstPage ?? body.metadata?.tablePageBreakAfter ?? 4,
         tablePageBreakNextPages: body.metadata?.tablePageBreakNextPages ?? body.metadata?.tablePageBreakAfter ?? 6,
         photoScalePercent: body.metadata?.photoScalePercent ?? 600,
         showPhotoColumn: body.metadata?.showPhotoColumn ?? true,
@@ -149,7 +149,7 @@ export class KpService {
     body.metadata = {
       ...body.metadata,
       tablePageBreakAfter: Math.max(1, Number(body.metadata?.tablePageBreakAfter ?? 6) || 6),
-      tablePageBreakFirstPage: Math.max(1, Number(body.metadata?.tablePageBreakFirstPage ?? body.metadata?.tablePageBreakAfter ?? 6) || 6),
+      tablePageBreakFirstPage: Math.max(1, Number(body.metadata?.tablePageBreakFirstPage ?? body.metadata?.tablePageBreakAfter ?? 4) || 4),
       tablePageBreakNextPages: Math.max(1, Number(body.metadata?.tablePageBreakNextPages ?? body.metadata?.tablePageBreakAfter ?? 6) || 6),
       photoScalePercent: body.metadata?.photoScalePercent ?? 600,
       showPhotoColumn: body.metadata?.showPhotoColumn ?? true,
@@ -287,7 +287,7 @@ export class KpService {
     const nextMetadata = {
       ...kp.metadata,
       number: nextNumber,
-      tablePageBreakFirstPage: Math.max(1, Number((kp.metadata as any)?.tablePageBreakFirstPage ?? (kp.metadata as any)?.tablePageBreakAfter ?? 6) || 6),
+      tablePageBreakFirstPage: Math.max(1, Number((kp.metadata as any)?.tablePageBreakFirstPage ?? (kp.metadata as any)?.tablePageBreakAfter ?? 4) || 4),
       tablePageBreakNextPages: Math.max(1, Number((kp.metadata as any)?.tablePageBreakNextPages ?? (kp.metadata as any)?.tablePageBreakAfter ?? 6) || 6),
       defaultMarkupPercent: Number((company as any).defaultMarkupPercent ?? kp.metadata?.defaultMarkupPercent ?? 0) || 0,
       defaultDiscountPercent: Number((company as any).defaultDiscountPercent ?? kp.metadata?.defaultDiscountPercent ?? 0) || 0,

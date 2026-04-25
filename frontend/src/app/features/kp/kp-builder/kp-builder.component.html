@@ -82,6 +82,9 @@
             </button>
             @if (isPdfMenuOpen()) {
               <div class="builder__pdf-menu" role="menu" (click)="$event.stopPropagation()">
+                <button type="button" class="builder__pdf-menu-item" role="menuitem" (click)="onPreviewPdf()">
+                  Просмотр PDF (в новом окне)
+                </button>
                 <button type="button" class="builder__pdf-menu-item" role="menuitem" (click)="onQuickPrint()">
                   Быстрая печать (Draft)
                 </button>

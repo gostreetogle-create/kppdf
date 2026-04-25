@@ -1,4 +1,5 @@
-import puppeteer, { Browser } from 'puppeteer';
+import { Browser } from 'puppeteer';
+import { puppeteerService } from './puppeteer.service';
 
 interface GenerateKpPdfInput {
   kpId: string;
@@ -17,9 +18,9 @@ export class PdfGeneratorService {
   }
 
   async generateKpPdf(input: GenerateKpPdfInput): Promise<Buffer> {
-    const browser = await this.launchBrowser();
+    const browser = await puppeteerService.getBrowser();
+    const page = await browser.newPage();
     try {
-      const page = await browser.newPage();
       await page.setViewport({ width: 1440, height: 2000, deviceScaleFactor: 2 });
 
       if (input.accessToken) {
@@ -78,15 +79,8 @@ export class PdfGeneratorService {
 
       return Buffer.from(pdf);
     } finally {
-      await browser.close();
+      await page.close();
     }
-  }
-
-  private async launchBrowser(): Promise<Browser> {
-    return puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
   }
 }
 

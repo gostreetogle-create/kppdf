@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { puppeteerService } from './puppeteer.service';
 import { Product } from '../models/product.model';
 import { ProductSpec } from '../models/product-spec.model';
 import { DEFAULT_SETTINGS, Setting } from '../models/settings.model';
@@ -169,10 +169,7 @@ export class ProductPassportPdfService {
     if (!spec) throw new Error('Технический профиль не найден');
     const constants = await this.getConstants();
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    const browser = await puppeteerService.getBrowser();
     try {
       const page = await browser.newPage();
       await page.setContent(renderPassportHtml({ product, spec, constants }), { waitUntil: 'networkidle0' });
@@ -185,7 +182,8 @@ export class ProductPassportPdfService {
       const safeCode = String(product.code ?? product._id).replace(/[^\w.-]+/g, '_');
       return { pdf: Buffer.from(pdf), filename: `passport-${safeCode}.pdf` };
     } finally {
-      await browser.close();
+      // @ts-ignore
+      if (typeof page !== 'undefined') await page.close();
     }
   }
 }
