@@ -34,6 +34,7 @@ export class KpBuilderCartComponent {
   qtyChange = output<{ item: KpItem; qty: number }>();
   incrementQty = output<KpItem>();
   decrementQty = output<KpItem>();
+  duplicateItem = output<KpItem>();
   removeItem = output<KpItem>();
   bulkMarkupInput = output<string | number>();
   bulkDiscountInput = output<string | number>();

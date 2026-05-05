@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { kpService } from '../services/kp.service';
 import { pdfGeneratorService } from '../services/pdf-generator.service';
 import { productPassportPdfService } from '../services/product-passport-pdf.service';
+import { mapKpToDto } from '../dtos/kp.dto';
 
 function validationMessage(error: any): string {
   return typeof error?.message === 'string' && error.message.trim()
@@ -12,7 +13,7 @@ function validationMessage(error: any): string {
 export async function listKp(_req: Request, res: Response) {
   try {
     const list = await kpService.list();
-    res.json(list);
+    res.json(list.map(mapKpToDto));
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
@@ -21,7 +22,7 @@ export async function listKp(_req: Request, res: Response) {
 export async function createKp(req: Request, res: Response) {
   try {
     const kp = await kpService.create(req.body);
-    res.status(201).json(kp);
+    res.status(201).json(mapKpToDto(kp));
   } catch (error: any) {
     res.status(400).json({ message: validationMessage(error) });
   }
@@ -34,7 +35,7 @@ export async function duplicateKp(req: Request, res: Response) {
       res.status(404).json({ message: 'Not found' });
       return;
     }
-    res.status(201).json(duplicate);
+    res.status(201).json(mapKpToDto(duplicate));
   } catch (error: any) {
     res.status(400).json({ message: validationMessage(error) });
   }
@@ -47,7 +48,11 @@ export async function switchKpType(req: Request, res: Response) {
       res.status(404).json({ message: 'Not found' });
       return;
     }
-    res.json(result);
+    // Возвращаем объект с отмаппленным КП и метаданными
+    res.json({
+      kp: mapKpToDto(result.kp),
+      meta: result.meta
+    });
   } catch (error: any) {
     res.status(400).json({ message: validationMessage(error) });
   }
@@ -60,7 +65,7 @@ export async function getKpById(req: Request, res: Response) {
       res.status(404).json({ message: 'Not found' });
       return;
     }
-    res.json(kp);
+    res.json(mapKpToDto(kp));
   } catch {
     res.status(400).json({ message: 'Неверный ID' });
   }
@@ -78,7 +83,7 @@ export async function updateKp(req: Request, res: Response) {
       res.status(404).json({ message: 'Not found' });
       return;
     }
-    res.json(updated);
+    res.json(mapKpToDto(updated));
   } catch (error: any) {
     res.status(400).json({ message: validationMessage(error) });
   }

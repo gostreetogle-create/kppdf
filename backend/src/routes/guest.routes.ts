@@ -2,7 +2,8 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthService } from '../auth/auth.service';
 import { authGuard, type AuthPayload, requirePermission } from '../middleware/auth.middleware';
-import { ALL_PERMISSION_KEYS, type Permission } from '../auth/permissions';
+import { ALL_PERMISSION_KEYS } from '../auth/permissions';
+import { Permission } from '../../../shared/types/User';
 
 const router = Router();
 const authService = new AuthService();

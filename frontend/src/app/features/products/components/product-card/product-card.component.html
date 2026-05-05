@@ -20,6 +20,7 @@
   </div>
   <div class="card__actions">
     <button class="btn-action btn-action--edit" (click)="edit.emit()">Редактировать</button>
+    <button class="btn-action btn-action--duplicate" (click)="duplicate.emit()">Копировать</button>
     <button
       class="btn-action btn-action--passport"
       [class.btn-action--passport-active]="!!product().specId"

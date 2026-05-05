@@ -3,6 +3,7 @@ import { Product } from '../models/product.model';
 import { ProductSpec } from '../models/product-spec.model';
 import { Dictionary } from '../models/dictionary.model';
 import { requirePermission } from '../middleware/rbac.guard';
+import { mapProductToDto } from '../dtos/product.dto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -85,7 +86,7 @@ router.get('/', async (req: Request, res: Response) => {
       { $project: { spec: 0 } },
       { $sort: { category: 1, name: 1 } }
     ]);
-    res.json(products);
+    res.json(products.map(mapProductToDto));
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
@@ -128,16 +129,65 @@ router.post('/upload-image', (req: Request, res: Response) => {
   });
 });
 
+// POST /api/products/:id/duplicate
+router.post('/:id/duplicate', async (req: Request, res: Response) => {
+  try {
+    const original = await Product.findById(req.params.id);
+    if (!original) {
+      res.status(404).json({ message: 'Оригинальный товар не найден' });
+      return;
+    }
+
+    const { _id, createdAt, updatedAt, __v, ...originalObj } = original.toObject() as any;
+
+    // Генерируем новый артикул, чтобы избежать коллизии unique index
+    let newCode = `${originalObj.code}-copy`;
+    let suffix = 1;
+    while (await Product.exists({ code: newCode })) {
+      newCode = `${originalObj.code}-copy-${suffix++}`;
+    }
+
+    const duplicatedProduct = await Product.create({
+      ...originalObj,
+      code: newCode,
+      name: `${originalObj.name} (копия)`,
+      isActive: false // По умолчанию копия неактивна, чтобы не мусорить в каталоге
+    });
+
+    // Дублируем тех. паспорт если он есть
+    const originalSpec = await ProductSpec.findOne({ productId: original._id });
+    let newSpecId: string | undefined;
+
+    if (originalSpec) {
+      const { _id: _, createdAt: __, updatedAt: ___, __v: ____, ...specObj } = originalSpec.toObject() as any;
+
+      const newSpec = await ProductSpec.create({
+        ...specObj,
+        productId: duplicatedProduct._id
+      });
+      newSpecId = String(newSpec._id);
+    }
+
+    res.status(201).json(mapProductToDto({
+      ...duplicatedProduct.toObject(),
+      specId: newSpecId
+    }));
+  } catch (e: any) {
+    console.error('[products/duplicate] error:', e);
+    res.status(500).json({ message: 'Ошибка при дублировании товара' });
+  }
+});
+
 // GET /api/products/:id
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) { res.status(404).json({ message: 'Товар не найден' }); return; }
     const spec = await ProductSpec.findOne({ productId: product._id }).select('_id').lean();
-    res.json({
+    res.json(mapProductToDto({
       ...product.toObject(),
       specId: spec?._id ? String(spec._id) : undefined
-    });
+    }));
   } catch {
     res.status(400).json({ message: 'Неверный ID' });
   }
@@ -198,7 +248,7 @@ router.post('/bulk', async (req: Request, res: Response) => {
 router.post('/', validateProduct, async (req: Request, res: Response) => {
   try {
     const product = await Product.create(buildPayload(req.body));
-    res.status(201).json(product);
+    res.status(201).json(mapProductToDto(product));
   } catch (e: any) {
     if (e.code === 11000) {
       res.status(400).json({ errors: [`Артикул "${req.body.code}" уже существует`] });
@@ -215,7 +265,7 @@ router.put('/:id', validateProduct, async (req: Request, res: Response) => {
       req.params.id, buildPayload(req.body), { new: true, runValidators: true }
     );
     if (!product) { res.status(404).json({ message: 'Товар не найден' }); return; }
-    res.json(product);
+    res.json(mapProductToDto(product));
   } catch (e: any) {
     if (e.code === 11000) {
       res.status(400).json({ errors: [`Артикул "${req.body.code}" уже существует`] });

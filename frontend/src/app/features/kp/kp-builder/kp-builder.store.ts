@@ -57,9 +57,15 @@ export class KpBuilderStore {
     const history = this.past();
     const current = this._kp();
     if (!current || history.length === 0) return;
+    
     const previous = history[history.length - 1];
+    const newFuture = [...this.future(), this.cloneState(current)];
+    if (newFuture.length > this.historyLimit) {
+      newFuture.shift();
+    }
+
     this.past.set(history.slice(0, -1));
-    this.future.set([...this.future(), this.cloneState(current)]);
+    this.future.set(newFuture);
     this._kp.set(this.cloneState(previous));
   }
 
@@ -67,9 +73,15 @@ export class KpBuilderStore {
     const future = this.future();
     const current = this._kp();
     if (!current || future.length === 0) return;
+    
     const next = future[future.length - 1];
+    const newPast = [...this.past(), this.cloneState(current)];
+    if (newPast.length > this.historyLimit) {
+      newPast.shift();
+    }
+
     this.future.set(future.slice(0, -1));
-    this.past.set([...this.past(), this.cloneState(current)]);
+    this.past.set(newPast);
     this._kp.set(this.cloneState(next));
   }
 
@@ -101,7 +113,10 @@ export class KpBuilderStore {
 
   private pushToHistory(state: Kp): void {
     const nextHistory = [...this.past(), this.cloneState(state)];
-    this.past.set(nextHistory.slice(-this.historyLimit));
+    if (nextHistory.length > this.historyLimit) {
+      nextHistory.shift();
+    }
+    this.past.set(nextHistory);
     this.future.set([]);
   }
 

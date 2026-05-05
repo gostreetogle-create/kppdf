@@ -1,63 +1,19 @@
 import { Schema, model, Document } from 'mongoose';
+import { 
+  IKp as ISharedKp, 
+  KpStatus, 
+  KpType, 
+  KpItem, 
+  KpRecipient, 
+  KpMetadata 
+} from '../../../shared/types/Kp';
 
-export type KpStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
-export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
-
-export interface IKpItem {
-  productId:   string;
-  code?:       string;
-  name:        string;
-  description: string;
-  unit:        string;
-  price:       number;
-  qty:         number;
-  imageUrl?:   string;
-  markupEnabled?: boolean;
-  markupPercent?: number;
-  discountEnabled?: boolean;
-  discountPercent?: number;
-}
-
-export interface IKp extends Document {
-  title: string;
-  status: KpStatus;
-  kpType: KpType;
-  counterpartyId?: string;
-  companyId?:      string;   // ссылка на Counterparty с isOurCompany=true
-  recipient: {
-    name:                  string;
-    shortName?:            string;
-    legalForm?:            string;
-    inn?:                  string;
-    kpp?:                  string;
-    ogrn?:                 string;
-    legalAddress?:         string;
-    phone?:                string;
-    email?:                string;
-    bankName?:             string;
-    bik?:                  string;
-    checkingAccount?:      string;
-    correspondentAccount?: string;
-    founderName?:          string;
-    founderNameShort?:     string;
-  };
-  metadata: {
-    number: string;
-    validityDays: number;
-    prepaymentPercent: number;
-    productionDays: number;
+export interface IKp extends Omit<ISharedKp, '_id' | 'createdAt' | 'updatedAt' | 'items' | 'recipient' | 'metadata' | 'companySnapshot'>, Document {
+  recipient: KpRecipient;
+  metadata: KpMetadata & {
     tablePageBreakAfter: number;
-    tablePageBreakFirstPage?: number;
-    tablePageBreakNextPages?: number;
-    photoScalePercent?: number;
-    photoCropPercent?: number;
-    showPhotoColumn?: boolean;
-    defaultMarkupPercent?: number;
-    defaultDiscountPercent?: number;
   };
-  items: IKpItem[];
-  conditions: string[];
-  vatPercent: number;
+  items: KpItem[];
   companySnapshot: {
     companyId: Schema.Types.ObjectId | string;
     companyName: string;
@@ -87,15 +43,15 @@ export interface IKp extends Document {
       email?: string;
     };
   };
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const INN_REGEX = /^\d{10}(\d{2})?$/;
 const BIK_REGEX = /^\d{9}$/;
 const ACCOUNT_REGEX = /^\d{20}$/;
 
-const KpItemSchema = new Schema<IKpItem>({
+const KpItemSchema = new Schema<KpItem>({
   productId:   { type: String, required: true },
   code:        { type: String },
   name:        { type: String, required: true },

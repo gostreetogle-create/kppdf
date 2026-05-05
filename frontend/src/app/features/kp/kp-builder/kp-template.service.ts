@@ -1,5 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { KpItem } from '../../../core/services/api.service';
+import { calculateItemUnitPrice, clampPercent } from '@shared/utils/price.utils';
 import { KpBuilderStore } from './kp-builder.store';
 
 @Injectable()
@@ -18,7 +19,7 @@ export class KpTemplateService {
     const kp = this.store.kp();
     if (!kp) return this.emptyVariables;
 
-    const totalAmount = kp.items.reduce((sum, item) => sum + this.itemUnitPrice(item) * item.qty, 0);
+    const totalAmount = kp.items.reduce((sum, item) => sum + calculateItemUnitPrice(item) * item.qty, 0);
     const dateValue = kp.metadata?.createdAt ?? kp.createdAt;
 
     return {
@@ -39,19 +40,6 @@ export class KpTemplateService {
       const token = key.trim();
       return Object.prototype.hasOwnProperty.call(map, token) ? map[token] : match;
     });
-  }
-
-  private itemUnitPrice(item: KpItem): number {
-    const markupPercent = item.markupEnabled ? this.clampPercent(item.markupPercent ?? 0, 0, 500) : 0;
-    const discountPercent = item.discountEnabled ? this.clampPercent(item.discountPercent ?? 0, 0, 100) : 0;
-    const withMarkup = item.price * (1 + markupPercent / 100);
-    const withDiscount = withMarkup * (1 - discountPercent / 100);
-    return Math.max(0, Math.round(withDiscount));
-  }
-
-  private clampPercent(value: number, min: number, max: number): number {
-    const n = Number.isFinite(value) ? value : 0;
-    return Math.min(max, Math.max(min, n));
   }
 
   private formatDate(value: Date | string | undefined): string {

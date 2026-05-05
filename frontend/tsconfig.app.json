@@ -8,7 +8,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/environments/*.ts"
+    "src/environments/*.ts",
+    "../shared/**/*.ts"
   ],
   "exclude": [
     "src/**/*.spec.ts"

@@ -1,9 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
+import { ISetting as ISharedSetting } from '../../../shared/types/ApiResponses';
 
-export interface ISetting extends Document {
-  key:   string;
-  value: unknown;
-  label: string;
+export interface ISetting extends Omit<ISharedSetting, '_id'>, Document {
 }
 
 const SettingSchema = new Schema<ISetting>({

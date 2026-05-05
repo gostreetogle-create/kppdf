@@ -46,15 +46,15 @@
   </div>
 
   @if (loading()) {
-    <div class="loading-state">Загрузка...</div>
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <span>Загрузка каталога...</span>
+    </div>
   } @else if (filtered().length === 0) {
     <ui-empty-state>
-      @if (search()) {
-        <p empty-title>Ничего не найдено по запросу "{{ search() }}"</p>
-      }
-      @if (!search()) {
-        <p empty-title>Каталог пуст</p>
-      }
+      <p empty-title>
+        {{ search() ? 'Ничего не найдено по запросу "' + search() + '"' : 'Каталог пуст' }}
+      </p>
       @if (!search()) {
         <button empty-actions ui-btn variant="primary" (click)="openCreate()">Добавить первый товар</button>
       }
@@ -65,6 +65,7 @@
         <app-product-card
           [product]="product"
           (edit)="openEdit(product)"
+          (duplicate)="openDuplicate(product)"
           (passport)="openSpecEditor(product)"
           (delete)="confirmDelete(product)">
         </app-product-card>
@@ -110,6 +111,7 @@
                   <span>Тех. паспорт</span>
                 </button>
                 <button ui-btn size="sm" (click)="openEdit(product)">Изменить</button>
+                <button ui-btn size="sm" (click)="openDuplicate(product)">Копировать</button>
                 <button ui-btn size="sm" variant="danger" (click)="confirmDelete(product)">Удалить</button>
               </td>
             </tr>

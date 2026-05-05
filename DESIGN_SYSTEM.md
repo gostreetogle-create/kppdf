@@ -58,7 +58,15 @@ Rules:
 - label is always visible (placeholder is not a label),
 - error/hint text stays under control,
 - focus state must use tokenized focus ring (`--ui-focus-ring`),
-- disabled style must be visibly distinct.
+- disabled style must be visibly distinct,
+- uses semantic spacing `--ui-spacing-*` for internal layout.
+
+## `ui-empty-state`
+
+Used to provide feedback when lists or search results are empty:
+- provides a title, optional description, and action buttons,
+- consistent padding and background across the app,
+- supports a `compact` mode for use in sidebars or small containers.
 
 ## `ui-card`
 

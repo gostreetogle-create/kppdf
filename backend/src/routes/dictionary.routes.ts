@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { Dictionary, DictionaryType } from '../models/dictionary.model';
+import { DictionaryType } from '../../../shared/types/ApiResponses';
+import { Dictionary } from '../models/dictionary.model';
 import { requirePermission } from '../middleware/rbac.guard';
 
 const router = Router();

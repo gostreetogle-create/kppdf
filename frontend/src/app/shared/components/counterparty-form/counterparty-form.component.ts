@@ -65,6 +65,7 @@ export class CounterpartyFormComponent implements OnInit, OnDestroy {
   counterparty = input<Counterparty | null>(null);
   /** Заголовок модалки (например «Новый получатель» в контексте КП) */
   formHeading  = input<string | undefined>(undefined);
+  closeOnBackdrop = input(false);
   saved        = output<Counterparty>();
   cancelled    = output<void>();
 

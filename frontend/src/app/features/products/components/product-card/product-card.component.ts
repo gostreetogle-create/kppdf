@@ -12,6 +12,7 @@ import { Product } from '../../../../core/services/api.service';
 export class ProductCardComponent {
   product = input.required<Product>();
   edit    = output<void>();
+  duplicate = output<void>();
   passport = output<void>();
   delete  = output<void>();
 

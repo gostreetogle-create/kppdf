@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Counterparty } from '../models/counterparty.model';
 import { requirePermission } from '../middleware/rbac.guard';
 import { CounterpartyController } from '../controllers/counterparty.controller';
+import { mapCounterpartyToDto } from '../dtos/counterparty.dto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -40,7 +41,7 @@ router.get('/company', async (_req: Request, res: Response) => {
     const company = await Counterparty.findOne({ isOurCompany: true, status: 'active' })
       .sort({ isDefaultInitiator: -1, name: 1 });
     if (!company) { res.status(404).json({ message: 'Компания не настроена' }); return; }
-    res.json(company);
+    res.json(mapCounterpartyToDto(company));
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
@@ -62,7 +63,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
     if (q)      filter.$text  = { $search: String(q) };
     const list = await Counterparty.find(filter).sort({ name: 1 });
-    res.json(list);
+    res.json(list.map(mapCounterpartyToDto));
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });
   }

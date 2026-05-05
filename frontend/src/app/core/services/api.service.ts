@@ -3,81 +3,29 @@ import { HttpErrorResponse, HttpClient } from '@angular/common/http';
 import { Observable, catchError, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+// Импортируем типы из shared/types
+import { Product, ProductImage, ProductKind, ImageContext, createImage } from '@shared/types/Product';
+import { ProductSpec, ProductSpecGroup, ProductSpecParam } from '@shared/types/ProductSpec';
+import { Counterparty, LegalForm, CpRole, CpContact, KpType, CpStatus } from '@shared/types/Counterparty';
+import { Kp, KpItem, KpStatus, KP_TYPE_LABELS } from '@shared/types/Kp';
+import { AuthUser as AppUser, PermissionModule, PermissionMeta as PermissionDefinition } from '@shared/types/User';
+
+// Экспортируем типы повторно для удобства использования в других частях фронтенда
+export type { Product, ProductImage, ProductKind, ImageContext };
+export { createImage };
+export type { ProductSpec, ProductSpecGroup, ProductSpecParam };
+export type { Counterparty, LegalForm, CpRole, CpContact, KpType, CpStatus };
+export type { Kp, KpItem, KpStatus };
+export { KP_TYPE_LABELS };
+export type { AppUser, PermissionModule, PermissionDefinition };
+
 const BASE = environment.apiUrl;
-
-export type ProductKind   = 'ITEM' | 'SERVICE' | 'WORK';
-export type ImageContext  = 'product' | 'kp-page1' | 'kp-page2' | 'passport';
-export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
-
-export const KP_TYPE_LABELS: Record<KpType, string> = {
-  standard: 'КП',
-  response: 'Ответ на письмо',
-  special: 'Спецпредложение',
-  tender: 'Для тендера',
-  service: 'На услуги',
-};
-
-export interface ProductImage {
-  url:       string;
-  isMain:    boolean;
-  sortOrder: number;
-  context?:  ImageContext;  // optional — backward compatible, defaults to 'product'
-}
-
-/** Factory — единственный правильный способ создавать ProductImage */
-export function createImage(
-  url: string,
-  options: { isMain?: boolean; sortOrder?: number; context?: ImageContext } = {}
-): ProductImage {
-  return {
-    url,
-    isMain:    options.isMain    ?? false,
-    sortOrder: options.sortOrder ?? 0,
-    context:   options.context   ?? 'product',
-  };
-}
-
-export interface Product {
-  _id:          string;
-  specId?:      string;
-  code:         string;
-  name:         string;
-  description:  string;
-  category:     string;
-  subcategory?: string;
-  unit:         string;
-  price:        number;
-  costRub?:     number;
-  images:       ProductImage[];
-  isActive:     boolean;
-  kind:         ProductKind;
-  notes?:       string;
-}
-
-export interface ProductSpecParam {
-  name: string;
-  value: string;
-}
-
-export interface ProductSpecGroup {
-  title: string;
-  params: ProductSpecParam[];
-}
 
 export interface ProductSpecDrawings {
   viewFront?: string;
   viewSide?: string;
   viewTop?: string;
   view3D?: string;
-}
-
-export interface ProductSpec {
-  _id: string;
-  productId: string;
-  drawings: ProductSpecDrawings;
-  groups: ProductSpecGroup[];
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface ProductSpecTemplate {
@@ -108,20 +56,6 @@ export interface BackupItem {
   createdAt: string;
 }
 
-export interface AppUser {
-  _id: string;
-  username: string;
-  name: string;
-  roleId: string | null;
-  roleKey: string;
-  roleName: string;
-  permissions?: string[];
-  isSystemRole?: boolean;
-  isActive: boolean;
-  mustChangePassword: boolean;
-  createdAt?: string;
-}
-
 export interface Role {
   _id: string;
   name: string;
@@ -132,15 +66,6 @@ export interface Role {
   updatedAt?: string;
 }
 
-export type PermissionModule = 'kp' | 'products' | 'counterparties' | 'users' | 'settings' | 'backups';
-
-export interface PermissionDefinition {
-  key: string;
-  label: string;
-  module: PermissionModule;
-  description: string;
-}
-
 export type DictionaryType = 'category' | 'subcategory' | 'unit' | 'kind';
 
 export interface Dictionary {
@@ -149,53 +74,6 @@ export interface Dictionary {
   value:     string;
   sortOrder: number;
   isActive:  boolean;
-}
-
-export type LegalForm = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'МКУ' | 'Физлицо' | 'Другое';
-export type CpRole    = 'client' | 'supplier' | 'company';
-
-export interface CpContact {
-  name:      string;
-  position?: string;
-  phone?:    string;
-  email?:    string;
-}
-
-export interface Counterparty {
-  _id:                   string;
-  legalForm:             LegalForm;
-  role:                  CpRole[];
-  name:                  string;
-  shortName:             string;
-  inn:                   string;
-  kpp?:                  string;
-  ogrn?:                 string;
-  legalAddress?:         string;
-  actualAddress?:        string;
-  sameAddress:           boolean;
-  phone?:                string;
-  email?:                string;
-  website?:              string;
-  contacts:              CpContact[];
-  bankName?:             string;
-  bik?:                  string;
-  checkingAccount?:      string;
-  correspondentAccount?: string;
-  founderName?:          string;
-  founderNameShort?:     string;
-  status:                'active' | 'inactive';
-  notes?:                string;
-  tags:                  string[];
-  // Company profile (isOurCompany=true)
-  isOurCompany?:         boolean;
-  isDefaultInitiator?:   boolean;
-  images?:               ProductImage[];
-  footerText?:           string;
-  defaultMarkupPercent?: number;
-  defaultDiscountPercent?: number;
-  brandingTemplates?:    BrandingTemplate[];
-  createdAt:             string;
-  updatedAt:             string;
 }
 
 export interface BrandingTemplate {
@@ -235,93 +113,6 @@ export interface SwitchKpTypeResponse {
 export interface GuestPreviewIssueResponse {
   previewUrl: string;
   expiresInSeconds: number;
-}
-
-export interface KpItem {
-  productId:   string;
-  code?:       string;
-  name:        string;
-  description: string;
-  unit:        string;
-  price:       number;
-  qty:         number;
-  imageUrl?:   string;
-  markupEnabled?: boolean;
-  markupPercent?: number;
-  discountEnabled?: boolean;
-  discountPercent?: number;
-}
-
-export interface Kp {
-  _id: string;
-  title: string;
-  status: 'draft' | 'sent' | 'accepted' | 'rejected';
-  kpType: KpType;
-  counterpartyId?: string;
-  companyId?:      string;
-  recipient: {
-    name:                  string;
-    shortName?:            string;
-    legalForm?:            string;
-    inn?:                  string;
-    kpp?:                  string;
-    ogrn?:                 string;
-    legalAddress?:         string;
-    phone?:                string;
-    email?:                string;
-    bankName?:             string;
-    bik?:                  string;
-    checkingAccount?:      string;
-    correspondentAccount?: string;
-    founderName?:          string;
-    founderNameShort?:     string;
-  };
-  metadata: {
-    number: string;
-    createdAt?: Date;
-    validityDays: number;
-    prepaymentPercent: number;
-    productionDays: number;
-    tablePageBreakAfter?: number;
-    tablePageBreakFirstPage?: number;
-    tablePageBreakNextPages?: number;
-    photoScalePercent?: number;
-    photoCropPercent?: number;
-    showPhotoColumn?: boolean;
-    defaultMarkupPercent?: number;
-    defaultDiscountPercent?: number;
-  };
-  items: KpItem[];
-  conditions: string[];
-  vatPercent: number;
-  companySnapshot: {
-    companyId: string;
-    companyName: string;
-    templateKey: string;
-    templateName: string;
-    kpType: KpType;
-    assets: {
-      kpPage1: string;
-      kpPage2?: string;
-      passport?: string;
-      appendix?: string;
-    };
-    texts: {
-      headerNote?: string;
-      introText?: string;
-      footerText?: string;
-      closingText?: string;
-    };
-    requisitesSnapshot?: {
-      inn?: string;
-      kpp?: string;
-      ogrn?: string;
-      phone?: string;
-      email?: string;
-    };
-  };
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface CreateKpPayload {
@@ -367,6 +158,12 @@ export class ApiService {
 
   createProduct(data: Omit<Product, '_id'>): Observable<Product> {
     return this.http.post<Product>(`${BASE}/products`, data).pipe(
+      tap(() => this.invalidateProducts())
+    );
+  }
+
+  duplicateProduct(id: string): Observable<Product> {
+    return this.http.post<Product>(`${BASE}/products/${id}/duplicate`, {}).pipe(
       tap(() => this.invalidateProducts())
     );
   }
@@ -473,10 +270,6 @@ export class ApiService {
     return this.http.get(`${BASE}/kp/${id}/export`, {
       responseType: 'blob'
     });
-  }
-
-  getKpPdfPreviewUrl(id: string): string {
-    return `${BASE}/kp/${id}/preview`;
   }
 
   issueGuestPreviewLink(ttlDays = 7): Observable<GuestPreviewIssueResponse> {

@@ -1,9 +1,11 @@
 import { ImageContext } from './Product';
+import { KpType } from './Kp';
+
+export type { KpType };
 
 export type LegalForm  = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'МКУ' | 'Физлицо' | 'Другое';
 export type CpRole     = 'client' | 'supplier' | 'company';
 export type CpStatus   = 'active' | 'inactive';
-export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
 
 export interface CpContact {
   name:      string;
@@ -46,6 +48,7 @@ export interface ICounterparty {
   tags:                  string[];
   // Company profile
   isOurCompany?:         boolean;
+  isDefaultInitiator?:   boolean;
   images?:               CpImage[];
   footerText?:           string;
   defaultMarkupPercent?: number;
@@ -61,12 +64,7 @@ export interface ICounterparty {
       passport?: string;
       appendix?: string;
     };
-    texts: {
-      headerNote?: string;
-      introText?: string;
-      footerText?: string;
-      closingText?: string;
-    };
+    conditions?: string[];
   }>;
   createdAt?:            string;
   updatedAt?:            string;

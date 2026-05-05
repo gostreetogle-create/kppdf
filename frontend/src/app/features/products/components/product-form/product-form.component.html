@@ -1,4 +1,4 @@
-<ui-modal [title]="modalTitle" [maxWidth]="compactForKp() ? '820px' : '640px'" (closed)="cancelled.emit()">
+<ui-modal [title]="modalTitle" [maxWidth]="compactForKp() ? '820px' : '640px'" [closeOnBackdrop]="closeOnBackdrop()" (closed)="cancelled.emit()">
 
   <div modal-body>
     @if (errors().length > 0) {
@@ -11,6 +11,26 @@
       <p class="compact-kp-hint">Быстрое добавление товара в формате строки КП.</p>
       <div class="compact-kp-table" role="group" aria-label="Быстрое добавление товара в КП">
         <div class="compact-kp-table__row">
+          <div class="compact-kp-table__cell compact-kp-table__cell--photo">
+            <span>Фото</span>
+            <div class="compact-photo-box">
+              @if (form.images.length > 0) {
+                <div class="compact-photo-preview">
+                  <img [src]="form.images[0].url" alt="Preview" />
+                  <button class="compact-photo-remove" (click)="removeImage(0)" title="Удалить">✕</button>
+                </div>
+              } @else {
+                <label class="compact-photo-upload" [class.is-uploading]="uploadingImage()">
+                  <input type="file" accept="image/*" (change)="uploadImageFromFile($event)" [disabled]="uploadingImage()" />
+                  @if (uploadingImage()) {
+                    <span class="spinner"></span>
+                  } @else {
+                    <span class="plus">+</span>
+                  }
+                </label>
+              }
+            </div>
+          </div>
           <label class="compact-kp-table__cell">
             <span>Арт.</span>
             <input type="text" [(ngModel)]="form.code" required minlength="2" placeholder="АРТ-001" />

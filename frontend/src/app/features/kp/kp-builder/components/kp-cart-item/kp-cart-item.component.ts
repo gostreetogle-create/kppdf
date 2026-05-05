@@ -22,5 +22,6 @@ export class KpCartItemComponent {
   decrement = output<void>();
   increment = output<void>();
   edit = output<void>();
+  duplicate = output<void>();
   remove = output<void>();
 }

@@ -27,9 +27,11 @@
       <span class="value">{{ product().price | currency:'RUB':'symbol-narrow':'1.0-0' }}</span>
     </div>
 
-    <button ui-btn variant="secondary" size="sm" class="add-btn" type="button" (click)="onAdd.emit(product())">
-      <span class="icon-plus" aria-hidden="true"></span>
-      <span>Добавить</span>
-    </button>
+    <div class="actions">
+      <button ui-btn variant="secondary" size="sm" class="action-btn add-btn" type="button" (click)="onAdd.emit(product())">
+        <span class="icon-plus" aria-hidden="true"></span>
+        <span>Добавить</span>
+      </button>
+    </div>
   </div>
 </div>

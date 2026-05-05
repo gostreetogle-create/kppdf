@@ -95,6 +95,24 @@ export class ProductsComponent implements OnInit {
 
   openCreate() { this.editTarget.set(null); this.formOpen.set(true); }
   openEdit(p: Product) { this.editTarget.set(p); this.formOpen.set(true); }
+
+  openDuplicate(p: Product) {
+    this.loading.set(true);
+    this.api.duplicateProduct(p._id).subscribe({
+      next: (copy) => {
+        this.products.update(list => [copy, ...list]);
+        this.loading.set(false);
+        this.editTarget.set(copy);
+        this.formOpen.set(true);
+        this.notification.success('Товар скопирован. Теперь вы можете внести изменения.');
+      },
+      error: () => {
+        this.loading.set(false);
+        this.notification.error('Не удалось скопировать товар');
+      }
+    });
+  }
+
   closeForm() { this.formOpen.set(false); this.editTarget.set(null); }
   openSpecEditor(product: Product) { this.specTarget.set(product); }
   closeSpecEditor() { this.specTarget.set(null); }

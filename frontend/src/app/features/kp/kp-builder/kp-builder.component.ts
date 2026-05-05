@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ApiService, Kp, Product, KpItem, Counterparty, KpType, KP_TYPE_LABELS, BrandingTemplatesDto } from '../../../core/services/api.service';
+import { calculateItemUnitPrice, clampPercent, parsePercentInput } from '@shared/utils/price.utils';
 import { KpDocumentComponent } from '../components/kp-document/kp-document.component';
 import { KpCatalogItemComponent } from '../components/kp-catalog-item/kp-catalog-item.component';
 import { type KpCatalogItem, type PriceChangedEvent } from '../components/kp-catalog/kp-catalog.component';
@@ -93,7 +94,7 @@ export class KpBuilderComponent implements OnInit {
       name:        i.name,
       description: i.description,
       unit:        i.unit,
-      price:       this.itemUnitPrice(i),
+      price:       calculateItemUnitPrice(i),
       basePrice:   i.price,
       qty:         i.qty,
       imageUrl:    this.normalizeImageUrl(i.imageUrl)
@@ -101,7 +102,7 @@ export class KpBuilderComponent implements OnInit {
   );
 
   readonly subtotal = computed(() =>
-    this.kp()?.items.reduce((s, i) => s + this.itemUnitPrice(i) * i.qty, 0) ?? 0
+    this.kp()?.items.reduce((s, i) => s + calculateItemUnitPrice(i) * i.qty, 0) ?? 0
   );
   readonly vatAmount = computed(() =>
     Math.round(this.subtotal() * (this.kp()?.vatPercent ?? 20) / 100)
@@ -151,7 +152,7 @@ export class KpBuilderComponent implements OnInit {
   /** Есть ли несохранённые изменения — используется в CanDeactivate guard */
   readonly isDirty = computed(() => this.autosave.status() === 'unsaved');
   readonly normalizeImageUrlResolver = (url?: string) => this.normalizeImageUrl(url);
-  readonly itemUnitPriceResolver = (item: KpItem) => this.itemUnitPrice(item);
+  readonly itemUnitPriceResolver = (item: KpItem) => calculateItemUnitPrice(item);
 
   /** Флаг: данные уже загружены (чтобы effect не триггерил autosave при первой загрузке) */
   private initialized = false;
@@ -221,7 +222,18 @@ export class KpBuilderComponent implements OnInit {
           this.hydrateTypeControls(normalizedKp);
           this.applyCompanyDefaultsToBulk(normalizedKp);
           if (normalizedKp.items.length > 0) this.itemsCollapsed.set(false);
-          this.showRestoreBackup.set(this.hasBackupForKp(normalizedKp._id));
+          
+          // Проверяем наличие локального черновика
+          const hasBackup = this.hasBackupForKp(normalizedKp._id);
+          if (hasBackup) {
+            // Если черновик найден, восстанавливаем его автоматически без лишних вопросов
+            const restored = this.store.restoreFromBackup(normalizedKp._id);
+            if (restored) {
+              this.autosave.status.set('unsaved');
+              this.ns.info('Восстановлены несохраненные изменения из браузера');
+            }
+          }
+
           this.loading.set(false);
           const initCompanyId = normalizedKp.companyId || normalizedKp.companySnapshot?.companyId || ourCompanies[0]?._id || null;
           this.selectedCompanyId.set(initCompanyId);
@@ -284,7 +296,27 @@ export class KpBuilderComponent implements OnInit {
           this.productToEdit.set(p);
           this.productFormOpen.set(true);
         },
-        error: () => this.ns.error('Не удалось загрузить данные товара')
+        error: (err) => {
+          if (err.status === 404) {
+            this.ns.warning('Оригинальный товар удален из каталога. Вы можете отредактировать его данные как новый товар.');
+            // Создаем временный объект продукта из данных КП
+            const ghostProduct: any = {
+              _id: item.productId, // Сохраняем ID, но при сохранении он может быть заменен если мы решим создавать новый
+              name: item.name,
+              code: item.code || '',
+              description: item.description,
+              unit: item.unit,
+              price: item.price,
+              images: item.imageUrl ? [{ url: item.imageUrl, isMain: true }] : [],
+              kind: 'ITEM',
+              isActive: false
+            };
+            this.productToEdit.set(ghostProduct);
+            this.productFormOpen.set(true);
+          } else {
+            this.ns.error('Не удалось загрузить данные товара');
+          }
+        }
       });
     }
   }
@@ -298,6 +330,8 @@ export class KpBuilderComponent implements OnInit {
     // Обновляем в составе КП
     const kp = this.kp();
     if (kp) {
+      const isNew = !kp.items.some(i => i.productId === product._id);
+      
       const items = kp.items.map(i => i.productId === product._id ? {
         ...i,
         code: product.code,
@@ -307,12 +341,36 @@ export class KpBuilderComponent implements OnInit {
         price: product.price,
         imageUrl: this.normalizeImageUrl(product.images.find(im => im.isMain)?.url ?? product.images[0]?.url ?? i.imageUrl ?? '')
       } : i);
+
+      // Если товара не было в КП (это новый товар, созданный через форму), добавляем его
+      if (isNew) {
+        items.push({
+          productId:   product._id,
+          code:        product.code,
+          name:        product.name,
+          description: product.description,
+          unit:        product.unit,
+          price:       product.price,
+          qty:         1,
+          imageUrl:    this.normalizeImageUrl(product.images.find(im => im.isMain)?.url ?? product.images[0]?.url ?? ''),
+          markupEnabled: false,
+          markupPercent: 0,
+          discountEnabled: false,
+          discountPercent: 0
+        });
+      }
+
       this.setKpState({ ...kp, items });
+      
+      if (isNew) {
+        this.selectedItemIds.update(ids => [...ids, product._id]);
+        if (items.length > 0) this.itemsCollapsed.set(false);
+      }
     }
 
     this.productFormOpen.set(false);
     this.productToEdit.set(null);
-    this.ns.success('Товар обновлён');
+    this.ns.success(this.productToEdit() ? 'Товар обновлён' : 'Товар добавлен в КП');
   }
 
   onRecipientFormSaved(cp: Counterparty) {
@@ -449,8 +507,63 @@ export class KpBuilderComponent implements OnInit {
     this.updateQty(item, item.qty + 1);
   }
 
+  duplicateCartItem(item: KpItem) {
+    if (this.isReadOnly()) return;
+
+    this.ns.info('Создание копии товара...');
+    this.api.duplicateProduct(item.productId).subscribe({
+      next: (duplicated) => {
+        this.products.update(list => [duplicated, ...list]);
+        this.productToEdit.set(duplicated);
+        this.productFormOpen.set(true);
+        this.ns.success(`Создана копия: ${duplicated.name}. Внесите изменения и сохраните.`);
+      },
+      error: (err) => {
+        // Если товар удален из каталога (404), предлагаем создать новый на основе данных из КП
+        if (err.status === 404) {
+          this.ns.warning('Оригинальный товар удален из каталога. Создаем новый на основе данных из КП...');
+          
+          const newProductData: any = {
+            name: `${item.name} (копия)`,
+            code: `${item.code || 'NEW'}-copy`,
+            description: item.description,
+            unit: item.unit,
+            price: item.price,
+            images: item.imageUrl ? [{ url: item.imageUrl, isMain: true }] : [],
+            kind: 'ITEM',
+            isActive: false
+          };
+
+          this.api.createProduct(newProductData).subscribe({
+            next: (created) => {
+              this.products.update(list => [created, ...list]);
+              this.productToEdit.set(created);
+              this.productFormOpen.set(true);
+              this.ns.success(`Создан новый товар на основе данных из КП. Внесите изменения и сохраните.`);
+            },
+            error: () => this.ns.error('Не удалось создать товар на основе данных из КП')
+          });
+        } else {
+          this.ns.error('Не удалось продублировать товар');
+        }
+      }
+    });
+  }
+
   decrementQty(item: KpItem) {
     this.updateQty(item, Math.max(1, item.qty - 1));
+  }
+
+  duplicateProduct(product: Product) {
+    if (this.isReadOnly()) return;
+    this.api.duplicateProduct(product._id).subscribe({
+      next: (duplicated) => {
+        // Обновляем список товаров (products) - это вызовет перерисовку каталога
+        this.products.update(list => [duplicated, ...list]);
+        this.ns.success(`Товар «${product.name}» продублирован`);
+      },
+      error: () => this.ns.error('Не удалось продублировать товар')
+    });
   }
 
   isItemSelected(item: KpItem): boolean {
@@ -492,7 +605,7 @@ export class KpBuilderComponent implements OnInit {
   }
 
   onBulkMarkupInput(rawValue: string | number) {
-    const percent = this.clampPercent(this.parsePercentInput(rawValue), 0, 500);
+    const percent = clampPercent(parsePercentInput(rawValue), 0, 500);
     this.bulkMarkupPercent.set(percent);
     this.updateKpWith((prev) => ({
       ...prev,
@@ -502,7 +615,7 @@ export class KpBuilderComponent implements OnInit {
   }
 
   onBulkDiscountInput(rawValue: string | number) {
-    const percent = this.clampPercent(this.parsePercentInput(rawValue), 0, 100);
+    const percent = clampPercent(parsePercentInput(rawValue), 0, 100);
     this.bulkDiscountPercent.set(percent);
     this.updateKpWith((prev) => ({
       ...prev,
@@ -521,7 +634,7 @@ export class KpBuilderComponent implements OnInit {
     const kp = this.kp();
     if (!kp) return;
     const selected = this.selectedIdsSet(kp);
-    const percent = this.clampPercent(this.bulkMarkupPercent(), 0, 500);
+    const percent = clampPercent(this.bulkMarkupPercent(), 0, 500);
     this.bulkMarkupPercent.set(percent);
     this.setKpState({
       ...kp,
@@ -538,7 +651,7 @@ export class KpBuilderComponent implements OnInit {
     const kp = this.kp();
     if (!kp) return;
     const selected = this.selectedIdsSet(kp);
-    const percent = this.clampPercent(this.bulkDiscountPercent(), 0, 100);
+    const percent = clampPercent(this.bulkDiscountPercent(), 0, 100);
     this.bulkDiscountPercent.set(percent);
     this.setKpState({
       ...kp,
@@ -587,14 +700,14 @@ export class KpBuilderComponent implements OnInit {
 
   updatePhotoScalePercent(value: number) {
     if (this.isReadOnly()) return;
-    const uiValue = this.clampPercent(value, 0, KpBuilderComponent.PHOTO_SCALE_UI_MAX);
+    const uiValue = clampPercent(value, 0, KpBuilderComponent.PHOTO_SCALE_UI_MAX);
     const actualScale = KpBuilderComponent.PHOTO_SCALE_BASE + uiValue;
-    this.updateMetadata({ photoScalePercent: this.clampPercent(actualScale, 0, 1000) });
+    this.updateMetadata({ photoScalePercent: clampPercent(actualScale, 0, 1000) });
   }
 
   updatePhotoCropPercent(value: number) {
     if (this.isReadOnly()) return;
-    const uiValue = this.clampPercent(value, 0, KpBuilderComponent.PHOTO_CROP_UI_MAX);
+    const uiValue = clampPercent(value, 0, KpBuilderComponent.PHOTO_CROP_UI_MAX);
     this.updateMetadata({ photoCropPercent: uiValue });
   }
 
@@ -609,7 +722,7 @@ export class KpBuilderComponent implements OnInit {
 
   photoScaleUiValue(): number {
     const actual = Number(this.kp()?.metadata?.photoScalePercent ?? KpBuilderComponent.PHOTO_SCALE_BASE);
-    return this.clampPercent(actual - KpBuilderComponent.PHOTO_SCALE_BASE, 0, KpBuilderComponent.PHOTO_SCALE_UI_MAX);
+    return clampPercent(actual - KpBuilderComponent.PHOTO_SCALE_BASE, 0, KpBuilderComponent.PHOTO_SCALE_UI_MAX);
   }
 
   photoCropUiValue(): number {
@@ -629,7 +742,7 @@ export class KpBuilderComponent implements OnInit {
   }
 
   onPrepaymentPercentChange(value: number): void {
-    this.updateMetadata({ prepaymentPercent: this.clampPercent(value, 0, 100) });
+    this.updateMetadata({ prepaymentPercent: clampPercent(value, 0, 100) });
   }
 
   onProductionDaysChange(value: number): void {
@@ -637,7 +750,7 @@ export class KpBuilderComponent implements OnInit {
   }
 
   onVatPercentChange(value: number): void {
-    this.updateKp({ vatPercent: this.clampPercent(value, 0, 100) });
+    this.updateKp({ vatPercent: clampPercent(value, 0, 100) });
   }
 
   onDocumentPriceChanged(event: PriceChangedEvent): void {
@@ -885,34 +998,14 @@ export class KpBuilderComponent implements OnInit {
     return normalized.startsWith('/') ? normalized : `/${normalized}`;
   }
 
-  itemUnitPrice(item: KpItem): number {
-    const markupPercent = item.markupEnabled ? this.clampPercent(item.markupPercent ?? 0, 0, 500) : 0;
-    const discountPercent = item.discountEnabled ? this.clampPercent(item.discountPercent ?? 0, 0, 100) : 0;
-    const withMarkup = item.price * (1 + markupPercent / 100);
-    const withDiscount = withMarkup * (1 - discountPercent / 100);
-    return Math.max(0, Math.round(withDiscount));
-  }
-
-  private clampPercent(value: number, min: number, max: number): number {
-    const n = Number.isFinite(value) ? value : 0;
-    return Math.min(max, Math.max(min, n));
-  }
-
-  private parsePercentInput(value: string | number): number {
-    if (typeof value === 'number') return value;
-    if (!value?.trim()) return 0;
-    const n = Number(value);
-    return Number.isFinite(n) ? n : 0;
-  }
-
   private hydrateTypeControls(kp: Kp) {
     this.selectedKpType.set((kp.kpType ?? 'standard') as KpType);
     this.selectedCompanyId.set(kp.companyId || kp.companySnapshot?.companyId || null);
   }
 
   private applyCompanyDefaultsToBulk(kp: Kp) {
-    const markup = this.clampPercent(Number(kp.metadata?.defaultMarkupPercent ?? 0) || 0, 0, 500);
-    const discount = this.clampPercent(Number(kp.metadata?.defaultDiscountPercent ?? 0) || 0, 0, 100);
+    const markup = clampPercent(Number(kp.metadata?.defaultMarkupPercent ?? 0) || 0, 0, 500);
+    const discount = clampPercent(Number(kp.metadata?.defaultDiscountPercent ?? 0) || 0, 0, 100);
     this.bulkMarkupPercent.set(markup);
     this.bulkDiscountPercent.set(discount);
   }
@@ -993,13 +1086,6 @@ export class KpBuilderComponent implements OnInit {
     });
   }
 
-  onPreviewPdf() {
-    const kp = this.kp();
-    if (!kp) return;
-    const url = this.api.getKpPdfPreviewUrl(kp._id);
-    window.open(url, '_blank');
-  }
-
   onQuickPrint() {
     this.isPdfMenuOpen.set(false);
     window.print();
@@ -1031,22 +1117,11 @@ export class KpBuilderComponent implements OnInit {
   }
 
   restoreUnsavedBackup() {
-    const kpId = this.kp()?._id;
-    if (!kpId) return;
-    const restored = this.store.restoreFromBackup(kpId);
-    this.showRestoreBackup.set(false);
-    if (restored) {
-      this.autosave.status.set('unsaved');
-      this.ns.success('Локальная копия восстановлена');
-      return;
-    }
-    this.ns.warning('Локальная копия недоступна');
+    // Метод оставлен для совместимости, но теперь восстановление происходит автоматически в ngOnInit
   }
 
   dismissBackupRestore() {
-    const kpId = this.kp()?._id;
-    if (kpId) this.store.clearBackup(kpId);
-    this.showRestoreBackup.set(false);
+    // Метод оставлен для совместимости
   }
 
   private hasBackupForKp(kpId: string): boolean {

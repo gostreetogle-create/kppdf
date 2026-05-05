@@ -82,9 +82,6 @@
             </button>
             @if (isPdfMenuOpen()) {
               <div class="builder__pdf-menu" role="menu" (click)="$event.stopPropagation()">
-                <button type="button" class="builder__pdf-menu-item" role="menuitem" (click)="onPreviewPdf()">
-                  Просмотр PDF (в новом окне)
-                </button>
                 <button type="button" class="builder__pdf-menu-item" role="menuitem" (click)="onQuickPrint()">
                   Быстрая печать (Draft)
                 </button>
@@ -189,7 +186,8 @@
               <app-kp-catalog-item
                 [product]="product"
                 [isSelected]="isProductInKp(product)"
-                (onAdd)="addItem($event)">
+                (onAdd)="addItem($event)"
+                (onDuplicate)="duplicateProduct($event)">
               </app-kp-catalog-item>
             }
           </div>
@@ -275,6 +273,7 @@
           (qtyChange)="updateQty($event.item, $event.qty)"
           (incrementQty)="incrementQty($event)"
           (decrementQty)="decrementQty($event)"
+          (duplicateItem)="duplicateCartItem($event)"
           (removeItem)="removeItem($event)"
           (bulkMarkupInput)="onBulkMarkupInput($event)"
           (bulkDiscountInput)="onBulkDiscountInput($event)"
@@ -365,21 +364,6 @@
       <ng-container modal-footer>
         <button ui-btn (click)="resolveLeaveConfirm(false)">Остаться</button>
         <button ui-btn variant="primary" (click)="resolveLeaveConfirm(true)">Уйти</button>
-      </ng-container>
-    </ui-modal>
-  }
-
-  @if (showRestoreBackup()) {
-    <ui-modal
-      title="Восстановление черновика"
-      maxWidth="460px"
-      (closed)="dismissBackupRestore()">
-      <div modal-body>
-        <p class="leave-confirm-text">В браузере найдены несохраненные изменения по этому КП. Восстановить локальную копию?</p>
-      </div>
-      <ng-container modal-footer>
-        <button ui-btn (click)="dismissBackupRestore()">Нет, начать с сервера</button>
-        <button ui-btn variant="primary" (click)="restoreUnsavedBackup()">Восстановить</button>
       </ng-container>
     </ui-modal>
   }

@@ -10,6 +10,21 @@ export type Permission =
   | 'backups.manage'
   | 'users.manage';
 
+export type PermissionModule =
+  | 'kp'
+  | 'products'
+  | 'counterparties'
+  | 'users'
+  | 'settings'
+  | 'backups';
+
+export interface PermissionMeta {
+  key: Permission;
+  label: string;
+  module: PermissionModule;
+  description: string;
+}
+
 export interface IUser {
   _id: string;
   username: string;

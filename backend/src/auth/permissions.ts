@@ -1,29 +1,4 @@
-export type Permission =
-  | 'kp.create'
-  | 'kp.edit'
-  | 'kp.delete'
-  | 'kp.view'
-  | 'products.write'
-  | 'products.view'
-  | 'counterparties.crud'
-  | 'settings.write'
-  | 'backups.manage'
-  | 'users.manage';
-
-export type PermissionModule =
-  | 'kp'
-  | 'products'
-  | 'counterparties'
-  | 'users'
-  | 'settings'
-  | 'backups';
-
-export interface PermissionMeta {
-  key: Permission;
-  label: string;
-  module: PermissionModule;
-  description: string;
-}
+import { Permission, PermissionModule, PermissionMeta } from '../../../shared/types/User';
 
 export const PERMISSIONS: PermissionMeta[] = [
   { key: 'kp.create', label: 'Создавать КП', module: 'kp', description: 'Создание новых коммерческих предложений' },

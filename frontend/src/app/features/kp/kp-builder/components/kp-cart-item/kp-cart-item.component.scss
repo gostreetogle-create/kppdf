@@ -204,7 +204,7 @@
   gap: 2px;
 }
 
-.edit-btn, .remove-btn {
+.edit-btn, .remove-btn, .duplicate-btn-mini {
   all: unset;
   cursor: pointer;
   color: #d1d5db;
@@ -221,6 +221,7 @@
   }
 }
 
+.duplicate-btn-mini:hover:not(:disabled) { color: #10b981; }
 .edit-btn:hover:not(:disabled) { color: #3b82f6; }
 .remove-btn:hover:not(:disabled) { color: #ef4444; }
 .remove-btn { font-size: 16px; }

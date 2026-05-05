@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { Permission } from '../../../shared/types/User';
 import { User } from '../models/user.model';
 import { Role } from '../models/role.model';
-import { type Permission } from '../auth/permissions';
 
 export interface AuthPayload {
   userId: string;

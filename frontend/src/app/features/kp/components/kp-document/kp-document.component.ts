@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, computed, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KpBackgroundComponent } from '../kp-background/kp-background.component';
-import { KpHeaderComponent, type KpRecipient, type KpMetadata } from '../kp-header/kp-header.component';
+import { KpHeaderComponent } from '../kp-header/kp-header.component';
 import { KpCatalogComponent, type KpCatalogItem, type PriceChangedEvent } from '../kp-catalog/kp-catalog.component';
 import { KpTableComponent, type KpTotals } from '../kp-table/kp-table.component';
 import { KpTemplatePipe } from '../template-pipe/template.pipe';
+import { Kp, KpItem, KpRecipient, KpMetadata } from '@shared/types/Kp';
 
 interface KpPageChunk {
   items: KpCatalogItem[];
@@ -12,26 +13,6 @@ interface KpPageChunk {
   useFirstBackground: boolean;
   showHeader: boolean;
   showTotals: boolean;
-}
-
-interface CompanySnapshot {
-  companyId: string;
-  companyName: string;
-  templateKey: string;
-  templateName: string;
-  kpType: 'standard' | 'response' | 'special' | 'tender' | 'service';
-  assets: {
-    kpPage1: string;
-    kpPage2?: string;
-    passport?: string;
-    appendix?: string;
-  };
-  texts: {
-    headerNote?: string;
-    introText?: string;
-    footerText?: string;
-    closingText?: string;
-  };
 }
 
 @Component({
@@ -78,7 +59,7 @@ export class KpDocumentComponent {
   editablePrices = input(false);
   conditions = input<string[]>([]);
   vatPercent = input<number>(20);
-  companySnapshot = input.required<CompanySnapshot>();
+  companySnapshot = input.required<Kp['companySnapshot']>();
   priceChanged = output<PriceChangedEvent>();
 
   protected readonly totals = computed((): KpTotals => {

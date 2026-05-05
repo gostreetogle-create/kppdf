@@ -1,56 +1,18 @@
 import { Schema, model, Document } from 'mongoose';
+import { 
+  ICounterparty as ISharedCounterparty, 
+  CpContact, 
+  CpImage, 
+  LegalForm, 
+  CpRole, 
+  CpStatus, 
+  KpType 
+} from '../../../shared/types/Counterparty';
 
-export type LegalForm    = 'ООО' | 'ИП' | 'АО' | 'ПАО' | 'МКУ' | 'Физлицо' | 'Другое';
-export type CpRole       = 'client' | 'supplier' | 'company';
-export type CpStatus     = 'active' | 'inactive';
-export type ImageContext  = 'product' | 'kp-page1' | 'kp-page2' | 'passport';
-export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
-
-export interface IContact {
-  name:      string;
-  position?: string;
-  phone?:    string;
-  email?:    string;
-}
-
-export interface IImage {
-  url:       string;
-  isMain:    boolean;
-  sortOrder: number;
-  context?:  ImageContext;  // optional, default: 'product'
-}
-
-export interface ICounterparty extends Document {
-  legalForm:            LegalForm;
-  role:                 CpRole[];
-  name:                 string;
-  shortName:            string;
-  inn:                  string;
-  kpp?:                 string;
-  ogrn?:                string;
-  legalAddress?:        string;
-  actualAddress?:       string;
-  sameAddress:          boolean;
-  phone?:               string;
-  email?:               string;
-  website?:             string;
-  contacts:             IContact[];
-  bankName?:            string;
-  bik?:                 string;
-  checkingAccount?:     string;
-  correspondentAccount?:string;
-  founderName?:         string;
-  founderNameShort?:    string;
-  status:               CpStatus;
-  notes?:               string;
-  tags:                 string[];
-  // Company profile fields
-  isOurCompany:         boolean;
-  isDefaultInitiator?:  boolean;
-  images:               IImage[];   // context: kp-page1, kp-page2, passport
-  footerText?:          string;     // HTML — текст внизу КП
-  defaultMarkupPercent?: number;
-  defaultDiscountPercent?: number;
+export interface ICounterparty extends Omit<ISharedCounterparty, '_id' | 'createdAt' | 'updatedAt' | 'contacts' | 'images' | 'brandingTemplates'>, Document {
+  contacts: CpContact[];
+  images: CpImage[];
+  isDefaultInitiator?: boolean;
   brandingTemplates: Array<{
     key: string;
     name: string;
@@ -64,16 +26,18 @@ export interface ICounterparty extends Document {
     };
     conditions?: string[];
   }>;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const ContactSchema = new Schema<IContact>({
+const ContactSchema = new Schema<CpContact>({
   name:     { type: String, required: true },
   position: String,
   phone:    String,
   email:    String,
 }, { _id: false });
 
-const ImageSchema = new Schema<IImage>({
+const ImageSchema = new Schema<CpImage>({
   url:       { type: String, required: true },
   isMain:    { type: Boolean, default: false },
   sortOrder: { type: Number, default: 0 },

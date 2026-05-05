@@ -1,4 +1,4 @@
-<ui-modal [title]="title" maxWidth="680px" [closeOnBackdrop]="false" (closed)="cancelled.emit()">
+<ui-modal [title]="title" [maxWidth]="'640px'" [closeOnBackdrop]="closeOnBackdrop()" (closed)="cancelled.emit()">
 
   <div modal-body>
     @if (formError()) {

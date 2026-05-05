@@ -14,6 +14,7 @@ export class KpCatalogItemComponent {
   product = input.required<Product>();
   isSelected = input(false);
   onAdd = output<Product>();
+  onDuplicate = output<Product>();
 
   productImageUrl(): string | null {
     const image = this.product().images.find(i => i.isMain) ?? this.product().images[0];

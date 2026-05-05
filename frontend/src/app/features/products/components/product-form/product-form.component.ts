@@ -37,6 +37,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   product   = input<Product | null>(null);
   compactForKp = input(false);
+  closeOnBackdrop = input(false);
   saved     = output<Product>();
   cancelled = output<void>();
 

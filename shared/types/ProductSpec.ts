@@ -8,15 +8,17 @@ export interface ProductSpecGroup {
   params: ProductSpecParam[];
 }
 
+export interface ProductSpecDrawings {
+  viewFront?: string;
+  viewSide?: string;
+  viewTop?: string;
+  view3D?: string;
+}
+
 export interface ProductSpec {
   _id?: string;
   productId: string;
-  drawings: {
-    viewFront?: string;
-    viewSide?: string;
-    viewTop?: string;
-    view3D?: string;
-  };
+  drawings: ProductSpecDrawings;
   groups: ProductSpecGroup[];
   createdAt?: Date;
   updatedAt?: Date;

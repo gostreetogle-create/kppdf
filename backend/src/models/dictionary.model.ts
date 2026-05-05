@@ -1,12 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
+import { IDictionary as ISharedDictionary, DictionaryType } from '../../../shared/types/ApiResponses';
 
-export type DictionaryType = 'category' | 'subcategory' | 'unit' | 'kind';
-
-export interface IDictionary extends Document {
-  type:      DictionaryType;
-  value:     string;
-  sortOrder: number;
-  isActive:  boolean;
+export interface IDictionary extends Omit<ISharedDictionary, '_id'>, Document {
 }
 
 const DictionarySchema = new Schema<IDictionary>({

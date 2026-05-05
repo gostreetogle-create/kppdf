@@ -1,20 +1,17 @@
 import { Schema, model, Document } from 'mongoose';
+import { IUser as ISharedUser } from '../../../shared/types/User';
 
-export interface IUser extends Document {
-  username:     string;
+export interface IUser extends Omit<ISharedUser, '_id' | 'roleId' | 'roleKey' | 'roleName' | 'permissions' | 'createdAt' | 'updatedAt'>, Document {
   passwordHash: string;
-  name:         string;
   roleId:       Schema.Types.ObjectId | string;
   // legacy field kept for compatibility/migration
   role?:        string;
-  isActive:     boolean;
-  mustChangePassword: boolean;
   refreshTokenHash?: string | null;
   refreshTokenExpiresAt?: Date | null;
   createdBy?: string | null;
   updatedBy?: string | null;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const UserSchema = new Schema<IUser>({

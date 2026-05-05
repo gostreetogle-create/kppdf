@@ -19,3 +19,10 @@ export interface IDictionary {
   sortOrder: number;
   isActive:  boolean;
 }
+
+export interface ISetting {
+  _id:   string;
+  key:   string;
+  value: any;
+  label: string;
+}

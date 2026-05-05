@@ -1,32 +1,14 @@
 import { Schema, model, Document } from 'mongoose';
+import { IProduct as ISharedProduct, ProductImage, ProductKind } from '../../../shared/types/Product';
 
-export type ProductKind = 'ITEM' | 'SERVICE' | 'WORK';
-
-export interface IProductImage {
-  url:       string;
-  isMain:    boolean;
-  sortOrder: number;
-  context?:  'product' | 'kp-page1' | 'kp-page2' | 'passport'; // optional, default: 'product'
+export interface IProduct extends Omit<ISharedProduct, '_id' | 'createdAt' | 'updatedAt' | 'images' | 'kind'>, Document {
+  images: ProductImage[];
+  kind: ProductKind;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface IProduct extends Document {
-  code:         string;
-  name:         string;
-  description:  string;
-  category:     string;
-  subcategory?: string;
-  unit:         string;
-  price:        number;
-  costRub?:     number;
-  images:       IProductImage[];
-  isActive:     boolean;
-  kind:         ProductKind;
-  notes?:       string;
-  createdAt?:   Date;
-  updatedAt?:   Date;
-}
-
-const ProductImageSchema = new Schema<IProductImage>({
+const ProductImageSchema = new Schema<ProductImage>({
   url:       { type: String, required: true },
   isMain:    { type: Boolean, default: false },
   sortOrder: { type: Number, default: 0 },

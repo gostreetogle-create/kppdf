@@ -6,9 +6,14 @@
 kppdf/
 ├── backend/                  # Express API
 │   └── src/
+│       ├── controllers/      # Контроллеры (с маппингом в DTO)
+│       ├── dtos/             # Data Transfer Objects (синхронизация с shared)
 │       ├── models/           # Mongoose-схемы (Product, Kp)
 │       ├── routes/           # REST-роуты (/api/products, /api/kp)
 │       └── app.ts            # Точка входа, подключение к MongoDB
+├── shared/                   # Общий код для frontend и backend
+│   ├── types/                # Canonical TypeScript interfaces
+│   └── utils/                # Общая бизнес-логика (price calculation и др.)
 ├── frontend/                 # Angular 19 SPA
 │   └── src/
 │       ├── styles/           # Design tokens, глобальные стили
@@ -82,6 +87,7 @@ kppdf/
 | `BadgeComponent`   | `<ui-badge>`           | Цветной бейдж для статусов        |
 | `ModalComponent`   | `<ui-modal>`           | Модальное окно со слотами         |
 | `FormFieldComponent`| `<ui-form-field>`     | Обёртка поля формы с label/error  |
+| `EmptyStateComponent`| `<ui-empty-state>`    | Состояние пустого списка/поиска   |
 | `AlertComponent`   | `<ui-alert>`           | Блок уведомления                  |
 
 ---

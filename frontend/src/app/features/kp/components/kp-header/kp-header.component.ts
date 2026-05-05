@@ -1,38 +1,8 @@
 import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KpType } from '../../../../core/services/api.service';
+import { KpType, KpRecipient, KpMetadata } from '@shared/types/Kp';
 
-export interface KpRecipient {
-  name:                  string;
-  shortName?:            string;
-  legalForm?:            string;
-  inn?:                  string;
-  kpp?:                  string;
-  ogrn?:                 string;
-  legalAddress?:         string;
-  phone?:                string;
-  email?:                string;
-  bankName?:             string;
-  bik?:                  string;
-  checkingAccount?:      string;
-  correspondentAccount?: string;
-  founderName?:          string;
-  founderNameShort?:     string;
-}
-
-export interface KpMetadata {
-  number:            string;
-  createdAt?:        Date;
-  validityDays:      number;
-  prepaymentPercent: number;
-  productionDays:    number;
-  tablePageBreakAfter?: number;
-  tablePageBreakFirstPage?: number;
-  tablePageBreakNextPages?: number;
-  photoScalePercent?: number;
-  photoCropPercent?: number;
-  showPhotoColumn?: boolean;
-}
+export type { KpType, KpRecipient, KpMetadata };
 
 @Component({
   selector: 'app-kp-header',

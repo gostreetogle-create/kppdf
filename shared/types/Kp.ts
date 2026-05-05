@@ -36,7 +36,7 @@ export interface KpRecipient {
 
 export interface KpMetadata {
   number:            string;
-  createdAt?:        Date;
+  createdAt?:        string | Date;
   validityDays:      number;
   prepaymentPercent: number;
   productionDays:    number;
@@ -94,6 +94,14 @@ export interface IKp {
 
 /** Alias для совместимости с frontend (без префикса I) */
 export type Kp = IKp;
+
+export const KP_TYPE_LABELS: Record<KpType, string> = {
+  standard: 'КП',
+  response: 'Ответ на письмо',
+  special: 'Спецпредложение',
+  tender: 'Для тендера',
+  service: 'На услуги',
+};
 
 // Бизнес-правила статусов (см. docs/business-rules.md)
 export const KP_STATUS_TRANSITIONS: Record<KpStatus, KpStatus[]> = {

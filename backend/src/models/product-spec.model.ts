@@ -1,41 +1,29 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { 
+  ProductSpec as ISharedProductSpec, 
+  ProductSpecGroup, 
+  ProductSpecParam,
+  ProductSpecDrawings
+} from '../../../shared/types/ProductSpec';
 
-export interface IProductSpecParam {
-  name: string;
-  value: string;
-}
-
-export interface IProductSpecGroup {
-  title: string;
-  params: IProductSpecParam[];
-}
-
-export interface IProductSpecDrawings {
-  viewFront?: string;
-  viewSide?: string;
-  viewTop?: string;
-  view3D?: string;
-}
-
-export interface IProductSpec extends Document {
+export interface IProductSpec extends Omit<ISharedProductSpec, '_id' | 'productId' | 'createdAt' | 'updatedAt' | 'groups'>, Document {
   productId: Types.ObjectId;
-  drawings: IProductSpecDrawings;
-  groups: IProductSpecGroup[];
-  createdAt?: Date;
-  updatedAt?: Date;
+  groups: ProductSpecGroup[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const ProductSpecParamSchema = new Schema<IProductSpecParam>({
+const ProductSpecParamSchema = new Schema<ProductSpecParam>({
   name: { type: String, required: true, trim: true },
   value: { type: String, required: true, trim: true }
 }, { _id: false });
 
-const ProductSpecGroupSchema = new Schema<IProductSpecGroup>({
+const ProductSpecGroupSchema = new Schema<ProductSpecGroup>({
   title: { type: String, required: true, trim: true },
   params: { type: [ProductSpecParamSchema], default: [] }
 }, { _id: false });
 
-const ProductSpecDrawingsSchema = new Schema<IProductSpecDrawings>({
+const ProductSpecDrawingsSchema = new Schema<ProductSpecDrawings>({
   viewFront: { type: String, trim: true },
   viewSide: { type: String, trim: true },
   viewTop: { type: String, trim: true },

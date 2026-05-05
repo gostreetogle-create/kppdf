@@ -1,5 +1,5 @@
 .ui-empty-state {
-  padding: var(--spacing-6);
+  padding: var(--ui-spacing-6);
   border: 1px dashed var(--ui-border);
   border-radius: var(--radius-lg);
   color: var(--ui-text-soft);
@@ -7,11 +7,11 @@
   display: grid;
   place-items: center;
   text-align: center;
-  gap: var(--spacing-2);
+  gap: var(--ui-spacing-2);
 }
 
 .ui-empty-state--compact {
-  padding: var(--spacing-4);
+  padding: var(--ui-spacing-4);
 }
 
 .ui-empty-state__title {
@@ -27,6 +27,6 @@
 
 .ui-empty-state__icon {
   font-size: 2rem;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--ui-spacing-2);
   opacity: 0.5;
 }

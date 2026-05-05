@@ -36,11 +36,22 @@
   }
 
   @if (loading()) {
-    <div class="loading-state">Загрузка...</div>
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <span>Загрузка контрагентов...</span>
+    </div>
   } @else if (counterparties().length === 0) {
     <ui-empty-state>
-      <p empty-title>Контрагенты не найдены</p>
-      <button empty-actions ui-btn variant="primary" (click)="openCreate()">Создать первого</button>
+      <p empty-title>
+        {{ search() ? 'Контрагенты не найдены по запросу "' + search() + '"' : 'Список контрагентов пуст' }}
+      </p>
+      <div empty-actions>
+        @if (search()) {
+          <button ui-btn (click)="search.set('')">Сбросить поиск</button>
+        } @else {
+          <button ui-btn variant="primary" (click)="openCreate()">Создать первого</button>
+        }
+      </div>
     </ui-empty-state>
   } @else {
     <div class="counterparties-grid">

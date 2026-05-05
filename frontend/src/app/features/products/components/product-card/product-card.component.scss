@@ -126,7 +126,7 @@
 
   &__actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     background: var(--ui-bg-soft);
     border-top: 1px solid var(--ui-border-light);
   }
@@ -137,11 +137,11 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px;
+  padding: 10px 4px;
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--ui-text-secondary);
   transition: all 0.2s ease;
@@ -153,16 +153,22 @@
 
   &--edit {
     border-right: 1px solid var(--ui-border-light);
+    border-bottom: 1px solid var(--ui-border-light);
     &:hover { color: var(--ui-primary); }
   }
 
-  &--delete {
-    &:hover { color: var(--ui-danger); background: var(--ui-danger-soft); }
+  &--duplicate {
+    border-bottom: 1px solid var(--ui-border-light);
+    &:hover { color: var(--ui-primary); }
   }
 
   &--passport {
     border-right: 1px solid var(--ui-border-light);
     &:hover { color: var(--ui-primary); }
+  }
+
+  &--delete {
+    &:hover { color: var(--ui-danger); background: var(--ui-danger-soft); }
   }
 
   &--passport-active {

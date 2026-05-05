@@ -62,6 +62,7 @@ Client-side session persistence:
 | GET | `/api/products/:id` | Один товар |
 | POST | `/api/products/bulk` | Массовый импорт JSON: `{ items: Product[], mode: "skip" \| "update" }` |
 | POST | `/api/products/upload-image` | Upload фото товара (`multipart/form-data`, поле `file`) |
+| POST | `/api/products/:id/duplicate` | Дублировать товар (копирует данные и тех. паспорт, возвращает новый товар) |
 | POST | `/api/products` | Создать |
 | PUT | `/api/products/:id` | Обновить |
 | DELETE | `/api/products/:id` | Удалить |

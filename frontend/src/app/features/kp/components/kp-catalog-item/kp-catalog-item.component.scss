@@ -157,13 +157,44 @@
   }
 }
 
-.add-btn {
-  padding: 0.22rem 0.64rem;
+.actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.action-btn {
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  background: color-mix(in srgb, var(--ui-bg-soft) 85%, transparent);
+  border: 1px solid var(--ui-border);
+
+  &:hover {
+    background: var(--ui-primary-focus);
+    border-color: var(--ui-primary);
+    color: var(--ui-primary);
+    transform: scale(1.05);
+  }
+
+  &.add-btn {
+    width: auto;
+    height: 28px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+}
+
+.icon-duplicate {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .icon-plus {
