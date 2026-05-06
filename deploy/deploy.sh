@@ -148,13 +148,8 @@ log "Собираю backend..."
 npm --prefix "${REPO_ROOT}/backend" ci
 npm --prefix "${REPO_ROOT}/backend" run build
 
-# tsc with rootDir=.. outputs to dist/backend/src/app.js
-# Ensure the expected path dist/app.js exists
-if [[ -f "${REPO_ROOT}/backend/dist/backend/src/app.js" ]]; then
-  log "Fixing build output path..."
-  mkdir -p "${REPO_ROOT}/backend/dist"
-  cp "${REPO_ROOT}/backend/dist/backend/src/app.js" "${REPO_ROOT}/backend/dist/app.js"
-  rm -rf "${REPO_ROOT}/backend/dist/backend"
+if [[ ! -f "${REPO_ROOT}/backend/dist/app.js" ]]; then
+  err "После сборки не найден ${REPO_ROOT}/backend/dist/app.js"
 fi
 
 log "Собираю frontend..."

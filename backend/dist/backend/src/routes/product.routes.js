@@ -67,8 +67,14 @@ router.get('/', async (req, res) => {
             filter.category = category;
         if (kind)
             filter.kind = kind;
-        if (isActive !== undefined)
+        if (isActive !== undefined) {
             filter.isActive = isActive === 'true';
+        }
+        else {
+            // По умолчанию показываем только активные
+            // $ne: false — включает и true, и документы без поля isActive (старые из бэкапа)
+            filter.isActive = { $ne: false };
+        }
         if (q)
             filter.$text = { $search: String(q) };
         const pageNum = Math.max(1, Number.parseInt(String(page ?? ''), 10) || 1);

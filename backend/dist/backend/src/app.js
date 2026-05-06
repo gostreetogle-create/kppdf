@@ -41,6 +41,20 @@ app.use((req, _res, next) => {
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', uptime: process.uptime() });
 });
+// Version endpoint — регистрируем ДО /api/*, чтобы не требовал авторизации
+app.get('/api/version', (_req, res) => {
+    let commit = process.env.GIT_COMMIT;
+    if (!commit || commit.startsWith('$(')) {
+        try {
+            const { execSync } = require('child_process');
+            commit = execSync('git rev-parse --short HEAD', { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+        }
+        catch {
+            commit = 'unknown';
+        }
+    }
+    res.json({ commit, time: new Date().toISOString() });
+});
 const loginAttempts = new Map();
 app.use('/api/auth/login', (req, res, next) => {
     const ip = req.ip ?? 'unknown';
