@@ -156,6 +156,10 @@ export class ApiService {
     return this.http.get<Product[]>(`${BASE}/products`, { params: normalizedParams });
   }
 
+  getVersion(): Observable<{ commit: string; time: string }> {
+    return this.http.get<{ commit: string; time: string }>(`${BASE}/version`);
+  }
+
   getProductsPage(params: {
     page: number;
     limit: number;

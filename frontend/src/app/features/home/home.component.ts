@@ -37,9 +37,13 @@ export class HomeComponent implements OnInit {
   loading     = signal(true);
   error       = signal('');
   duplicating = signal<string | null>(null);
+  version     = signal('');
 
   ngOnInit() {
     this.loadKpList();
+    this.api.getVersion()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(v => this.version.set(v.commit.slice(0, 7)));
   }
 
   loadKpList() {

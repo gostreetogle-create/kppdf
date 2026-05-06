@@ -1,5 +1,17 @@
 @use '../../../styles/tokens' as *;
 
+.version-badge {
+  display: inline-block;
+  margin-bottom: $space-3;
+  padding: 0.2rem $space-3;
+  font-size: $font-xs;
+  font-family: monospace;
+  color: var(--ui-text-muted);
+  background: var(--ui-bg-soft);
+  border: 1px solid var(--ui-border-light);
+  border-radius: $radius-full;
+}
+
 .home-actions {
   display: flex;
   gap: $space-3;

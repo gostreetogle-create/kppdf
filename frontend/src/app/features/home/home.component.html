@@ -7,6 +7,10 @@
     </div>
   </ui-page-header>
 
+  @if (version()) {
+    <div class="version-badge">commit: {{ version() }}</div>
+  }
+
   @if (error()) {
     <ui-alert type="error">{{ error() }}</ui-alert>
   }

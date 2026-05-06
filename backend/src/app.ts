@@ -43,6 +43,10 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+app.get('/version', (_req, res) => {
+  res.json({ commit: process.env.GIT_COMMIT || 'unknown', time: new Date().toISOString() });
+});
+
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 app.use('/api/auth/login', (req, res, next) => {
   const ip = req.ip ?? 'unknown';
