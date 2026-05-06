@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn src/app.ts",
     "build": "tsc",
+    "postbuild": "node scripts/fix-build.js",
     "start": "node dist/app.js",
     "seed:admin": "ts-node-dev --respawn src/scripts/seed-admin.ts",
     "seed:owner": "ts-node-dev --respawn src/scripts/seed-owner.ts",

@@ -148,8 +148,8 @@ log "Собираю backend..."
 npm --prefix "${REPO_ROOT}/backend" ci
 npm --prefix "${REPO_ROOT}/backend" run build
 
-# Fix: if rootDir=.. was used, tsc outputs to dist/backend/src/app.js
-# Move it to the expected location dist/app.js
+# tsc with rootDir=.. outputs to dist/backend/src/app.js
+# Ensure the expected path dist/app.js exists
 if [[ -f "${REPO_ROOT}/backend/dist/backend/src/app.js" ]]; then
   log "Fixing build output path..."
   mkdir -p "${REPO_ROOT}/backend/dist"
@@ -206,7 +206,7 @@ Wants=mongod.service
 [Service]
 Type=simple
 WorkingDirectory=${REPO_ROOT}/backend
-ExecStart=$(command -v node) ${REPO_ROOT}/backend/dist/backend/src/app.js
+ExecStart=$(command -v node) ${REPO_ROOT}/backend/dist/app.js
 Restart=always
 RestartSec=5
 EnvironmentFile=${REPO_ROOT}/backend/.env
