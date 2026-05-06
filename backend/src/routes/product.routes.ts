@@ -58,7 +58,12 @@ router.get('/', async (req: Request, res: Response) => {
     const filter: Record<string, any> = {};
     if (category) filter.category = category;
     if (kind)     filter.kind     = kind;
-    if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (isActive !== undefined) {
+      filter.isActive = isActive === 'true';
+    } else if (page === undefined && limit === undefined) {
+      // Если это не пагинация (например, выбор в КП), показываем только активные
+      filter.isActive = true;
+    }
     if (q)        filter.$text    = { $search: String(q) };
 
     const pageNum = Math.max(1, Number.parseInt(String(page ?? ''), 10) || 1);
