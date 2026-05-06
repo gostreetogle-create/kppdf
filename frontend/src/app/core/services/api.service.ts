@@ -304,6 +304,10 @@ export class ApiService {
     return this.http.post<Kp>(`${BASE}/kp/${id}/duplicate`, {});
   }
 
+  createKpRevision(id: string): Observable<Kp> {
+    return this.http.post<Kp>(`${BASE}/kp/${id}/revision`, {});
+  }
+
   exportKpPdf(id: string): Observable<Blob> {
     return this.http.get(`${BASE}/kp/${id}/export`, { responseType: 'blob' });
   }

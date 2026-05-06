@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, signal, computed, inject, DestroyRef, effect, HostListener } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin, map, Observable, Subject, take, distinctUntilChanged, switchMap } from 'rxjs';
+import { forkJoin, map, Observable, Subject, take, distinctUntilChanged, switchMap, of, tap, combineLatest, catchError, throwError } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -109,10 +109,13 @@ export class KpBuilderComponent implements OnInit {
   readonly subtotal = computed(() =>
     this.kp()?.items.reduce((s, i) => s + calculateItemUnitPrice(i) * i.qty, 0) ?? 0
   );
-  readonly vatAmount = computed(() =>
-    Math.round(this.subtotal() * (this.kp()?.vatPercent ?? 20) / 100)
-  );
-  readonly total = computed(() => this.subtotal() + this.vatAmount());
+  readonly vatAmount = computed(() => {
+    const subtotal = this.subtotal();
+    const vatPercent = this.kp()?.vatPercent ?? 20;
+    // НДС включен в subtotal согласно бизнес-правилам
+    return Math.round(subtotal * vatPercent / (100 + vatPercent));
+  });
+  readonly total = computed(() => this.subtotal());
   readonly categories = computed(() =>
     Array.from(new Set(this.products().map(p => p.category).filter(Boolean))).sort((a, b) => a.localeCompare(b))
   );
@@ -167,7 +170,7 @@ export class KpBuilderComponent implements OnInit {
   readonly itemUnitPriceResolver = (item: KpItem) => calculateItemUnitPrice(item);
 
   /** Флаг: данные уже загружены (чтобы effect не триггерил autosave при первой загрузке) */
-  private initialized = false;
+  private readonly initialized = signal(false);
   /** Первый проход effect после init пропускаем как baseline */
   private autosavePrimed = false;
   /** Автосохранение включаем только после первой позиции товара */
@@ -199,7 +202,7 @@ export class KpBuilderComponent implements OnInit {
   constructor() {
     effect(() => {
       const kp = this.kp();
-      if (!kp || !this.initialized) return;
+      if (!kp || !this.initialized()) return;
       if (this.viewingVersion() !== null) return;
       if (!this.autosavePrimed) {
         this.autosavePrimed = true;
@@ -215,121 +218,155 @@ export class KpBuilderComponent implements OnInit {
   }
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id')!;
-    const selectCpId = this.route.snapshot.queryParamMap.get('selectCp');
-    this.kpId = id;
-
-    const rawVersion = this.route.snapshot.queryParamMap.get('version');
-    const initialVersion = rawVersion ? Number(rawVersion) : null;
-    this.viewingVersion.set(initialVersion !== null && Number.isFinite(initialVersion) ? initialVersion : null);
-
-    const counterparties$ = this.api.getCounterparties({ status: 'active' }).pipe(
-      map(list => list.filter(c => c.role.includes('client') || c.role.includes('company')))
-    );
-    const ourCompanies$ = this.api.getCounterparties({ isOurCompany: true, status: 'active' });
-
-    const kp$ = this.viewingVersion() !== null
-      ? this.api.getKpVersion(id, this.viewingVersion() as number)
-      : this.api.getKp(id);
-
-    forkJoin({ kp: kp$, counterparties: counterparties$, ourCompanies: ourCompanies$ })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ({ kp, counterparties, ourCompanies }) => {
-          const normalizedKp = this.normalizePaginationMetadata(kp);
-          this.counterparties.set(counterparties);
-          this.ourCompanies.set(ourCompanies);
-          this.setKpState(normalizedKp, false);
-          this.versions.set(normalizedKp.versions ?? []);
-          this.selectAllItems();
-          this.hydrateTypeControls(normalizedKp);
-          this.applyCompanyDefaultsToBulk(normalizedKp);
-          if (normalizedKp.items.length > 0) this.itemsCollapsed.set(false);
-          
-          if (this.viewingVersion() === null) {
-            const hasBackup = this.hasBackupForKp(normalizedKp._id);
-            if (hasBackup) {
-              const restored = this.store.restoreFromBackup(normalizedKp._id);
-              if (restored) {
-                this.autosave.status.set('unsaved');
-                this.ns.info('Восстановлены несохраненные изменения из браузера');
-              }
-            }
-          }
-
-          this.loading.set(false);
-          const initCompanyId = normalizedKp.companyId || normalizedKp.companySnapshot?.companyId || ourCompanies[0]?._id || null;
-          this.selectedCompanyId.set(initCompanyId);
-          if (initCompanyId) this.loadBrandingTemplates(initCompanyId, normalizedKp);
-          this.refreshVersions();
-          Promise.resolve().then(() => {
-            if (selectCpId && this.viewingVersion() === null) {
-              this.fillFromCounterparty(selectCpId);
-              void this.router.navigate([], {
-                relativeTo: this.route,
-                queryParams: { selectCp: null },
-                queryParamsHandling: 'merge',
-                replaceUrl: true
-              });
-            }
-            this.initialized = true;
-          });
-        },
-        error: () => {
-          this.loading.set(false);
-          this.ns.error('КП не найдено или недоступно');
-          void this.router.navigate(['/']);
-        }
-      });
-
+    // Подгружаем список товаров один раз при инициализации компонента
     this.api.getProducts()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(p => this.products.set(p));
 
-    this.route.queryParamMap
-      .pipe(
-        map((params) => params.get('version')),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe((value) => {
-        const parsed = value ? Number(value) : null;
-        const nextVersion = value && Number.isFinite(parsed) ? parsed : null;
-        if (nextVersion === this.viewingVersion()) return;
-        this.viewingVersion.set(nextVersion);
-        this.reloadKp();
-      });
+    // Объединяем параметры пути и query-параметры в один поток для исключения лишних перезагрузок
+    combineLatest([
+      this.route.paramMap.pipe(map(p => p.get('id')!), distinctUntilChanged()),
+      this.route.queryParamMap.pipe(map(p => p.get('version')), distinctUntilChanged())
+    ])
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe(([id, versionStr]: [string, string | null]) => {
+      this.kpId = id;
+      const version = versionStr ? Number(versionStr) : null;
+      this.viewingVersion.set(version !== null && Number.isFinite(version) ? version : null);
+      this.reloadKpWithContext();
+    });
   }
 
-  private reloadKp() {
+  private reloadKpWithContext() {
     this.loading.set(true);
+    this.initialized.set(false);
     this.autosavePrimed = false;
     this.autosaveEnabled = false;
-    this.autosave.status.set('saved');
-    const version = this.viewingVersion();
-    const kp$ = version !== null
-      ? this.api.getKpVersion(this.kpId, version)
+
+    const isPdfMode = this.route.snapshot.queryParamMap.get('pdf') === '1';
+    const selectCpId = this.route.snapshot.queryParamMap.get('selectCp');
+
+    const counterparties$ = this.api.getCounterparties({ status: 'active' }).pipe(
+      map(list => list.filter(c => c.role.includes('client') || c.role.includes('company'))),
+      catchError(() => of([] as Counterparty[]))
+    );
+    const ourCompanies$ = this.api.getCounterparties({ isOurCompany: true, status: 'active' }).pipe(
+      catchError(() => of([] as Counterparty[]))
+    );
+
+    const kp$ = this.viewingVersion() !== null
+      ? this.api.getKpVersion(this.kpId, this.viewingVersion() as number)
       : this.api.getKp(this.kpId);
-    kp$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+
+    forkJoin({ 
+      kp: kp$.pipe(catchError((err: any) => throwError(() => err))), 
+      counterparties: counterparties$, 
+      ourCompanies: ourCompanies$ 
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (kp) => {
-          const normalized = this.normalizePaginationMetadata(kp);
-          this.setKpState(normalized, false);
-          this.versions.set(normalized.versions ?? []);
+        next: ({ kp, counterparties, ourCompanies }: { kp: Kp, counterparties: Counterparty[], ourCompanies: Counterparty[] }) => {
+          const normalizedKp = this.normalizePaginationMetadata(kp);
+          
+          this.counterparties.set(counterparties);
+          this.ourCompanies.set(ourCompanies);
+          
+          // Сначала обновляем состояние КП
+          this.setKpState(normalizedKp, false);
+          this.versions.set(normalizedKp.versions ?? []);
+          
           this.selectAllItems();
-          this.hydrateTypeControls(normalized);
-          this.applyCompanyDefaultsToBulk(normalized);
-          this.loading.set(false);
+          this.hydrateTypeControls(normalizedKp);
+          this.applyCompanyDefaultsToBulk(normalizedKp);
+          
+          if (normalizedKp.items.length > 0) {
+            this.itemsCollapsed.set(false);
+          }
+          
+          // Обработка бекапа только для черновика
+          if (this.viewingVersion() === null) {
+            const hasBackup = this.hasBackupForKp(normalizedKp._id);
+            if (hasBackup) {
+              const backup = this.getBackupSnapshot(normalizedKp._id);
+              if (backup && backup.status !== normalizedKp.status) {
+                this.store.clearBackup(normalizedKp._id);
+              } else {
+                const restored = this.store.restoreFromBackup(normalizedKp._id);
+                if (restored) {
+                  this.autosave.status.set('unsaved');
+                  this.ns.info('Восстановлены несохраненные изменения из браузера');
+                }
+              }
+            }
+          }
+
+          // Настройка компании
+          const initCompanyId = normalizedKp.companyId || normalizedKp.companySnapshot?.companyId || ourCompanies[0]?._id || null;
+          this.selectedCompanyId.set(initCompanyId);
+          if (initCompanyId) {
+            this.loadBrandingTemplates(initCompanyId, normalizedKp);
+          }
+
           this.refreshVersions();
-          this.initialized = true;
+          
+          // Обработка быстрого заполнения из контрагента
+          if (selectCpId && this.viewingVersion() === null) {
+            this.fillFromCounterparty(selectCpId);
+            void this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { selectCp: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+            });
+          }
+
+          // ВАЖНО: сначала выключаем loading, затем помечаем инициализацию завершенной
+          this.loading.set(false);
+          this.initialized.set(true);
+
+          if (isPdfMode) {
+            this.markPdfReady(normalizedKp.items?.length ?? 0);
+          }
         },
-        error: () => {
+        error: (err) => {
+          console.error('[KpBuilder] Loading error:', err);
           this.loading.set(false);
           this.ns.error('КП не найдено или недоступно');
           void this.router.navigate(['/']);
         }
       });
+  }
+
+  private reloadKp() {
+    // Этот метод больше не нужен, так как всё объединено в reloadKpWithContext
+    this.reloadKpWithContext();
+  }
+
+  private markPdfReady(itemsCount: number): void {
+    const expectedRaw = this.route.snapshot.queryParamMap.get('expectedItems');
+    const expected = expectedRaw ? Number(expectedRaw) : null;
+    // Не подменяем реальное количество, если ожидаемое значение ошибочно 0 (backend может не донести items в версии).
+    const shouldTrustExpected = expected !== null && Number.isFinite(expected) && expected > 0;
+    const resolved = shouldTrustExpected ? expected : itemsCount;
+    const firstItem = this.kp()?.items?.[0] ?? null;
+
+    // Wait for the DOM to settle so Puppeteer doesn't print before bindings are painted.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Дополнительная небольшая задержка для уверенности в завершении рендеринга Angular
+        setTimeout(() => {
+          const domRows = document.querySelectorAll('table.kp-table tbody tr.kp-row').length;
+          const firstRowCells = Array.from(document.querySelectorAll('table.kp-table tbody tr.kp-row:first-child td'))
+            .map((td) => (td.textContent ?? '').replace(/\s+/g, ' ').trim());
+          (globalThis as any).__KP_PDF_READY__ = { itemsCount: resolved };
+          document.documentElement.setAttribute('data-kp-pdf-ready', '1');
+          document.documentElement.setAttribute('data-kp-items-count', String(resolved));
+          console.debug(
+            `[KP PDF Debug] kpId=${this.kpId} expectedItemsRaw=${expectedRaw} expectedItems=${expected} itemsCount=${itemsCount} resolved=${resolved} domRows=${domRows} firstRowCells=${JSON.stringify(firstRowCells)} firstItem=${JSON.stringify(firstItem)}`
+          );
+        }, 100);
+      });
+    });
   }
 
   private refreshVersions() {
@@ -1163,22 +1200,59 @@ export class KpBuilderComponent implements OnInit {
   createVersion() {
     const kp = this.kp();
     if (!kp || this.viewingVersion() !== null) return;
-    if (!this.isReadOnly()) {
-      this.autosave.saveNow(kp);
-    }
-    this.api.createKpVersion(kp._id)
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (updated) => {
-          const normalized = this.normalizePaginationMetadata(updated);
-          this.setKpState(normalized, false);
-          this.versions.set(normalized.versions ?? []);
-          this.ns.success('Версия сохранена');
-        },
-        error: (err) => {
-          this.ns.error(err?.error?.message || 'Не удалось сохранить версию');
-        }
-      });
+
+    this.loading.set(true);
+    const isDraft = kp.status === 'draft';
+    // Если черновик и есть несохраненные изменения — сначала сохраняем
+    const save$ = (isDraft && (this.autosave.status() === 'unsaved' || this.autosave.status() === 'error'))
+      ? this.api.updateKp(kp._id, kp).pipe(tap(() => this.autosave.status.set('saved')))
+      : of(kp);
+
+    save$.pipe(
+      switchMap(() => this.api.createKpVersion(kp._id)),
+      take(1),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (updated) => {
+        const normalized = this.normalizePaginationMetadata(updated);
+        this.setKpState(normalized, false);
+        this.versions.set(normalized.versions ?? []);
+        this.loading.set(false);
+        this.ns.success('Версия сохранена');
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.ns.error(err?.error?.message || 'Не удалось сохранить версию');
+      }
+    });
+  }
+
+  createRevision() {
+    const kp = this.kp();
+    if (!kp || this.viewingVersion() !== null) return;
+
+    this.modal.confirm({
+      title: 'Создать новую ревизию?',
+      message: `Будет создан новый черновик на основе текущего КП. Номер нового документа будет изменен (например, на ${kp.metadata?.number}_1).`,
+      confirmText: 'Создать ревизию',
+      type: 'primary'
+    }).pipe(take(1)).subscribe(confirmed => {
+      if (!confirmed) return;
+
+      this.loading.set(true);
+      this.api.createKpRevision(kp._id)
+        .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (revision) => {
+            this.ns.success('Новая ревизия создана');
+            void this.router.navigate(['/kp', revision._id]);
+          },
+          error: (err) => {
+            this.loading.set(false);
+            this.ns.error(err?.error?.message || 'Не удалось создать ревизию');
+          }
+        });
+    });
   }
 
   exportVersion(version: number) {
@@ -1213,14 +1287,28 @@ export class KpBuilderComponent implements OnInit {
     const kp = this.kp();
     if (!kp || this.isExporting()) return;
 
+    // Перед экспортом черновика — принудительно сохраняем, чтобы Puppeteer увидел актуальные данные в БД.
+    // Если это просмотр версии — сохранять не нужно (версии read-only).
+    const isDraft = this.viewingVersion() === null;
+    const save$ = isDraft ? this.api.updateKp(kp._id, kp) : of(kp);
+
     this.isExporting.set(true);
     this.ns.info('Генерация PDF высокого качества...');
-    const export$ = this.viewingVersion() !== null
-      ? this.api.exportToPdfVersion(kp._id, this.viewingVersion() as number)
-      : this.api.exportToPdf(kp._id);
 
-    export$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (blob) => {
+    save$.pipe(
+      switchMap(() => {
+        // После успешного сохранения сбрасываем статус в "saved" (через autosave сервис)
+        if (isDraft) {
+          this.autosave.status.set('saved');
+        }
+        return this.viewingVersion() !== null
+          ? this.api.exportToPdfVersion(kp._id, this.viewingVersion() as number)
+          : this.api.exportToPdf(kp._id);
+      }),
+      take(1),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (blob: Blob) => {
         const docNumber = String(kp.metadata?.number || 'бн').replace(/[^\w.-]+/g, '_');
         const safeFileName = `КП_${docNumber}.pdf`;
         const url = URL.createObjectURL(blob);
@@ -1234,9 +1322,9 @@ export class KpBuilderComponent implements OnInit {
         this.isExporting.set(false);
         this.ns.success('PDF успешно сгенерирован');
       },
-      error: () => {
+      error: (err: any) => {
         this.isExporting.set(false);
-        this.ns.error('Ошибка генерации PDF на сервере');
+        this.ns.error(err?.error?.message || 'Ошибка генерации PDF на сервере');
       }
     });
   }
@@ -1284,6 +1372,15 @@ export class KpBuilderComponent implements OnInit {
       return Boolean(localStorage.getItem(`kp_builder_backup_${kpId}`));
     } catch {
       return false;
+    }
+  }
+
+  private getBackupSnapshot(kpId: string): Kp | null {
+    try {
+      const raw = localStorage.getItem(`kp_builder_backup_${kpId}`);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
   }
 

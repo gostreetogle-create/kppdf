@@ -101,6 +101,9 @@
 ### 10) PDF export strategy (frontend route + Puppeteer)
 - Экспорт `GET /api/kp/:id/export` и превью `GET /api/kp/:id/preview` генерируются в `backend/src/services/pdf-generator.service.ts` через Puppeteer, который открывает frontend-роут `/kp/:id?pdf=1`.
 - Поддержан экспорт версии через query `?version=N` (Puppeteer открывает `/kp/:id?pdf=1&version=N`).
+- Для защиты от “пустого PDF без товаров” backend передаёт параметр `expectedItems` и ждёт маркер готовности от фронтенда: Puppeteer ожидает `window.__KP_PDF_READY__.itemsCount === expectedItems` перед печатью.
+- Фронтенд выставляет маркер `__KP_PDF_READY__` (и атрибуты `data-kp-pdf-ready`, `data-kp-items-count`) в `KpBuilderComponent` после загрузки КП и 2 кадров отрисовки (`requestAnimationFrame`), чтобы гарантировать, что таблица товаров реально нарисована в DOM.
+- Для диагностики проблем PDF-рендера включены логи: backend проксирует `console`/`pageerror` из Puppeteer и печатает DOM-снимок (кол-во строк, тексты первой строки), frontend пишет `[KP PDF Debug]` (первый item и тексты первой строки).
 - Имя файла задаётся в `backend/src/controllers/kp.controller.ts` через `Content-Disposition` на основе `kp.metadata.number`.
 
 ### 10) UI governance (Storybook + shared focus/required)
@@ -197,6 +200,8 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-05-06 | HQ PDF export hardening: добавлен handshake “ожидаем N товаров” между backend Puppeteer (`pdf-generator.service.ts`) и frontend KP Builder (`__KP_PDF_READY__`), чтобы исключить генерацию PDF с пустой таблицей; ожидание изображений смягчено до `img.complete` (без требования `naturalWidth > 0`) |
+| 2026-05-06 | Frontend stability fix: исправлено использование `effect()` в `ProductsComponent` (перенесено в injection context + `allowSignalWrites`), устраняющее runtime-ошибки `NG0203/NG0100`, которые могли ломать рендер для Puppeteer при генерации PDF |
 | 2026-05-05 | Проведена финальная стабилизация проекта: синхронизация типов через DTO, вынос общей логики расчетов в `shared/utils` с покрытием тестами (Vitest), внедрение retry-механизма для PDF и аудит UI/UX (empty states, semantic spacing) |
 | 2026-04-24 | KP pagination default tweak: дефолт `metadata.tablePageBreakFirstPage` изменён с `6` на `4` (backend schema + create/normalize fallback), чтобы поле `Перенос строк (1-я стр.)` в новых КП по умолчанию открывалось со значением `4` |
 | 2026-04-24 | Deploy TLS resilience upgrade: `deploy/deploy.sh` больше не затирает HTTPS-конфигурацию при каждом релизе — при наличии Let's Encrypt сертификатов (`/etc/letsencrypt/live/<domain>/fullchain.pem|privkey.pem`) автоматически генерирует `80->301` + `443 ssl` server blocks и добавляет HTTPS smoke-check в финальный отчёт |
@@ -448,6 +453,16 @@
 ---
 
 ## Audit log
+
+- Дата: 2026-05-06
+- Выполнено:
+  - **PDF Export Fix**: Устранена проблема пустых строк в скачиваемом PDF. Теперь `onExportHQ` принудительно сохраняет черновик КП в БД перед запуском генерации через Puppeteer.
+  - **Data Integrity (DTO)**: Исправлен `mapKpToDto` на бэкенде — добавлено преобразование документов Mongoose в простые JS-объекты через `.toObject()`, что решило проблему потери полей товаров при передаче на фронтенд.
+  - **VAT Logic Correction**: Синхронизирован расчёт итогов в `KpBuilderComponent` с бизнес-правилами: НДС теперь корректно выделяется «из суммы» (`total = subtotal`, `vatAmount = subtotal * rate / (100 + rate)`).
+  - **PDF Render Stability**: В метод `markPdfReady` добавлена небольшая задержка (`setTimeout 100ms`) для гарантированного завершения отрисовки Angular-компонентов перед захватом страницы Puppeteer.
+  - **Angular Stability (Products)**: Исправлены ошибки `NG0100` (ExpressionChangedAfterItHasBeenCheckedError) и `NG0203` (toObservable injection context) в `ProductsComponent`. Применён `ChangeDetectionStrategy.OnPush` и корректное использование `Injector` для сигналов.
+  - **KP Revision System**: Добавлена возможность создания новой ревизии для принятых/отправленных КП. При создании ревизии генерируется новый черновик с сохранением базового номера и добавлением суффикса (например, `КП-009` -> `КП-009_1`).
+  - **TS Fixes**: Устранены ошибки компиляции TypeScript в `KpBuilderComponent`, связанные с отсутствующими импортами и неявной типизацией `any`.
 
 - Дата: 2026-04-23
 - Выполнено:

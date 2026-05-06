@@ -1,9 +1,9 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef, effect } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef, effect, ChangeDetectionStrategy, untracked, Injector } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { take, combineLatest, debounceTime, switchMap, catchError, of } from 'rxjs';
+import { take, combineLatest, debounceTime, switchMap, catchError, of, skip } from 'rxjs';
 import { ApiService, Product } from '../../core/services/api.service';
 import { ProductFormComponent } from './components/product-form/product-form.component';
 import { ProductCardComponent } from './components/product-card/product-card.component';
@@ -36,13 +36,15 @@ import { ModalService } from '../../core/services/modal.service';
     './products.component.scss',
     './products.controls.scss',
     './products.table.scss'
-  ]
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductsComponent implements OnInit {
   private readonly api          = inject(ApiService);
   private readonly destroyRef   = inject(DestroyRef);
   private readonly modal        = inject(ModalService);
   private readonly notification = inject(NotificationService);
+  private readonly injector     = inject(Injector);
 
   products        = signal<Product[]>([]);
   loading         = signal(true);
@@ -62,24 +64,35 @@ export class ProductsComponent implements OnInit {
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.limit())));
 
+  private readonly resetPageOnFilterChange = effect(
+    () => {
+      // Trigger dependencies
+      this.search();
+      this.filterCategory();
+      this.filterHasSpec();
+      this.limit();
+
+      // Reset page to 1 when any filter or limit changes,
+      // but do it untracked to avoid cyclic dependency
+      untracked(() => {
+        if (this.page() !== 1) {
+          this.page.set(1);
+        }
+      });
+    }
+  );
+
   ngOnInit() {
     this.api.getProductCategories()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(cats => this.categories.set(cats));
 
-    effect(() => {
-      this.search();
-      this.filterCategory();
-      this.filterHasSpec();
-      this.page.set(1);
-    });
-
     combineLatest([
-      toObservable(this.search),
-      toObservable(this.filterCategory),
-      toObservable(this.filterHasSpec),
-      toObservable(this.page),
-      toObservable(this.limit),
+      toObservable(this.search, { injector: this.injector }),
+      toObservable(this.filterCategory, { injector: this.injector }),
+      toObservable(this.filterHasSpec, { injector: this.injector }),
+      toObservable(this.page, { injector: this.injector }),
+      toObservable(this.limit, { injector: this.injector }),
     ])
       .pipe(
         debounceTime(300),

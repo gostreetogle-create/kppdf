@@ -4,14 +4,25 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService, Kp, CreateKpPayload } from '../../core/services/api.service';
 import { take } from 'rxjs';
-import { ButtonComponent, AlertComponent, StatusBadgeComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared/ui/index';
+import { ButtonComponent, AlertComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared/ui/index';
 import { ModalService } from '../../core/services/modal.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { FormsModule } from '@angular/forms';
+import { KP_STATUS_TRANSITIONS } from '@shared/types/Kp';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent, StatusBadgeComponent, AlertComponent, PageLayoutComponent, PageHeaderComponent, EmptyStateComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ButtonComponent,
+    AlertComponent,
+    PageLayoutComponent,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    FormsModule
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
@@ -28,6 +39,10 @@ export class HomeComponent implements OnInit {
   duplicating = signal<string | null>(null);
 
   ngOnInit() {
+    this.loadKpList();
+  }
+
+  loadKpList() {
     this.api.getKpList()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -37,76 +52,123 @@ export class HomeComponent implements OnInit {
   }
 
   createNew() {
-    const draft: CreateKpPayload = {
+    const payload: CreateKpPayload = {
       title: 'Новое КП',
       status: 'draft',
       recipient: { name: '' },
-      items: [], conditions: []
+      items: [],
+      conditions: []
     };
-    this.api.createKp(draft)
+    this.api.createKp(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next:  kp  => {
-          this.ns.success('Черновик КП создан');
-          this.router.navigate(['/kp', kp._id]);
-        },
-        error: (err)  => this.error.set(err?.error?.message || 'Не удалось создать КП')
+        next:  kp => this.router.navigate(['/kp', kp._id]),
+        error: () => this.ns.error('Не удалось создать КП')
       });
   }
 
-  open(id: string) { this.router.navigate(['/kp', id]); }
+  open(id: string) {
+    this.router.navigate(['/kp', id]);
+  }
 
-  delete(id: string, event: Event) {
+  delete(id: string, event: MouseEvent) {
     event.stopPropagation();
     this.modal.confirm({
-      title: 'Удалить КП',
-      message: 'Коммерческое предложение будет удалено без возможности восстановления.',
+      title: 'Удалить КП?',
+      message: 'Это действие нельзя отменить.',
       confirmText: 'Удалить',
-      cancelText: 'Отмена',
       type: 'danger'
-    })
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe((confirmed) => {
-        if (!confirmed) return;
-        this.api.deleteKp(id)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next:  () => {
-              this.kpList.update(list => list.filter(k => k._id !== id));
-              this.ns.success('КП удалено');
-            },
-            error: () => this.error.set('Не удалось удалить КП')
-          });
-      });
+    }).pipe(take(1)).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.api.deleteKp(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ 
+          next:  () => {
+            this.kpList.update(list => list.filter(kp => kp._id !== id));
+            this.ns.success('КП удалено');
+          },
+          error: () => this.ns.error('Не удалось удалить КП')
+        });
+    });
   }
 
-  duplicate(id: string, event: Event) {
+  duplicate(id: string, event: MouseEvent) {
     event.stopPropagation();
     this.duplicating.set(id);
     this.api.duplicateKp(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next:  kp => {
+        next: (kp) => {
+          this.kpList.update(list => [kp, ...list]);
           this.duplicating.set(null);
           this.ns.success('КП дублировано');
-          this.router.navigate(['/kp', kp._id]);
         },
-        error: ()  => { this.duplicating.set(null); this.error.set('Не удалось дублировать КП'); }
+        error: () => {
+          this.duplicating.set(null);
+          this.ns.error('Не удалось дублировать КП');
+        }
       });
   }
 
   getTotal(kp: Kp): number {
-    const sub = kp.items.reduce((s, i) => s + i.price * i.qty, 0);
-    return sub + Math.round(sub * kp.vatPercent / 100);
+    return kp.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
   }
 
-  statusHint(status: Kp['status']): string {
-    const map: Record<Kp['status'], string> = {
-      draft: 'Можно редактировать и отправить клиенту',
-      sent: 'Ожидает решения клиента',
-      accepted: 'Клиент принял предложение',
-      rejected: 'Клиент отклонил предложение'
+  statusHint(status: string): string {
+    const hints: Record<string, string> = {
+      draft: 'В работе, можно редактировать',
+      sent: 'Отправлено клиенту',
+      accepted: 'Клиент подтвердил КП',
+      rejected: 'Клиент отказался'
     };
-    return map[status];
+    return hints[status] || '';
+  }
+
+  canSelectStatus(kp: Kp, targetStatus: Kp['status']): boolean {
+    const current = kp.status;
+    if (current === targetStatus) return true;
+    const allowed = KP_STATUS_TRANSITIONS[current] ?? [];
+    return allowed.includes(targetStatus);
+  }
+
+  onStatusChange(kp: Kp, nextStatus: Kp['status']) {
+    if (kp.status === nextStatus) return;
+
+    this.modal.confirm({
+      title: 'Смена статуса КП',
+      message: `Перевести КП из «${this.statusLabel(kp.status)}» в «${this.statusLabel(nextStatus)}»?`,
+      confirmText: 'Подтвердить',
+      type: 'primary'
+    }).pipe(take(1)).subscribe(confirmed => {
+      if (!confirmed) {
+        this.loadKpList();
+        return;
+      }
+
+      this.api.updateKp(kp._id, { status: nextStatus })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.kpList.update(list => list.map(item =>
+              item._id === kp._id ? { ...item, status: nextStatus } : item
+            ));
+            this.ns.success(`Статус изменён: ${this.statusLabel(nextStatus)}`);
+          },
+          error: () => {
+            this.ns.error('Не удалось изменить статус');
+            this.loadKpList();
+          }
+        });
+    });
+  }
+
+  statusLabel(status: Kp['status']): string {
+    const labels: Record<Kp['status'], string> = {
+      draft: 'Черновик',
+      sent: 'Отправлен',
+      accepted: 'Принят',
+      rejected: 'Отклонён'
+    };
+    return labels[status];
   }
 }

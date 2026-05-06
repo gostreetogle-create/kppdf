@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requirePermission } from '../middleware/rbac.guard';
 import {
   createKp,
+  createKpRevision,
   createKpVersion,
   deleteKp,
   duplicateKp,
@@ -33,6 +34,9 @@ router.post('/', createKp);
 
 // POST /api/kp/:id/duplicate
 router.post('/:id/duplicate', duplicateKp);
+
+// POST /api/kp/:id/revision
+router.post('/:id/revision', createKpRevision);
 
 // PUT /api/kp/:id/switch-type
 router.put('/:id/switch-type', switchKpType);

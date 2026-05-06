@@ -57,6 +57,10 @@
       <div class="builder__toolbar-actions">
         <select
           class="builder__status form-control"
+          [class.builder__status--draft]="kp()!.status === 'draft'"
+          [class.builder__status--sent]="kp()!.status === 'sent'"
+          [class.builder__status--accepted]="kp()!.status === 'accepted'"
+          [class.builder__status--rejected]="kp()!.status === 'rejected'"
           [ngModel]="kp()!.status"
           [disabled]="!canEditStatus()"
           (ngModelChange)="onStatusChange($event)">
@@ -65,14 +69,25 @@
           <option value="accepted" [disabled]="!canSelectStatus('accepted')">Принят</option>
           <option value="rejected" [disabled]="!canSelectStatus('rejected')">Отклонён</option>
         </select>
-        <button
-          ui-btn
-          class="builder__toolbar-btn"
-          variant="secondary"
-          (click)="createVersion()"
-          [disabled]="viewingVersion() !== null || autosave.status() === 'saving'">
-          Сохранить версию
-        </button>
+        @if (!isDraft()) {
+          <button
+            ui-btn
+            class="builder__toolbar-btn"
+            variant="primary"
+            (click)="createRevision()"
+            [disabled]="viewingVersion() !== null">
+            Создать ревизию
+          </button>
+        } @else {
+          <button
+            ui-btn
+            class="builder__toolbar-btn"
+            variant="secondary"
+            (click)="createVersion()"
+            [disabled]="viewingVersion() !== null || autosave.status() === 'saving'">
+            Сохранить версию
+          </button>
+        }
         <div class="builder__pdf-split" [class.is-menu-open]="isPdfMenuOpen()">
           <button
             ui-btn

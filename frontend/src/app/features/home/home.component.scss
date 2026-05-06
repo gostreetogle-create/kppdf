@@ -42,6 +42,60 @@
   color: color-mix(in srgb, var(--ui-primary) 72%, var(--ui-text));
 }
 
+.kp-status-select {
+  min-height: 1.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  padding: 0.15rem $space-3;
+  padding-right: $space-6;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all $transition-fast;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.4rem center;
+  background-size: 0.85rem;
+
+  &--draft {
+    color: var(--ui-text-soft);
+    background-color: var(--ui-bg-soft);
+    border-color: var(--ui-border-light);
+  }
+
+  &--sent {
+    color: var(--ui-primary);
+    background-color: var(--ui-primary-soft);
+    border-color: var(--ui-primary-light);
+  }
+
+  &--accepted {
+    color: var(--ui-success);
+    background-color: var(--color-success-soft);
+    border-color: color-mix(in srgb, var(--ui-success) 20%, transparent);
+  }
+
+  &--rejected {
+    color: var(--ui-danger);
+    background-color: var(--color-error-soft);
+    border-color: color-mix(in srgb, var(--ui-danger) 20%, transparent);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 3px var(--ui-primary-focus);
+  }
+
+  option {
+    background-color: var(--ui-bg-card);
+    color: var(--ui-text-main);
+    padding: $space-2;
+  }
+}
+
 .is-right {
   text-align: right !important;
 }

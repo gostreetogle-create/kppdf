@@ -41,6 +41,19 @@ export async function duplicateKp(req: Request, res: Response) {
   }
 }
 
+export async function createKpRevision(req: Request, res: Response) {
+  try {
+    const revision = await kpService.createRevision(req.params.id);
+    if (!revision) {
+      res.status(404).json({ message: 'Not found' });
+      return;
+    }
+    res.status(201).json(mapKpToDto(revision));
+  } catch (error: any) {
+    res.status(400).json({ message: validationMessage(error) });
+  }
+}
+
 export async function switchKpType(req: Request, res: Response) {
   try {
     const result = await kpService.switchType(req.params.id, req.body);

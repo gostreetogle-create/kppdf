@@ -37,7 +37,20 @@
             <tr class="kp-row" (click)="open(kp._id)">
               <td class="kp-cell-number">{{ kp.metadata.number }}</td>
               <td>
-                <ui-status-badge [variant]="kp.status" [hint]="statusHint(kp.status)"></ui-status-badge>
+                <select
+                  class="kp-status-select"
+                  [class.kp-status-select--draft]="kp.status === 'draft'"
+                  [class.kp-status-select--sent]="kp.status === 'sent'"
+                  [class.kp-status-select--accepted]="kp.status === 'accepted'"
+                  [class.kp-status-select--rejected]="kp.status === 'rejected'"
+                  [ngModel]="kp.status"
+                  (click)="$event.stopPropagation()"
+                  (ngModelChange)="onStatusChange(kp, $event)">
+                  <option value="draft" [disabled]="!canSelectStatus(kp, 'draft')">Черновик</option>
+                  <option value="sent" [disabled]="!canSelectStatus(kp, 'sent')">Отправлен</option>
+                  <option value="accepted" [disabled]="!canSelectStatus(kp, 'accepted')">Принят</option>
+                  <option value="rejected" [disabled]="!canSelectStatus(kp, 'rejected')">Отклонён</option>
+                </select>
               </td>
               <td class="kp-cell-title">{{ kp.metadata.number }} — {{ kp.title }}</td>
               <td class="kp-cell-client">{{ kp.recipient.name || 'Клиент не указан' }}</td>

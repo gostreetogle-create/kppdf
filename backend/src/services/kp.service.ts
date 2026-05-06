@@ -230,6 +230,40 @@ export class KpService {
     });
   }
 
+  async createRevision(id: string) {
+    const original = await Kp.findById(id);
+    if (!original) return null;
+
+    const currentNumber = String(original.metadata?.number ?? '').trim();
+    let nextNumber = currentNumber;
+
+    if (currentNumber) {
+      // Ищем суффикс _N в конце номера
+      const match = currentNumber.match(/_(\d+)$/);
+      if (match) {
+        const version = parseInt(match[1], 10);
+        nextNumber = currentNumber.replace(/_(\d+)$/, `_${version + 1}`);
+      } else {
+        nextNumber = `${currentNumber}_1`;
+      }
+    }
+
+    const sourceType = ((original as any).kpType ?? original.companySnapshot?.kpType ?? 'standard') as KpType;
+
+    return Kp.create({
+      title: original.title, // Для ревизии оставляем то же название
+      status: 'draft',
+      companyId: original.companyId,
+      kpType: sourceType,
+      companySnapshot: original.companySnapshot,
+      recipient: original.recipient,
+      metadata: { ...original.metadata, number: nextNumber },
+      items: original.items,
+      conditions: original.conditions,
+      vatPercent: original.vatPercent,
+    });
+  }
+
   async switchType(id: string, payload: any) {
     const kp = await Kp.findById(id);
     if (!kp) return null;
