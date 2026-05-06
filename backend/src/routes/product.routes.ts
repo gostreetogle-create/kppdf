@@ -62,7 +62,8 @@ router.get('/', async (req: Request, res: Response) => {
       filter.isActive = isActive === 'true';
     } else if (page === undefined && limit === undefined) {
       // Если это не пагинация (например, выбор в КП), показываем только активные
-      filter.isActive = true;
+      // $ne: false — включает и true, и документы без поля isActive (старые из бэкапа)
+      filter.isActive = { $ne: false };
     }
     if (q)        filter.$text    = { $search: String(q) };
 

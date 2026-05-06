@@ -282,7 +282,7 @@ server {
   }
 
   location / {
-    try_files \$uri \$uri/ /index.html;
+    try_files \$uri /index.html;
     add_header Cache-Control "no-cache, no-store, must-revalidate";
   }
 }
@@ -347,7 +347,7 @@ server {
   }
 
   location / {
-    try_files \$uri \$uri/ /index.html;
+    try_files \$uri /index.html;
     add_header Cache-Control "no-cache, no-store, must-revalidate";
   }
 }
@@ -392,6 +392,14 @@ if [[ -f "${SSL_FULLCHAIN}" && -f "${SSL_PRIVKEY}" ]]; then
   fi
 fi
 
+log "Запускаю миграцию БД (isActive для старых товаров)..."
+if command -v mongosh >/dev/null 2>&1; then
+  mongosh "${MONGO_DB}" --eval "db.products.updateMany({ \$or: [{ isActive: { \$exists: false } }, { isActive: null }] }, { \$set: { isActive: true } })" || log "ПРЕДУПРЕЖДЕНИЕ: миграция БД не выполнена (mongosh недоступен или ошибка подключения)"
+else
+  log "ПРЕДУПРЕЖДЕНИЕ: mongosh не найден — пропускаю миграцию БД"
+fi
+
+log ""
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 log "Деплой выполнен успешно!"
 log "  Web: http://<IP-сервера>:${WEB_PORT}"
