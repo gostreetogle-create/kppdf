@@ -168,7 +168,12 @@ if [[ "${MEDIA_ROOT}" == "${REPO_ROOT}"* ]]; then
   log "ВНИМАНИЕ: MEDIA_ROOT находится внутри репозитория (${MEDIA_ROOT}). Рекомендуется вынести его вне git-дерева."
 fi
 
-GIT_COMMIT=$(git -C "${REPO_ROOT}" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+# Получаем хеш коммита заранее, с проверкой
+if git -C "${REPO_ROOT}" rev-parse --short HEAD >/dev/null 2>&1; then
+  GIT_COMMIT=$(git -C "${REPO_ROOT}" rev-parse --short HEAD)
+else
+  GIT_COMMIT="unknown"
+fi
 log "Git commit: ${GIT_COMMIT}"
 
 cat > "${REPO_ROOT}/backend/.env" <<EOF
@@ -192,7 +197,7 @@ Wants=mongod.service
 [Service]
 Type=simple
 WorkingDirectory=${REPO_ROOT}/backend
-ExecStart=$(command -v node) ${REPO_ROOT}/backend/dist/app.js
+ExecStart=$(command -v node) ${REPO_ROOT}/backend/dist/backend/src/app.js
 Restart=always
 RestartSec=5
 EnvironmentFile=${REPO_ROOT}/backend/.env
