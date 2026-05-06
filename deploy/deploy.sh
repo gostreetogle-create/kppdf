@@ -168,6 +168,8 @@ if [[ "${MEDIA_ROOT}" == "${REPO_ROOT}"* ]]; then
   log "ВНИМАНИЕ: MEDIA_ROOT находится внутри репозитория (${MEDIA_ROOT}). Рекомендуется вынести его вне git-дерева."
 fi
 
+GIT_COMMIT=$(git -C "${REPO_ROOT}" rev-parse --short HEAD)
+
 cat > "${REPO_ROOT}/backend/.env" <<EOF
 NODE_ENV=production
 PORT=${BACKEND_PORT}
@@ -176,7 +178,7 @@ CORS_ORIGIN=${CORS_ORIGIN}
 JWT_SECRET=${JWT_SECRET}
 DADATA_TOKEN=${DADATA_TOKEN}
 MEDIA_ROOT=${MEDIA_ROOT}
-GIT_COMMIT=$(git -C "${REPO_ROOT}" rev-parse --short HEAD)
+GIT_COMMIT=${GIT_COMMIT}
 EOF
 chmod 600 "${REPO_ROOT}/backend/.env"
 

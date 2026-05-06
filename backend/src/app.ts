@@ -45,7 +45,16 @@ app.get('/health', (_req, res) => {
 
 // Version endpoint — регистрируем ДО /api/*, чтобы не требовал авторизации
 app.get('/api/version', (_req, res) => {
-  res.json({ commit: process.env.GIT_COMMIT || 'unknown', time: new Date().toISOString() });
+  let commit = process.env.GIT_COMMIT;
+  if (!commit || commit.startsWith('$(')) {
+    try {
+      const { execSync } = require('child_process');
+      commit = execSync('git rev-parse --short HEAD', { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+    } catch {
+      commit = 'unknown';
+    }
+  }
+  res.json({ commit, time: new Date().toISOString() });
 });
 
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
