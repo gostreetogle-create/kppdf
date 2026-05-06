@@ -148,6 +148,15 @@ log "Собираю backend..."
 npm --prefix "${REPO_ROOT}/backend" ci
 npm --prefix "${REPO_ROOT}/backend" run build
 
+# Fix: if rootDir=.. was used, tsc outputs to dist/backend/src/app.js
+# Move it to the expected location dist/app.js
+if [[ -f "${REPO_ROOT}/backend/dist/backend/src/app.js" ]]; then
+  log "Fixing build output path..."
+  mkdir -p "${REPO_ROOT}/backend/dist"
+  cp "${REPO_ROOT}/backend/dist/backend/src/app.js" "${REPO_ROOT}/backend/dist/app.js"
+  rm -rf "${REPO_ROOT}/backend/dist/backend"
+fi
+
 log "Собираю frontend..."
 set +e
 npm --prefix "${REPO_ROOT}/frontend" ci
