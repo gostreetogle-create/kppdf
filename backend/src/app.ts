@@ -43,7 +43,8 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-app.get('/version', (_req, res) => {
+// Version endpoint — регистрируем ДО /api/*, чтобы не требовал авторизации
+app.get('/api/version', (_req, res) => {
   res.json({ commit: process.env.GIT_COMMIT || 'unknown', time: new Date().toISOString() });
 });
 
