@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.listKp = listKp;
 exports.createKp = createKp;
 exports.duplicateKp = duplicateKp;
+exports.createKpRevision = createKpRevision;
 exports.switchKpType = switchKpType;
 exports.getKpById = getKpById;
 exports.listKpVersions = listKpVersions;
@@ -48,6 +49,19 @@ async function duplicateKp(req, res) {
             return;
         }
         res.status(201).json((0, kp_dto_1.mapKpToDto)(duplicate));
+    }
+    catch (error) {
+        res.status(400).json({ message: validationMessage(error) });
+    }
+}
+async function createKpRevision(req, res) {
+    try {
+        const revision = await kp_service_1.kpService.createRevision(req.params.id);
+        if (!revision) {
+            res.status(404).json({ message: 'Not found' });
+            return;
+        }
+        res.status(201).json((0, kp_dto_1.mapKpToDto)(revision));
     }
     catch (error) {
         res.status(400).json({ message: validationMessage(error) });

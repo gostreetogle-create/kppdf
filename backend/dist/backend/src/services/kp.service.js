@@ -208,6 +208,37 @@ class KpService {
             vatPercent: original.vatPercent,
         });
     }
+    async createRevision(id) {
+        const original = await kp_model_1.Kp.findById(id);
+        if (!original)
+            return null;
+        const currentNumber = String(original.metadata?.number ?? '').trim();
+        let nextNumber = currentNumber;
+        if (currentNumber) {
+            // Ищем суффикс _N в конце номера
+            const match = currentNumber.match(/_(\d+)$/);
+            if (match) {
+                const version = parseInt(match[1], 10);
+                nextNumber = currentNumber.replace(/_(\d+)$/, `_${version + 1}`);
+            }
+            else {
+                nextNumber = `${currentNumber}_1`;
+            }
+        }
+        const sourceType = (original.kpType ?? original.companySnapshot?.kpType ?? 'standard');
+        return kp_model_1.Kp.create({
+            title: original.title, // Для ревизии оставляем то же название
+            status: 'draft',
+            companyId: original.companyId,
+            kpType: sourceType,
+            companySnapshot: original.companySnapshot,
+            recipient: original.recipient,
+            metadata: { ...original.metadata, number: nextNumber },
+            items: original.items,
+            conditions: original.conditions,
+            vatPercent: original.vatPercent,
+        });
+    }
     async switchType(id, payload) {
         const kp = await kp_model_1.Kp.findById(id);
         if (!kp)

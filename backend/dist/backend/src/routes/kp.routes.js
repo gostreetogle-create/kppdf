@@ -21,6 +21,8 @@ router.get('/', kp_controller_1.listKp);
 router.post('/', kp_controller_1.createKp);
 // POST /api/kp/:id/duplicate
 router.post('/:id/duplicate', kp_controller_1.duplicateKp);
+// POST /api/kp/:id/revision
+router.post('/:id/revision', kp_controller_1.createKpRevision);
 // PUT /api/kp/:id/switch-type
 router.put('/:id/switch-type', kp_controller_1.switchKpType);
 // GET /api/kp/:id/export

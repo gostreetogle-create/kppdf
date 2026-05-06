@@ -118,8 +118,8 @@ export class ProductsComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((resp) => {
-        this.products.set(resp.items);
-        this.total.set(resp.total);
+        this.products.set(resp?.items || []);
+        this.total.set(resp?.total || 0);
         this.loading.set(false);
       });
   }
