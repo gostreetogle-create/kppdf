@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requirePermission } from '../middleware/rbac.guard';
 import {
   createKp,
+  createKpVersion,
   deleteKp,
   duplicateKp,
   exportKpPdf,
@@ -9,6 +10,7 @@ import {
   exportProductPassportPdf,
   previewProductPassportPdf,
   getKpById,
+  listKpVersions,
   listKp,
   switchKpType,
   updateKp
@@ -48,6 +50,12 @@ router.get('/passport/:productId/export', exportProductPassportPdf);
 router.get('/passport/:productId/preview', previewProductPassportPdf);
 
 // GET /api/kp/:id
+// GET /api/kp/:id/versions
+router.get('/:id/versions', listKpVersions);
+
+// POST /api/kp/:id/versions
+router.post('/:id/versions', createKpVersion);
+
 router.get('/:id', getKpById);
 
 // PUT /api/kp/:id

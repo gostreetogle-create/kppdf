@@ -1,6 +1,14 @@
 export type KpStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
 export type KpType = 'standard' | 'response' | 'special' | 'tender' | 'service';
 
+export interface KpVersionMeta {
+  version: number;
+  createdAt: string;
+  status: KpStatus;
+  number: string;
+  title: string;
+}
+
 export interface KpItem {
   productId:   string;
   code?:       string;
@@ -88,6 +96,7 @@ export interface IKp {
   items:           KpItem[];
   conditions:      string[];
   vatPercent:      number;
+  versions?:       KpVersionMeta[];
   createdAt?:      string;
   updatedAt?:      string;
 }

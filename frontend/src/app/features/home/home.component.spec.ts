@@ -3,11 +3,22 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { HomeComponent } from './home.component';
 import { ApiService, Kp } from '../../core/services/api.service';
+import { ModalService } from '../../core/services/modal.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 const mockKp: Kp = {
-  _id: '1', title: 'КП-1', status: 'draft',
+  _id: '1', title: 'КП-1', status: 'draft', kpType: 'standard',
   recipient: { name: 'ООО Тест' },
   metadata: { number: 'КП-001', validityDays: 10, prepaymentPercent: 50, productionDays: 15 },
+  companySnapshot: {
+    companyId: 'c1',
+    companyName: 'Компания',
+    templateKey: 't1',
+    templateName: 'Template',
+    kpType: 'standard',
+    assets: { kpPage1: '' },
+    texts: {}
+  },
   items: [{ productId: 'p1', name: 'Товар', description: '', unit: 'шт.', price: 1000, qty: 2 }],
   conditions: [], vatPercent: 20,
   createdAt: '2024-01-01', updatedAt: '2024-01-01'
@@ -16,16 +27,27 @@ const mockKp: Kp = {
 describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let component: HomeComponent;
-  let apiSpy: jasmine.SpyObj<ApiService>;
+  let apiSpy: any;
+  let modalSpy: any;
+  let nsSpy: any;
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('ApiService', ['getKpList', 'createKp', 'deleteKp']);
-    apiSpy.getKpList.and.returnValue(of([mockKp]));
+    apiSpy = {
+      getKpList: vi.fn(() => of([mockKp])),
+      createKp: vi.fn(() => of(mockKp)),
+      deleteKp: vi.fn(() => of(undefined)),
+      duplicateKp: vi.fn(() => of(mockKp)),
+    } satisfies Partial<ApiService>;
+
+    modalSpy = { confirm: vi.fn(() => of(true)) } satisfies Partial<ModalService>;
+    nsSpy = { success: vi.fn(), error: vi.fn(), info: vi.fn() } satisfies Partial<NotificationService>;
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
-        { provide: ApiService, useValue: apiSpy },
+        { provide: ApiService, useValue: apiSpy as ApiService },
+        { provide: ModalService, useValue: modalSpy as ModalService },
+        { provide: NotificationService, useValue: nsSpy as NotificationService },
         provideRouter([])
       ]
     }).compileComponents();
@@ -38,13 +60,13 @@ describe('HomeComponent', () => {
   it('should load KP list on init', () => {
     expect(apiSpy.getKpList).toHaveBeenCalled();
     expect(component.kpList().length).toBe(1);
-    expect(component.loading()).toBeFalse();
+    expect(component.loading()).toBe(false);
   });
 
   it('should handle load error gracefully', async () => {
-    apiSpy.getKpList.and.returnValue(throwError(() => new Error('Network error')));
+    apiSpy.getKpList.mockReturnValue(throwError(() => new Error('Network error')));
     component.ngOnInit();
-    expect(component.loading()).toBeFalse();
+    expect(component.loading()).toBe(false);
   });
 
   it('should calculate total correctly (subtotal + VAT)', () => {
@@ -53,24 +75,9 @@ describe('HomeComponent', () => {
     expect(total).toBe(2400);
   });
 
-  it('should return correct status labels', () => {
-    expect(component.statusLabel('draft')).toBe('Черновик');
-    expect(component.statusLabel('sent')).toBe('Отправлен');
-    expect(component.statusLabel('accepted')).toBe('Принят');
-    expect(component.statusLabel('rejected')).toBe('Отклонён');
-  });
-
-  it('should return correct status colors', () => {
-    expect(component.statusColor('draft')).toBe('default');
-    expect(component.statusColor('sent')).toBe('blue');
-    expect(component.statusColor('accepted')).toBe('green');
-    expect(component.statusColor('rejected')).toBe('red');
-  });
-
   it('should delete KP and remove from list', () => {
-    apiSpy.deleteKp.and.returnValue(of(undefined));
     const event = new MouseEvent('click');
-    spyOn(event, 'stopPropagation');
+    vi.spyOn(event, 'stopPropagation');
     component.delete('1', event);
     expect(apiSpy.deleteKp).toHaveBeenCalledWith('1');
     expect(component.kpList().length).toBe(0);

@@ -60,6 +60,19 @@ export async function switchKpType(req: Request, res: Response) {
 
 export async function getKpById(req: Request, res: Response) {
   try {
+    const rawVersion = req.query.version;
+    const requestedVersion = typeof rawVersion === 'string' && rawVersion.trim()
+      ? Number(rawVersion)
+      : undefined;
+    if (requestedVersion && Number.isFinite(requestedVersion)) {
+      const snapshot = await kpService.getVersionSnapshot(req.params.id, requestedVersion);
+      if (!snapshot) {
+        res.status(404).json({ message: 'Not found' });
+        return;
+      }
+      res.json(snapshot);
+      return;
+    }
     const kp = await kpService.getById(req.params.id);
     if (!kp) {
       res.status(404).json({ message: 'Not found' });
@@ -71,13 +84,34 @@ export async function getKpById(req: Request, res: Response) {
   }
 }
 
-export async function updateKp(req: Request, res: Response) {
+export async function listKpVersions(req: Request, res: Response) {
   try {
-    const existing = await kpService.getById(req.params.id);
-    if (!existing) {
+    const versions = await kpService.listVersions(req.params.id);
+    if (!versions) {
       res.status(404).json({ message: 'Not found' });
       return;
     }
+    res.json({ items: versions });
+  } catch (error: any) {
+    res.status(400).json({ message: validationMessage(error) });
+  }
+}
+
+export async function createKpVersion(req: Request, res: Response) {
+  try {
+    const kp = await kpService.createVersion(req.params.id);
+    if (!kp) {
+      res.status(404).json({ message: 'Not found' });
+      return;
+    }
+    res.status(201).json(mapKpToDto(kp));
+  } catch (error: any) {
+    res.status(400).json({ message: validationMessage(error) });
+  }
+}
+
+export async function updateKp(req: Request, res: Response) {
+  try {
     const updated = await kpService.updateKp(req.params.id, req.body);
     if (!updated) {
       res.status(404).json({ message: 'Not found' });
@@ -108,17 +142,39 @@ export async function previewKpPdf(req: Request, res: Response) {
 
 async function handlePdfExport(req: Request, res: Response, disposition: 'attachment' | 'inline') {
   try {
-    const kp = await kpService.getById(req.params.id);
-    if (!kp) {
-      res.status(404).json({ message: 'КП не найдено' });
-      return;
+    const rawVersion = req.query.version;
+    const requestedVersion = typeof rawVersion === 'string' && rawVersion.trim()
+      ? Number(rawVersion)
+      : undefined;
+    const resolvedVersion = requestedVersion && Number.isFinite(requestedVersion)
+      ? requestedVersion
+      : undefined;
+
+    let kpDto: any = null;
+    if (resolvedVersion) {
+      kpDto = await kpService.getVersionSnapshot(req.params.id, resolvedVersion);
+      if (!kpDto) {
+        res.status(404).json({ message: 'КП не найдено' });
+        return;
+      }
+    } else {
+      const kp = await kpService.getById(req.params.id);
+      if (!kp) {
+        res.status(404).json({ message: 'КП не найдено' });
+        return;
+      }
+      kpDto = mapKpToDto(kp);
     }
 
     const accessToken = req.headers.authorization?.startsWith('Bearer ')
       ? req.headers.authorization.slice('Bearer '.length)
       : undefined;
-    const pdfBuffer = await pdfGeneratorService.generateKpPdf({ kpId: req.params.id, accessToken });
-    const docNumber = String(kp.metadata?.number ?? req.params.id).replace(/[^\w.-]+/g, '_');
+    const pdfBuffer = await pdfGeneratorService.generateKpPdf({
+      kpId: req.params.id,
+      accessToken,
+      version: resolvedVersion
+    } as any);
+    const docNumber = String(kpDto.metadata?.number ?? req.params.id).replace(/[^\w.-]+/g, '_');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `${disposition}; filename="kp-${docNumber}.pdf"`);
     res.send(pdfBuffer);

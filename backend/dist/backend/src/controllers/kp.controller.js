@@ -5,6 +5,8 @@ exports.createKp = createKp;
 exports.duplicateKp = duplicateKp;
 exports.switchKpType = switchKpType;
 exports.getKpById = getKpById;
+exports.listKpVersions = listKpVersions;
+exports.createKpVersion = createKpVersion;
 exports.updateKp = updateKp;
 exports.deleteKp = deleteKp;
 exports.exportKpPdf = exportKpPdf;
@@ -14,6 +16,7 @@ exports.previewProductPassportPdf = previewProductPassportPdf;
 const kp_service_1 = require("../services/kp.service");
 const pdf_generator_service_1 = require("../services/pdf-generator.service");
 const product_passport_pdf_service_1 = require("../services/product-passport-pdf.service");
+const kp_dto_1 = require("../dtos/kp.dto");
 function validationMessage(error) {
     return typeof error?.message === 'string' && error.message.trim()
         ? error.message
@@ -22,7 +25,7 @@ function validationMessage(error) {
 async function listKp(_req, res) {
     try {
         const list = await kp_service_1.kpService.list();
-        res.json(list);
+        res.json(list.map(kp_dto_1.mapKpToDto));
     }
     catch {
         res.status(500).json({ message: 'Ошибка сервера' });
@@ -31,7 +34,7 @@ async function listKp(_req, res) {
 async function createKp(req, res) {
     try {
         const kp = await kp_service_1.kpService.create(req.body);
-        res.status(201).json(kp);
+        res.status(201).json((0, kp_dto_1.mapKpToDto)(kp));
     }
     catch (error) {
         res.status(400).json({ message: validationMessage(error) });
@@ -44,7 +47,7 @@ async function duplicateKp(req, res) {
             res.status(404).json({ message: 'Not found' });
             return;
         }
-        res.status(201).json(duplicate);
+        res.status(201).json((0, kp_dto_1.mapKpToDto)(duplicate));
     }
     catch (error) {
         res.status(400).json({ message: validationMessage(error) });
@@ -57,7 +60,11 @@ async function switchKpType(req, res) {
             res.status(404).json({ message: 'Not found' });
             return;
         }
-        res.json(result);
+        // Возвращаем объект с отмаппленным КП и метаданными
+        res.json({
+            kp: (0, kp_dto_1.mapKpToDto)(result.kp),
+            meta: result.meta
+        });
     }
     catch (error) {
         res.status(400).json({ message: validationMessage(error) });
@@ -65,30 +72,64 @@ async function switchKpType(req, res) {
 }
 async function getKpById(req, res) {
     try {
+        const rawVersion = req.query.version;
+        const requestedVersion = typeof rawVersion === 'string' && rawVersion.trim()
+            ? Number(rawVersion)
+            : undefined;
+        if (requestedVersion && Number.isFinite(requestedVersion)) {
+            const snapshot = await kp_service_1.kpService.getVersionSnapshot(req.params.id, requestedVersion);
+            if (!snapshot) {
+                res.status(404).json({ message: 'Not found' });
+                return;
+            }
+            res.json(snapshot);
+            return;
+        }
         const kp = await kp_service_1.kpService.getById(req.params.id);
         if (!kp) {
             res.status(404).json({ message: 'Not found' });
             return;
         }
-        res.json(kp);
+        res.json((0, kp_dto_1.mapKpToDto)(kp));
     }
     catch {
         res.status(400).json({ message: 'Неверный ID' });
     }
 }
-async function updateKp(req, res) {
+async function listKpVersions(req, res) {
     try {
-        const existing = await kp_service_1.kpService.getById(req.params.id);
-        if (!existing) {
+        const versions = await kp_service_1.kpService.listVersions(req.params.id);
+        if (!versions) {
             res.status(404).json({ message: 'Not found' });
             return;
         }
+        res.json({ items: versions });
+    }
+    catch (error) {
+        res.status(400).json({ message: validationMessage(error) });
+    }
+}
+async function createKpVersion(req, res) {
+    try {
+        const kp = await kp_service_1.kpService.createVersion(req.params.id);
+        if (!kp) {
+            res.status(404).json({ message: 'Not found' });
+            return;
+        }
+        res.status(201).json((0, kp_dto_1.mapKpToDto)(kp));
+    }
+    catch (error) {
+        res.status(400).json({ message: validationMessage(error) });
+    }
+}
+async function updateKp(req, res) {
+    try {
         const updated = await kp_service_1.kpService.updateKp(req.params.id, req.body);
         if (!updated) {
             res.status(404).json({ message: 'Not found' });
             return;
         }
-        res.json(updated);
+        res.json((0, kp_dto_1.mapKpToDto)(updated));
     }
     catch (error) {
         res.status(400).json({ message: validationMessage(error) });
@@ -111,16 +152,38 @@ async function previewKpPdf(req, res) {
 }
 async function handlePdfExport(req, res, disposition) {
     try {
-        const kp = await kp_service_1.kpService.getById(req.params.id);
-        if (!kp) {
-            res.status(404).json({ message: 'КП не найдено' });
-            return;
+        const rawVersion = req.query.version;
+        const requestedVersion = typeof rawVersion === 'string' && rawVersion.trim()
+            ? Number(rawVersion)
+            : undefined;
+        const resolvedVersion = requestedVersion && Number.isFinite(requestedVersion)
+            ? requestedVersion
+            : undefined;
+        let kpDto = null;
+        if (resolvedVersion) {
+            kpDto = await kp_service_1.kpService.getVersionSnapshot(req.params.id, resolvedVersion);
+            if (!kpDto) {
+                res.status(404).json({ message: 'КП не найдено' });
+                return;
+            }
+        }
+        else {
+            const kp = await kp_service_1.kpService.getById(req.params.id);
+            if (!kp) {
+                res.status(404).json({ message: 'КП не найдено' });
+                return;
+            }
+            kpDto = (0, kp_dto_1.mapKpToDto)(kp);
         }
         const accessToken = req.headers.authorization?.startsWith('Bearer ')
             ? req.headers.authorization.slice('Bearer '.length)
             : undefined;
-        const pdfBuffer = await pdf_generator_service_1.pdfGeneratorService.generateKpPdf({ kpId: req.params.id, accessToken });
-        const docNumber = String(kp.metadata?.number ?? req.params.id).replace(/[^\w.-]+/g, '_');
+        const pdfBuffer = await pdf_generator_service_1.pdfGeneratorService.generateKpPdf({
+            kpId: req.params.id,
+            accessToken,
+            version: resolvedVersion
+        });
+        const docNumber = String(kpDto.metadata?.number ?? req.params.id).replace(/[^\w.-]+/g, '_');
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `${disposition}; filename="kp-${docNumber}.pdf"`);
         res.send(pdfBuffer);

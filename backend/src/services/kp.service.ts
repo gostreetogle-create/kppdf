@@ -1,6 +1,7 @@
 import { Kp } from '../models/kp.model';
 import { Setting, DEFAULT_SETTINGS } from '../models/settings.model';
 import { Counterparty } from '../models/counterparty.model';
+import { KP_STATUS_TRANSITIONS, KpStatus } from '../../../shared/types/Kp';
 
 const KP_TYPE_VALUES = ['standard', 'response', 'special', 'tender', 'service'] as const;
 type KpType = (typeof KP_TYPE_VALUES)[number];
@@ -326,12 +327,142 @@ export class KpService {
     };
   }
 
+  async listVersions(id: string) {
+    const kp = await Kp.findById(id).select('versions').lean();
+    if (!kp) return null;
+    const versions = Array.isArray((kp as any).versions) ? (kp as any).versions : [];
+    return versions.map((v: any) => ({
+      version: Number(v?.version) || 0,
+      createdAt: (v?.createdAt instanceof Date ? v.createdAt : new Date(v?.createdAt)).toISOString(),
+      status: v?.status,
+      number: String(v?.number ?? v?.metadata?.number ?? ''),
+      title: String(v?.title ?? '')
+    })).filter((v: any) => v.version > 0 && v.number && v.title);
+  }
+
+  async getVersionSnapshot(id: string, version: number) {
+    const kp = await Kp.findById(id).lean();
+    if (!kp) return null;
+    const entry = Array.isArray((kp as any).versions)
+      ? (kp as any).versions.find((v: any) => Number(v?.version) === version)
+      : null;
+    if (!entry) return null;
+
+    const createdAt = entry.createdAt instanceof Date ? entry.createdAt : new Date(entry.createdAt);
+    return {
+      _id: String((kp as any)._id),
+      title: String(entry.title),
+      status: entry.status as KpStatus,
+      kpType: entry.kpType,
+      counterpartyId: entry.counterpartyId,
+      companyId: entry.companyId,
+      recipient: entry.recipient,
+      metadata: {
+        ...entry.metadata,
+        number: entry.number ?? entry.metadata?.number,
+        createdAt: createdAt.toISOString(),
+      },
+      items: (entry.items ?? []).map((item: any) => ({
+        ...item,
+        markupEnabled: !!item.markupEnabled,
+        markupPercent: item.markupPercent ?? 0,
+        discountEnabled: !!item.discountEnabled,
+        discountPercent: item.discountPercent ?? 0,
+      })),
+      companySnapshot: entry.companySnapshot
+        ? { ...entry.companySnapshot, companyId: String(entry.companySnapshot.companyId) }
+        : entry.companySnapshot,
+      conditions: entry.conditions ?? [],
+      vatPercent: entry.vatPercent,
+      createdAt: createdAt.toISOString(),
+      updatedAt: createdAt.toISOString(),
+      versions: Array.isArray((kp as any).versions)
+        ? (kp as any).versions.map((v: any) => ({
+            version: Number(v?.version) || 0,
+            createdAt: (v?.createdAt instanceof Date ? v.createdAt : new Date(v?.createdAt)).toISOString(),
+            status: v?.status,
+            number: String(v?.number ?? v?.metadata?.number ?? ''),
+            title: String(v?.title ?? '')
+          })).filter((v: any) => v.version > 0 && v.number && v.title)
+        : [],
+    };
+  }
+
+  async createVersion(id: string) {
+    const kp = await Kp.findById(id);
+    if (!kp) return null;
+    const nextVersion = Array.isArray((kp as any).versions) ? (kp as any).versions.length + 1 : 1;
+    (kp as any).versions = Array.isArray((kp as any).versions) ? (kp as any).versions : [];
+    (kp as any).versions.push({
+      version: nextVersion,
+      status: kp.status,
+      number: String((kp as any).metadata?.number ?? ''),
+      title: kp.title,
+      kpType: (kp as any).kpType,
+      counterpartyId: (kp as any).counterpartyId,
+      companyId: (kp as any).companyId,
+      recipient: kp.recipient,
+      metadata: kp.metadata,
+      items: kp.items,
+      companySnapshot: kp.companySnapshot,
+      conditions: kp.conditions,
+      vatPercent: kp.vatPercent,
+    });
+    await kp.save();
+    return kp;
+  }
+
   async updateKp(id: string, data: any) {
-    return Kp.findByIdAndUpdate(
-      id,
-      { $set: data },
-      { runValidators: true, new: true, context: 'query' }
-    );
+    const kp = await Kp.findById(id);
+    if (!kp) return null;
+
+    const nextStatus = typeof data?.status === 'string' ? (data.status as KpStatus) : undefined;
+    const currentStatus = kp.status as KpStatus;
+    const isDraft = currentStatus === 'draft';
+    const isStatusChange = Boolean(nextStatus && nextStatus !== currentStatus);
+    if (nextStatus && nextStatus !== currentStatus) {
+      const allowed = KP_STATUS_TRANSITIONS[currentStatus] ?? [];
+      if (!allowed.includes(nextStatus)) {
+        throw new Error(`Недопустимый переход статуса: ${currentStatus} → ${nextStatus}`);
+      }
+    }
+
+    if (!isDraft && !isStatusChange) {
+      throw new Error(`КП в статусе «${currentStatus}» доступно только для смены статуса`);
+    }
+
+    if (!isDraft && isStatusChange) {
+      kp.status = nextStatus as KpStatus;
+    } else {
+      const allowedKeys = [
+        'title',
+        'status',
+        'kpType',
+        'counterpartyId',
+        'companyId',
+        'recipient',
+        'metadata',
+        'items',
+        'conditions',
+        'vatPercent',
+        'companySnapshot'
+      ];
+      allowedKeys.forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(data ?? {}, key)) {
+          (kp as any)[key] = (data as any)[key];
+        }
+      });
+    }
+
+    await kp.validate();
+    await kp.save();
+
+    if (nextStatus && nextStatus !== currentStatus && nextStatus !== 'draft') {
+      await this.createVersion(id);
+      return Kp.findById(id);
+    }
+
+    return kp;
   }
 
   async remove(id: string) {

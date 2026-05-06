@@ -15,11 +15,13 @@
     />
     <ui-filter-select
       [value]="filterCategory()"
+      ariaLabel="Категория"
       [options]="[{ value: '', label: 'Все категории' }, ...categories().map(cat => ({ value: cat, label: cat }))]"
       (valueChange)="filterCategory.set($event)"
     />
     <ui-filter-select
       [value]="filterHasSpec() === null ? '' : (filterHasSpec() ? 'true' : 'false')"
+      ariaLabel="Технический паспорт"
       [options]="[
         { value: '', label: 'Любой тех. паспорт' },
         { value: 'true', label: 'Только с тех. паспортом' },
@@ -27,10 +29,23 @@
       ]"
       (valueChange)="setHasSpecFilter($event)"
     />
+    <ui-filter-select
+      [value]="limit() + ''"
+      ariaLabel="Количество на странице"
+      [options]="[
+        { value: '24', label: '24 / стр.' },
+        { value: '48', label: '48 / стр.' },
+        { value: '96', label: '96 / стр.' }
+      ]"
+      (valueChange)="setLimit($event)"
+    />
     <div class="view-toggle">
       <button
         class="view-toggle__btn"
         [class.view-toggle__btn--active]="view() === 'grid'"
+        [attr.aria-pressed]="view() === 'grid'"
+        aria-label="Вид: сетка"
+        type="button"
         (click)="view.set('grid')"
         title="Сетка">
         ⊞
@@ -38,6 +53,9 @@
       <button
         class="view-toggle__btn"
         [class.view-toggle__btn--active]="view() === 'table'"
+        [attr.aria-pressed]="view() === 'table'"
+        aria-label="Вид: таблица"
+        type="button"
         (click)="view.set('table')"
         title="Таблица">
         ☰
@@ -50,7 +68,9 @@
       <div class="loading-spinner"></div>
       <span>Загрузка каталога...</span>
     </div>
-  } @else if (filtered().length === 0) {
+  } @else if (error()) {
+    <ui-alert type="error">{{ error() }}</ui-alert>
+  } @else if (products().length === 0) {
     <ui-empty-state>
       <p empty-title>
         {{ search() ? 'Ничего не найдено по запросу "' + search() + '"' : 'Каталог пуст' }}
@@ -61,7 +81,7 @@
     </ui-empty-state>
   } @else if (view() === 'grid') {
     <div class="products-grid">
-      @for (product of filtered(); track product._id) {
+      @for (product of products(); track product._id) {
         <app-product-card
           [product]="product"
           (edit)="openEdit(product)"
@@ -87,7 +107,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (product of filtered(); track product._id) {
+          @for (product of products(); track product._id) {
             <tr [class.row--inactive]="!product.isActive">
               <td class="col-img">
                 <img
@@ -118,6 +138,19 @@
           }
         </tbody>
       </table>
+    </div>
+  }
+
+  @if (!loading() && !error() && total() > 0) {
+    <div class="products-footer">
+      <div class="products-footer__meta">
+        Показано {{ products().length }} из {{ total() }}
+      </div>
+      <div class="products-footer__pager">
+        <button ui-btn size="sm" (click)="prevPage()" [disabled]="page() === 1">←</button>
+        <span class="products-footer__page">{{ page() }} / {{ totalPages() }}</span>
+        <button ui-btn size="sm" (click)="nextPage()" [disabled]="page() >= totalPages()">→</button>
+      </div>
     </div>
   }
 </ui-page-layout>

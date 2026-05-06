@@ -1,6 +1,7 @@
 <select
   class="ui-filter-select form-control"
   [value]="value()"
+  [attr.aria-label]="ariaLabel() || null"
   (change)="valueChange.emit($any($event.target).value)"
 >
   @for (option of options(); track option.value) {

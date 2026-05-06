@@ -14,5 +14,6 @@ export interface FilterSelectOption {
 export class FilterSelectComponent {
   value = input('');
   options = input<FilterSelectOption[]>([]);
+  ariaLabel = input('');
   valueChange = output<string>();
 }

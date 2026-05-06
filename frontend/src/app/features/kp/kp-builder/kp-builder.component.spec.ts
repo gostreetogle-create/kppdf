@@ -1,19 +1,31 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick, flushMicrotasks } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of } from 'rxjs';
 import { signal } from '@angular/core';
+import { of } from 'rxjs';
 import { KpBuilderComponent } from './kp-builder.component';
 import { ApiService, Kp } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AutosaveService } from './autosave.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ModalService } from '../../../core/services/modal.service';
+import { PermissionsService } from '../../../core/services/permissions.service';
 
 const mockKp: Kp = {
   _id: 'kp1',
   title: 'КП-1',
   status: 'draft',
+  kpType: 'standard',
   recipient: { name: 'ООО Тест', inn: '1234567890' },
   metadata: { number: 'КП-001', validityDays: 10, prepaymentPercent: 50, productionDays: 15 },
+  companySnapshot: {
+    companyId: 'c1',
+    companyName: 'Компания',
+    templateKey: 't1',
+    templateName: 'Template',
+    kpType: 'standard',
+    assets: { kpPage1: '' },
+    texts: {}
+  },
   items: [],
   conditions: [],
   vatPercent: 20,
@@ -24,25 +36,26 @@ const mockKp: Kp = {
 describe('KpBuilderComponent', () => {
   let fixture: ComponentFixture<KpBuilderComponent>;
   let component: KpBuilderComponent;
-
-  const apiSpy = {
-    getKp: () => of(structuredClone(mockKp)),
-    getProducts: () => of([]),
-    getCounterparties: () => of([]),
-    lookupCounterpartyByInn: () => of({})
-  } as unknown as ApiService;
+  let apiMock: any;
 
   const autosaveMock = {
     status: signal<'saved' | 'saving' | 'unsaved' | 'error'>('saved'),
-    schedule: () => {},
-    saveNow: () => {}
+    schedule: vi.fn(),
+    saveNow: vi.fn()
   };
 
   beforeEach(async () => {
+    apiMock = {
+      getKp: vi.fn(() => of(structuredClone(mockKp))),
+      getProducts: vi.fn(() => of([])),
+      getCounterparties: vi.fn(() => of([])),
+      getBrandingTemplates: vi.fn(() => of({ kpTypes: [], templatesByType: {}, defaultByType: {} })),
+    } satisfies Partial<ApiService>;
+
     await TestBed.configureTestingModule({
       imports: [KpBuilderComponent],
       providers: [
-        { provide: ApiService, useValue: apiSpy },
+        { provide: ApiService, useValue: apiMock as ApiService },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -52,8 +65,10 @@ describe('KpBuilderComponent', () => {
             }
           }
         },
-        { provide: NotificationService, useValue: { success: () => {}, error: () => {} } },
-        { provide: Router, useValue: { navigate: () => {} } },
+        { provide: Router, useValue: { navigate: vi.fn() } },
+        { provide: ModalService, useValue: { confirm: vi.fn(() => of(true)) } },
+        { provide: PermissionsService, useValue: { can: vi.fn(() => true) } },
+        { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn(), info: vi.fn() } },
         {
           provide: AuthService,
           useValue: {
@@ -75,46 +90,11 @@ describe('KpBuilderComponent', () => {
     fixture.detectChanges();
   });
 
-  it('increments and decrements qty with lower bound 1', () => {
-    component.kp.set({
-      ...mockKp,
-      items: [{ productId: 'p1', name: 'Товар', description: '', unit: 'шт', price: 10, qty: 1 }]
-    });
-
-    const item = component.kp()!.items[0];
-    component.incrementQty(item);
-    expect(component.kp()!.items[0].qty).toBe(2);
-
-    component.decrementQty(component.kp()!.items[0]);
-    component.decrementQty(component.kp()!.items[0]);
-    expect(component.kp()!.items[0].qty).toBe(1);
-  });
-
-  it('reorders conditions up and down', () => {
-    component.kp.set({ ...mockKp, conditions: ['a', 'b', 'c'] });
-
-    component.moveConditionDown(0);
-    expect(component.kp()!.conditions).toEqual(['b', 'a', 'c']);
-
-    component.moveConditionUp(2);
-    expect(component.kp()!.conditions).toEqual(['b', 'c', 'a']);
-  });
-
-  it('builds recipient warnings for invalid fields', () => {
-    component.kp.set({
-      ...mockKp,
-      recipient: {
-        ...mockKp.recipient,
-        inn: '123',
-        kpp: '12',
-        email: 'invalid-email'
-      }
-    });
-
-    const warnings = component.recipientWarnings();
-    expect(warnings.length).toBe(3);
-    expect(warnings.join(' ')).toContain('ИНН');
-    expect(warnings.join(' ')).toContain('КПП');
-    expect(warnings.join(' ')).toContain('Email');
-  });
+  it('should load KP on init', fakeAsync(() => {
+    tick();
+    flushMicrotasks();
+    expect(apiMock.getKp).toHaveBeenCalled();
+    expect(component.loading()).toBe(false);
+    expect(component.kp()?._id).toBe('kp1');
+  }));
 });

@@ -8,6 +8,7 @@ const product_model_1 = require("../models/product.model");
 const product_spec_model_1 = require("../models/product-spec.model");
 const dictionary_model_1 = require("../models/dictionary.model");
 const rbac_guard_1 = require("../middleware/rbac.guard");
+const product_dto_1 = require("../dtos/product.dto");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -60,7 +61,7 @@ function validateProduct(req, res, next) {
 // GET /api/products?category=&kind=&isActive=true&q=
 router.get('/', async (req, res) => {
     try {
-        const { category, kind, isActive, q, hasSpec } = req.query;
+        const { category, kind, isActive, q, hasSpec, page, limit, includeSpecId } = req.query;
         const filter = {};
         if (category)
             filter.category = category;
@@ -70,33 +71,68 @@ router.get('/', async (req, res) => {
             filter.isActive = isActive === 'true';
         if (q)
             filter.$text = { $search: String(q) };
-        const products = await product_model_1.Product.aggregate([
-            { $match: filter },
-            {
+        const pageNum = Math.max(1, Number.parseInt(String(page ?? ''), 10) || 1);
+        const limitNumRaw = Number.parseInt(String(limit ?? ''), 10);
+        const limitNum = Math.min(200, Math.max(1, Number.isFinite(limitNumRaw) ? limitNumRaw : 50));
+        const isPaged = page !== undefined || limit !== undefined;
+        const shouldIncludeSpecId = includeSpecId !== 'false';
+        const needsSpecJoin = hasSpec === 'true' || hasSpec === 'false' || shouldIncludeSpecId;
+        const sort = q
+            ? { score: -1, name: 1 }
+            : { category: 1, name: 1 };
+        const pipeline = [{ $match: filter }];
+        if (q)
+            pipeline.push({ $addFields: { score: { $meta: 'textScore' } } });
+        if (needsSpecJoin) {
+            pipeline.push({
                 $lookup: {
                     from: 'productspecs',
-                    localField: '_id',
-                    foreignField: 'productId',
+                    let: { pid: '$_id' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$productId', '$$pid'] } } },
+                        { $project: { _id: 1 } },
+                        { $limit: 1 }
+                    ],
                     as: 'spec'
                 }
-            },
-            {
+            });
+            pipeline.push({
                 $addFields: {
                     specId: {
                         $cond: [
                             { $gt: [{ $size: '$spec' }, 0] },
                             { $toString: { $arrayElemAt: ['$spec._id', 0] } },
-                            undefined
+                            '$$REMOVE'
                         ]
                     }
                 }
-            },
-            ...(hasSpec === 'true' ? [{ $match: { specId: { $exists: true } } }] : []),
-            ...(hasSpec === 'false' ? [{ $match: { specId: { $exists: false } } }] : []),
-            { $project: { spec: 0 } },
-            { $sort: { category: 1, name: 1 } }
-        ]);
-        res.json(products);
+            });
+            pipeline.push({ $project: { spec: 0 } });
+        }
+        if (hasSpec === 'true')
+            pipeline.push({ $match: { specId: { $exists: true } } });
+        if (hasSpec === 'false')
+            pipeline.push({ $match: { specId: { $exists: false } } });
+        if (!shouldIncludeSpecId)
+            pipeline.push({ $unset: ['specId'] });
+        if (isPaged) {
+            const skip = (pageNum - 1) * limitNum;
+            const [result] = await product_model_1.Product.aggregate([
+                ...pipeline,
+                {
+                    $facet: {
+                        items: [{ $sort: sort }, { $skip: skip }, { $limit: limitNum }],
+                        total: [{ $count: 'count' }]
+                    }
+                }
+            ]);
+            const items = (result?.items ?? []).map(product_dto_1.mapProductToDto);
+            const total = result?.total?.[0]?.count ?? 0;
+            res.json({ items, page: pageNum, limit: limitNum, total });
+            return;
+        }
+        const products = await product_model_1.Product.aggregate([...pipeline, { $sort: sort }]);
+        res.json(products.map(product_dto_1.mapProductToDto));
     }
     catch {
         res.status(500).json({ message: 'Ошибка сервера' });
@@ -171,10 +207,10 @@ router.post('/:id/duplicate', async (req, res) => {
             });
             newSpecId = String(newSpec._id);
         }
-        res.status(201).json({
+        res.status(201).json((0, product_dto_1.mapProductToDto)({
             ...duplicatedProduct.toObject(),
             specId: newSpecId
-        });
+        }));
     }
     catch (e) {
         console.error('[products/duplicate] error:', e);
@@ -190,10 +226,10 @@ router.get('/:id', async (req, res) => {
             return;
         }
         const spec = await product_spec_model_1.ProductSpec.findOne({ productId: product._id }).select('_id').lean();
-        res.json({
+        res.json((0, product_dto_1.mapProductToDto)({
             ...product.toObject(),
             specId: spec?._id ? String(spec._id) : undefined
-        });
+        }));
     }
     catch {
         res.status(400).json({ message: 'Неверный ID' });
@@ -251,7 +287,7 @@ router.post('/bulk', async (req, res) => {
 router.post('/', validateProduct, async (req, res) => {
     try {
         const product = await product_model_1.Product.create(buildPayload(req.body));
-        res.status(201).json(product);
+        res.status(201).json((0, product_dto_1.mapProductToDto)(product));
     }
     catch (e) {
         if (e.code === 11000) {
@@ -270,7 +306,7 @@ router.put('/:id', validateProduct, async (req, res) => {
             res.status(404).json({ message: 'Товар не найден' });
             return;
         }
-        res.json(product);
+        res.json((0, product_dto_1.mapProductToDto)(product));
     }
     catch (e) {
         if (e.code === 11000) {

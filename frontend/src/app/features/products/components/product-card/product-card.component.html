@@ -19,15 +19,17 @@
     </div>
   </div>
   <div class="card__actions">
-    <button class="btn-action btn-action--edit" (click)="edit.emit()">Редактировать</button>
-    <button class="btn-action btn-action--duplicate" (click)="duplicate.emit()">Копировать</button>
+    <button ui-btn size="sm" variant="ghost" class="card__action card__action--edit" (click)="edit.emit()">Редактировать</button>
+    <button ui-btn size="sm" variant="ghost" class="card__action card__action--duplicate" (click)="duplicate.emit()">Копировать</button>
     <button
-      class="btn-action btn-action--passport"
-      [class.btn-action--passport-active]="!!product().specId"
+      ui-btn
+      size="sm"
+      class="card__action card__action--passport"
+      [variant]="product().specId ? 'primary' : 'ghost'"
       (click)="passport.emit()">
-      <span class="btn-action__doc-icon">[]</span>
+      <span class="card__action-icon">[]</span>
       <span>Тех. паспорт</span>
     </button>
-    <button class="btn-action btn-action--delete" (click)="delete.emit()">Удалить</button>
+    <button ui-btn size="sm" variant="danger" class="card__action card__action--delete" (click)="delete.emit()">Удалить</button>
   </div>
 </div>

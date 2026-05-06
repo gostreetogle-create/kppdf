@@ -7,6 +7,7 @@ const express_1 = require("express");
 const counterparty_model_1 = require("../models/counterparty.model");
 const rbac_guard_1 = require("../middleware/rbac.guard");
 const counterparty_controller_1 = require("../controllers/counterparty.controller");
+const counterparty_dto_1 = require("../dtos/counterparty.dto");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -45,7 +46,7 @@ router.get('/company', async (_req, res) => {
             res.status(404).json({ message: 'Компания не настроена' });
             return;
         }
-        res.json(company);
+        res.json((0, counterparty_dto_1.mapCounterpartyToDto)(company));
     }
     catch {
         res.status(500).json({ message: 'Ошибка сервера' });
@@ -71,7 +72,7 @@ router.get('/', async (req, res) => {
         if (q)
             filter.$text = { $search: String(q) };
         const list = await counterparty_model_1.Counterparty.find(filter).sort({ name: 1 });
-        res.json(list);
+        res.json(list.map(counterparty_dto_1.mapCounterpartyToDto));
     }
     catch {
         res.status(500).json({ message: 'Ошибка сервера' });

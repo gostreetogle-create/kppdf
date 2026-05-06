@@ -26,6 +26,7 @@
       <div class="builder__toolbar-main builder__toolbar-main--left">
         <button ui-btn class="builder__toolbar-btn builder__toolbar-btn--back" variant="ghost" (click)="back()">←</button>
         <div class="builder__title-wrap">
+          <span class="builder__doc-number">{{ kp()!.metadata.number }}</span>
           <input
             class="builder__title form-control"
             [ngModel]="kp()!.title"
@@ -45,7 +46,10 @@
             @case ('error')   { ✕ Ошибка }
           }
         </span>
-        @if (isReadOnly()) {
+        @if (viewingVersion() !== null) {
+          <button ui-btn variant="ghost" class="builder__toolbar-btn" (click)="closeVersion()">Вернуться</button>
+          <span class="readonly-badge">Просмотр версии #{{ viewingVersion() }}</span>
+        } @else if (isReadOnly()) {
           <span class="readonly-badge">Режим только чтение</span>
         }
       </div>
@@ -54,13 +58,21 @@
         <select
           class="builder__status form-control"
           [ngModel]="kp()!.status"
-          [disabled]="isReadOnly()"
+          [disabled]="!canEditStatus()"
           (ngModelChange)="onStatusChange($event)">
           <option value="draft" [disabled]="!canSelectStatus('draft')">Черновик</option>
           <option value="sent" [disabled]="!canSelectStatus('sent')">Отправлен</option>
           <option value="accepted" [disabled]="!canSelectStatus('accepted')">Принят</option>
           <option value="rejected" [disabled]="!canSelectStatus('rejected')">Отклонён</option>
         </select>
+        <button
+          ui-btn
+          class="builder__toolbar-btn"
+          variant="secondary"
+          (click)="createVersion()"
+          [disabled]="viewingVersion() !== null || autosave.status() === 'saving'">
+          Сохранить версию
+        </button>
         <div class="builder__pdf-split" [class.is-menu-open]="isPdfMenuOpen()">
           <button
             ui-btn
@@ -116,6 +128,32 @@
         <div class="builder__sidebar-scroll">
 
         @if (!focusCatalog()) {
+        <div class="sidebar-section sidebar-section--versions" [class.sidebar-section--open]="!versionsCollapsed()">
+          <button class="sidebar-section__title-btn" (click)="toggleSection('versions')">
+            <span class="sidebar-section__title">Версии ({{ versions().length }})</span>
+            <span class="sidebar-section__chevron">{{ versionsCollapsed() ? '▸' : '▾' }}</span>
+          </button>
+          @if (!versionsCollapsed()) {
+            <div class="versions-list">
+              @if (versions().length === 0) {
+                <p class="sidebar-empty">Пока нет сохранённых версий</p>
+              } @else {
+                @for (v of versions(); track v.version) {
+                  <div class="versions-row">
+                    <button
+                      ui-btn
+                      variant="ghost"
+                      class="versions-open"
+                      (click)="openVersion(v.version)">
+                      #{{ v.version }} · {{ v.number }} · {{ statusLabel(v.status) }} · {{ v.createdAt | date:'dd.MM.yyyy HH:mm' }}
+                    </button>
+                    <button ui-btn icon title="PDF" (click)="exportVersion(v.version); $event.stopPropagation()">↓</button>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
         <div class="sidebar-section sidebar-section--recipient" [class.sidebar-section--open]="!recipientCollapsed()">
           <button class="sidebar-section__title-btn" (click)="toggleSection('recipient')">
             <span class="sidebar-section__title">Получатель</span>

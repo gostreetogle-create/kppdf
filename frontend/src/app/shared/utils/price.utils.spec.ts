@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { calculateEffectivePrice, calculateItemUnitPrice, calculateKpTotals, clampPercent, parsePercentInput } from '../../../../../shared/utils/price.utils';
+import { KpItem } from '@shared/types/Kp';
 
 describe('Price Utils', () => {
   describe('calculateEffectivePrice', () => {

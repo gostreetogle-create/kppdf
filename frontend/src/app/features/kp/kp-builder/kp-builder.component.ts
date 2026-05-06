@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, signal, computed, inject, DestroyRef, effect, HostListener } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin, map, Observable, Subject, take } from 'rxjs';
+import { forkJoin, map, Observable, Subject, take, distinctUntilChanged, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ApiService, Kp, Product, KpItem, Counterparty, KpType, KP_TYPE_LABELS, BrandingTemplatesDto } from '../../../core/services/api.service';
+import { ApiService, Kp, Product, KpItem, Counterparty, KpType, KP_TYPE_LABELS, BrandingTemplatesDto, KpVersionMeta } from '../../../core/services/api.service';
 import { calculateItemUnitPrice, clampPercent, parsePercentInput } from '@shared/utils/price.utils';
+import { KP_STATUS_TRANSITIONS } from '@shared/types/Kp';
 import { KpDocumentComponent } from '../components/kp-document/kp-document.component';
 import { KpCatalogItemComponent } from '../components/kp-catalog-item/kp-catalog-item.component';
 import { type KpCatalogItem, type PriceChangedEvent } from '../components/kp-catalog/kp-catalog.component';
@@ -53,10 +54,13 @@ export class KpBuilderComponent implements OnInit {
   readonly autosave            = inject(AutosaveService);
 
   readonly kp    = this.store.kp;
+  private kpId = '';
   products       = signal<Product[]>([]);
   counterparties = signal<Counterparty[]>([]);
   ourCompanies = signal<Counterparty[]>([]);
   loading        = signal(true);
+  viewingVersion = signal<number | null>(null);
+  versions = signal<KpVersionMeta[]>([]);
   conditionDraft = '';
   selectedItemIds = signal<string[]>([]);
   bulkMarkupPercent = signal(0);
@@ -70,6 +74,7 @@ export class KpBuilderComponent implements OnInit {
   catalogSearch = signal('');
   catalogCategory = signal('');
   recipientCollapsed = signal(true);
+  versionsCollapsed = signal(true);
   catalogCollapsed = signal(true);
   paramsCollapsed = signal(true);
   itemsCollapsed = signal(true);
@@ -136,9 +141,16 @@ export class KpBuilderComponent implements OnInit {
   readonly can = (permission: Parameters<PermissionsService['can']>[0]) => this.permissions.can(permission);
   readonly isReadOnly = computed(() => {
     const status = this.kp()?.status;
-    return status === 'sent' || status === 'accepted';
+    return this.viewingVersion() !== null || status !== 'draft';
   });
   readonly isDraft = computed(() => this.kp()?.status === 'draft');
+  readonly canEditStatus = computed(() => this.viewingVersion() === null);
+  readonly displayTitle = computed(() => {
+    const kp = this.kp();
+    if (!kp) return '';
+    const number = String(kp.metadata?.number ?? '').trim();
+    return number ? `${number} — ${kp.title}` : kp.title;
+  });
   readonly previewPageCount = computed(() => {
     const kp = this.kp();
     if (!kp) return 1;
@@ -188,6 +200,7 @@ export class KpBuilderComponent implements OnInit {
     effect(() => {
       const kp = this.kp();
       if (!kp || !this.initialized) return;
+      if (this.viewingVersion() !== null) return;
       if (!this.autosavePrimed) {
         this.autosavePrimed = true;
         this.autosaveEnabled = kp.items.length > 0;
@@ -204,13 +217,22 @@ export class KpBuilderComponent implements OnInit {
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id')!;
     const selectCpId = this.route.snapshot.queryParamMap.get('selectCp');
+    this.kpId = id;
+
+    const rawVersion = this.route.snapshot.queryParamMap.get('version');
+    const initialVersion = rawVersion ? Number(rawVersion) : null;
+    this.viewingVersion.set(initialVersion !== null && Number.isFinite(initialVersion) ? initialVersion : null);
 
     const counterparties$ = this.api.getCounterparties({ status: 'active' }).pipe(
       map(list => list.filter(c => c.role.includes('client') || c.role.includes('company')))
     );
     const ourCompanies$ = this.api.getCounterparties({ isOurCompany: true, status: 'active' });
 
-    forkJoin({ kp: this.api.getKp(id), counterparties: counterparties$, ourCompanies: ourCompanies$ })
+    const kp$ = this.viewingVersion() !== null
+      ? this.api.getKpVersion(id, this.viewingVersion() as number)
+      : this.api.getKp(id);
+
+    forkJoin({ kp: kp$, counterparties: counterparties$, ourCompanies: ourCompanies$ })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ kp, counterparties, ourCompanies }) => {
@@ -218,19 +240,20 @@ export class KpBuilderComponent implements OnInit {
           this.counterparties.set(counterparties);
           this.ourCompanies.set(ourCompanies);
           this.setKpState(normalizedKp, false);
+          this.versions.set(normalizedKp.versions ?? []);
           this.selectAllItems();
           this.hydrateTypeControls(normalizedKp);
           this.applyCompanyDefaultsToBulk(normalizedKp);
           if (normalizedKp.items.length > 0) this.itemsCollapsed.set(false);
           
-          // Проверяем наличие локального черновика
-          const hasBackup = this.hasBackupForKp(normalizedKp._id);
-          if (hasBackup) {
-            // Если черновик найден, восстанавливаем его автоматически без лишних вопросов
-            const restored = this.store.restoreFromBackup(normalizedKp._id);
-            if (restored) {
-              this.autosave.status.set('unsaved');
-              this.ns.info('Восстановлены несохраненные изменения из браузера');
+          if (this.viewingVersion() === null) {
+            const hasBackup = this.hasBackupForKp(normalizedKp._id);
+            if (hasBackup) {
+              const restored = this.store.restoreFromBackup(normalizedKp._id);
+              if (restored) {
+                this.autosave.status.set('unsaved');
+                this.ns.info('Восстановлены несохраненные изменения из браузера');
+              }
             }
           }
 
@@ -238,8 +261,9 @@ export class KpBuilderComponent implements OnInit {
           const initCompanyId = normalizedKp.companyId || normalizedKp.companySnapshot?.companyId || ourCompanies[0]?._id || null;
           this.selectedCompanyId.set(initCompanyId);
           if (initCompanyId) this.loadBrandingTemplates(initCompanyId, normalizedKp);
+          this.refreshVersions();
           Promise.resolve().then(() => {
-            if (selectCpId) {
+            if (selectCpId && this.viewingVersion() === null) {
               this.fillFromCounterparty(selectCpId);
               void this.router.navigate([], {
                 relativeTo: this.route,
@@ -261,6 +285,60 @@ export class KpBuilderComponent implements OnInit {
     this.api.getProducts()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(p => this.products.set(p));
+
+    this.route.queryParamMap
+      .pipe(
+        map((params) => params.get('version')),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((value) => {
+        const parsed = value ? Number(value) : null;
+        const nextVersion = value && Number.isFinite(parsed) ? parsed : null;
+        if (nextVersion === this.viewingVersion()) return;
+        this.viewingVersion.set(nextVersion);
+        this.reloadKp();
+      });
+  }
+
+  private reloadKp() {
+    this.loading.set(true);
+    this.autosavePrimed = false;
+    this.autosaveEnabled = false;
+    this.autosave.status.set('saved');
+    const version = this.viewingVersion();
+    const kp$ = version !== null
+      ? this.api.getKpVersion(this.kpId, version)
+      : this.api.getKp(this.kpId);
+    kp$
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (kp) => {
+          const normalized = this.normalizePaginationMetadata(kp);
+          this.setKpState(normalized, false);
+          this.versions.set(normalized.versions ?? []);
+          this.selectAllItems();
+          this.hydrateTypeControls(normalized);
+          this.applyCompanyDefaultsToBulk(normalized);
+          this.loading.set(false);
+          this.refreshVersions();
+          this.initialized = true;
+        },
+        error: () => {
+          this.loading.set(false);
+          this.ns.error('КП не найдено или недоступно');
+          void this.router.navigate(['/']);
+        }
+      });
+  }
+
+  private refreshVersions() {
+    this.api.getKpVersions(this.kpId)
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ items }) => this.versions.set(items ?? []),
+        error: () => this.versions.set([]),
+      });
   }
 
   /** Модалка нового контрагента на месте (без смены маршрута) */
@@ -832,7 +910,8 @@ export class KpBuilderComponent implements OnInit {
     this.lastRemovedItem.set(null);
   }
 
-  toggleSection(section: 'recipient' | 'catalog' | 'params' | 'items' | 'conditions') {
+  toggleSection(section: 'versions' | 'recipient' | 'catalog' | 'params' | 'items' | 'conditions') {
+    if (section === 'versions') this.versionsCollapsed.update(v => !v);
     if (section === 'recipient') this.recipientCollapsed.update(v => !v);
     if (section === 'catalog') this.catalogCollapsed.update(v => !v);
     if (section === 'params') this.paramsCollapsed.update(v => !v);
@@ -849,10 +928,14 @@ export class KpBuilderComponent implements OnInit {
   }
 
   canSelectStatus(targetStatus: Kp['status']): boolean {
-    if (this.can('kp.edit') && this.can('kp.delete')) return true;
-    const current = this.kp()?.status;
-    if (!current) return false;
+    if (!this.canEditStatus()) return false;
+    const kp = this.kp();
+    if (!kp) return false;
+    const current = kp.status;
     if (current === targetStatus) return true;
+    const allowed = KP_STATUS_TRANSITIONS[current] ?? [];
+    if (!allowed.includes(targetStatus)) return false;
+    if (this.can('kp.edit') && this.can('kp.delete')) return true;
     return current === 'draft' && targetStatus === 'sent';
   }
 
@@ -871,7 +954,10 @@ export class KpBuilderComponent implements OnInit {
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
-        this.setKpState({ ...kp, status: nextStatus });
+        const next = { ...kp, status: nextStatus };
+        this.setKpState(next);
+        this.autosave.saveNow(next);
+        this.refreshVersions();
         this.ns.success(`Статус изменён: ${this.statusLabel(nextStatus)}`);
       });
   }
@@ -1058,13 +1144,82 @@ export class KpBuilderComponent implements OnInit {
     'Доставка рассчитывается отдельно и не входит в стоимость КП.'
   ];
 
+  openVersion(version: number) {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { version: String(version) },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  closeVersion() {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { version: null },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  createVersion() {
+    const kp = this.kp();
+    if (!kp || this.viewingVersion() !== null) return;
+    if (!this.isReadOnly()) {
+      this.autosave.saveNow(kp);
+    }
+    this.api.createKpVersion(kp._id)
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updated) => {
+          const normalized = this.normalizePaginationMetadata(updated);
+          this.setKpState(normalized, false);
+          this.versions.set(normalized.versions ?? []);
+          this.ns.success('Версия сохранена');
+        },
+        error: (err) => {
+          this.ns.error(err?.error?.message || 'Не удалось сохранить версию');
+        }
+      });
+  }
+
+  exportVersion(version: number) {
+    const kp = this.kp();
+    if (!kp || this.isExporting()) return;
+    const meta = this.versions().find(v => v.version === version);
+    this.isExporting.set(true);
+    this.ns.info('Генерация PDF высокого качества...');
+    this.api.exportToPdfVersion(kp._id, version).pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const docNumber = String(meta?.number || kp.metadata?.number || 'бн').replace(/[^\w.-]+/g, '_');
+        const safeFileName = `КП_${docNumber}.pdf`;
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = safeFileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+        this.isExporting.set(false);
+        this.ns.success('PDF успешно сгенерирован');
+      },
+      error: () => {
+        this.isExporting.set(false);
+        this.ns.error('Ошибка генерации PDF на сервере');
+      }
+    });
+  }
+
   onExportHQ() {
     const kp = this.kp();
     if (!kp || this.isExporting()) return;
 
     this.isExporting.set(true);
     this.ns.info('Генерация PDF высокого качества...');
-    this.api.exportToPdf(kp._id).pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe({
+    const export$ = this.viewingVersion() !== null
+      ? this.api.exportToPdfVersion(kp._id, this.viewingVersion() as number)
+      : this.api.exportToPdf(kp._id);
+
+    export$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (blob) => {
         const docNumber = String(kp.metadata?.number || 'бн').replace(/[^\w.-]+/g, '_');
         const safeFileName = `КП_${docNumber}.pdf`;

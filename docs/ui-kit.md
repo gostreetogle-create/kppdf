@@ -80,6 +80,11 @@ Visual baseline: compact Apple-style semantic badge (soft background через 
 
 Слоты: `modal-body`, `modal-footer`
 
+Поведение по доступности:
+- `Esc` закрывает модалку (emit `closed`);
+- при открытии фокус ставится на кнопку закрытия;
+- фокус удерживается внутри модалки (Tab/Shift+Tab), при закрытии фокус возвращается на элемент-инициатор.
+
 ```html
 <ui-modal title="Заголовок" (closed)="close()">
   <div modal-body>Содержимое</div>
@@ -236,6 +241,7 @@ Error-state:
 |-------|-----|---------|----------|
 | `value` | `string` | `''` | Текущее выбранное значение |
 | `options` | `{ value, label }[]` | `[]` | Список опций |
+| `ariaLabel` | `string` | `''` | Название контрола для скринридеров (если нет видимого `<label>`) |
 | Output `valueChange` | `string` | — | Изменение выбранного значения |
 
 ```html

@@ -39,7 +39,7 @@
               <td>
                 <ui-status-badge [variant]="kp.status" [hint]="statusHint(kp.status)"></ui-status-badge>
               </td>
-              <td class="kp-cell-title">{{ kp.title }}</td>
+              <td class="kp-cell-title">{{ kp.metadata.number }} — {{ kp.title }}</td>
               <td class="kp-cell-client">{{ kp.recipient.name || 'Клиент не указан' }}</td>
               <td class="is-right kp-cell-total">{{ getTotal(kp) | number:'1.0-0' }} ₽</td>
               <td class="kp-cell-date">{{ kp.createdAt | date:'dd.MM.yyyy' }}</td>

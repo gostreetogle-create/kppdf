@@ -1,8 +1,15 @@
 <div class="drawer-backdrop" (click)="onBackdropClick($event)">
-  <aside class="drawer" [style.width]="width()">
+  <aside
+    class="drawer"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="titleId"
+    [style.width]="width()"
+    tabindex="-1"
+    (keydown)="onKeydown($event)">
     <header class="drawer__header">
-      <h2 class="drawer__title">{{ title() }}</h2>
-      <button ui-btn variant="ghost" icon class="drawer__close" (click)="closed.emit()">✕</button>
+      <h2 class="drawer__title" [id]="titleId">{{ title() }}</h2>
+      <button #closeBtn ui-btn variant="ghost" icon type="button" aria-label="Закрыть" class="drawer__close" (click)="closed.emit()">✕</button>
     </header>
     <section class="drawer__body">
       <ng-content select="[drawer-body]" />

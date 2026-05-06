@@ -4,6 +4,7 @@ exports.kpService = exports.KpService = void 0;
 const kp_model_1 = require("../models/kp.model");
 const settings_model_1 = require("../models/settings.model");
 const counterparty_model_1 = require("../models/counterparty.model");
+const Kp_1 = require("../../../shared/types/Kp");
 const KP_TYPE_VALUES = ['standard', 'response', 'special', 'tender', 'service'];
 const KP_TYPE_NUMBER_PREFIX = {
     standard: 'КП',
@@ -289,8 +290,138 @@ class KpService {
             }
         };
     }
+    async listVersions(id) {
+        const kp = await kp_model_1.Kp.findById(id).select('versions').lean();
+        if (!kp)
+            return null;
+        const versions = Array.isArray(kp.versions) ? kp.versions : [];
+        return versions.map((v) => ({
+            version: Number(v?.version) || 0,
+            createdAt: (v?.createdAt instanceof Date ? v.createdAt : new Date(v?.createdAt)).toISOString(),
+            status: v?.status,
+            number: String(v?.number ?? v?.metadata?.number ?? ''),
+            title: String(v?.title ?? '')
+        })).filter((v) => v.version > 0 && v.number && v.title);
+    }
+    async getVersionSnapshot(id, version) {
+        const kp = await kp_model_1.Kp.findById(id).lean();
+        if (!kp)
+            return null;
+        const entry = Array.isArray(kp.versions)
+            ? kp.versions.find((v) => Number(v?.version) === version)
+            : null;
+        if (!entry)
+            return null;
+        const createdAt = entry.createdAt instanceof Date ? entry.createdAt : new Date(entry.createdAt);
+        return {
+            _id: String(kp._id),
+            title: String(entry.title),
+            status: entry.status,
+            kpType: entry.kpType,
+            counterpartyId: entry.counterpartyId,
+            companyId: entry.companyId,
+            recipient: entry.recipient,
+            metadata: {
+                ...entry.metadata,
+                number: entry.number ?? entry.metadata?.number,
+                createdAt: createdAt.toISOString(),
+            },
+            items: (entry.items ?? []).map((item) => ({
+                ...item,
+                markupEnabled: !!item.markupEnabled,
+                markupPercent: item.markupPercent ?? 0,
+                discountEnabled: !!item.discountEnabled,
+                discountPercent: item.discountPercent ?? 0,
+            })),
+            companySnapshot: entry.companySnapshot
+                ? { ...entry.companySnapshot, companyId: String(entry.companySnapshot.companyId) }
+                : entry.companySnapshot,
+            conditions: entry.conditions ?? [],
+            vatPercent: entry.vatPercent,
+            createdAt: createdAt.toISOString(),
+            updatedAt: createdAt.toISOString(),
+            versions: Array.isArray(kp.versions)
+                ? kp.versions.map((v) => ({
+                    version: Number(v?.version) || 0,
+                    createdAt: (v?.createdAt instanceof Date ? v.createdAt : new Date(v?.createdAt)).toISOString(),
+                    status: v?.status,
+                    number: String(v?.number ?? v?.metadata?.number ?? ''),
+                    title: String(v?.title ?? '')
+                })).filter((v) => v.version > 0 && v.number && v.title)
+                : [],
+        };
+    }
+    async createVersion(id) {
+        const kp = await kp_model_1.Kp.findById(id);
+        if (!kp)
+            return null;
+        const nextVersion = Array.isArray(kp.versions) ? kp.versions.length + 1 : 1;
+        kp.versions = Array.isArray(kp.versions) ? kp.versions : [];
+        kp.versions.push({
+            version: nextVersion,
+            status: kp.status,
+            number: String(kp.metadata?.number ?? ''),
+            title: kp.title,
+            kpType: kp.kpType,
+            counterpartyId: kp.counterpartyId,
+            companyId: kp.companyId,
+            recipient: kp.recipient,
+            metadata: kp.metadata,
+            items: kp.items,
+            companySnapshot: kp.companySnapshot,
+            conditions: kp.conditions,
+            vatPercent: kp.vatPercent,
+        });
+        await kp.save();
+        return kp;
+    }
     async updateKp(id, data) {
-        return kp_model_1.Kp.findByIdAndUpdate(id, { $set: data }, { runValidators: true, new: true, context: 'query' });
+        const kp = await kp_model_1.Kp.findById(id);
+        if (!kp)
+            return null;
+        const nextStatus = typeof data?.status === 'string' ? data.status : undefined;
+        const currentStatus = kp.status;
+        const isDraft = currentStatus === 'draft';
+        const isStatusChange = Boolean(nextStatus && nextStatus !== currentStatus);
+        if (nextStatus && nextStatus !== currentStatus) {
+            const allowed = Kp_1.KP_STATUS_TRANSITIONS[currentStatus] ?? [];
+            if (!allowed.includes(nextStatus)) {
+                throw new Error(`Недопустимый переход статуса: ${currentStatus} → ${nextStatus}`);
+            }
+        }
+        if (!isDraft && !isStatusChange) {
+            throw new Error(`КП в статусе «${currentStatus}» доступно только для смены статуса`);
+        }
+        if (!isDraft && isStatusChange) {
+            kp.status = nextStatus;
+        }
+        else {
+            const allowedKeys = [
+                'title',
+                'status',
+                'kpType',
+                'counterpartyId',
+                'companyId',
+                'recipient',
+                'metadata',
+                'items',
+                'conditions',
+                'vatPercent',
+                'companySnapshot'
+            ];
+            allowedKeys.forEach((key) => {
+                if (Object.prototype.hasOwnProperty.call(data ?? {}, key)) {
+                    kp[key] = data[key];
+                }
+            });
+        }
+        await kp.validate();
+        await kp.save();
+        if (nextStatus && nextStatus !== currentStatus && nextStatus !== 'draft') {
+            await this.createVersion(id);
+            return kp_model_1.Kp.findById(id);
+        }
+        return kp;
     }
     async remove(id) {
         return kp_model_1.Kp.findByIdAndDelete(id);

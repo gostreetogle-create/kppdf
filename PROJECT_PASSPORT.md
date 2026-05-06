@@ -91,10 +91,17 @@
 - Рендер в UI выполняется через standalone pipe `kpTemplate` в `kp-document` и `kp-table`.
 - Неизвестные токены не удаляются и остаются в тексте для безопасной деградации/отладки.
 
-### 9) PDF export strategy (server-side HTML + Puppeteer)
-- Экспорт `GET /api/kp/:id/export` генерируется в `kp-pdf.service` из server-side HTML-шаблона документа.
-- Для многостраничных документов включён `displayHeaderFooter`: header (название КП + дата), footer (`Страница X из Y`).
-- Геометрия PDF учитывает колонтитулы через увеличенные `top/bottom` margins.
+### 9) KP lifecycle (statuses + versions)
+- Статусы и допустимые переходы: `shared/types/Kp.ts` → `KP_STATUS_TRANSITIONS`; источник правил: `docs/business-rules.md`.
+- Frontend ограничивает редактирование по статусу в `KpBuilderComponent` (контент редактируется только в `draft`), но статус можно менять по переходам.
+- Backend валидирует переходы статусов в `backend/src/services/kp.service.ts` → `updateKp()` и запрещает редактирование не-черновиков (разрешена только смена статуса).
+- История версий хранится внутри документа KP (`Kp.versions[]`): создаётся автоматически при смене статуса на `sent/accepted/rejected` и вручную через `POST /api/kp/:id/versions`.
+- API версий: `GET /api/kp/:id/versions`, `POST /api/kp/:id/versions`, просмотр через `GET /api/kp/:id?version=N`.
+
+### 10) PDF export strategy (frontend route + Puppeteer)
+- Экспорт `GET /api/kp/:id/export` и превью `GET /api/kp/:id/preview` генерируются в `backend/src/services/pdf-generator.service.ts` через Puppeteer, который открывает frontend-роут `/kp/:id?pdf=1`.
+- Поддержан экспорт версии через query `?version=N` (Puppeteer открывает `/kp/:id?pdf=1&version=N`).
+- Имя файла задаётся в `backend/src/controllers/kp.controller.ts` через `Content-Disposition` на основе `kp.metadata.number`.
 
 ### 10) UI governance (Storybook + shared focus/required)
 - Storybook используется как контрольный слой для `shared/ui` (базовые компоненты должны рендериться в изоляции и на тех же токенах, что runtime).

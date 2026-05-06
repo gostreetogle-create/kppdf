@@ -89,7 +89,17 @@
 - Auth: в `authInterceptor` для `401` на `POST /api/auth/login` и `POST /api/auth/logout` отключены refresh и принудительный `logout()` — устранён бесконечный спам `POST /logout` (раньше `logout` без Bearer → `401` → снова `logout`).
 - Локальный старт: `start.ps1` учитывает код выхода `docker compose` и не сообщает об успехе, если демон Docker недоступен (иначе MongoDB на `:27017` не поднимается).
 
+---
+
+## 2026-05-06
+
+- Products API: добавлена пагинация (`page/limit/total`) для `GET /api/products`, оптимизирован lookup техпаспорта (pipeline + limit), добавлен `includeSpecId=false`, при `q` сортировка учитывает `textScore`.
+- Products UI: страница `/products` переведена на серверную загрузку с debounce поиска, отменой запросов (switchMap) и UI-пагинацией; добавлен вывод ошибок через `ui-alert`.
+- Product card: действия карточки унифицированы на `ui-btn`, убраны хардкод-цвета в пользу токенов.
+
 ## 2026-04-22
+
+- KP Builder: `ui-modal` вместо `window.confirm` в `canDeactivate`.
 
 - KP Builder: `ui-modal` вместо `window.confirm` в `canDeactivate`.
 - Autosave: отключён на первом рендере, включается после первой товарной позиции.

@@ -6,13 +6,31 @@ import { ApiService, Product, Kp } from './api.service';
 const BASE = 'http://localhost:3000/api';
 
 const mockProduct: Product = {
-  _id: '1', name: 'Тест', description: 'Описание', unit: 'шт.', price: 1000, imageUrl: ''
+  _id: '1',
+  code: 'TEST-1',
+  name: 'Тест',
+  description: 'Описание',
+  category: '',
+  unit: 'шт.',
+  price: 1000,
+  images: [],
+  isActive: true,
+  kind: 'ITEM'
 };
 
 const mockKp: Kp = {
-  _id: 'kp1', title: 'КП-1', status: 'draft',
+  _id: 'kp1', title: 'КП-1', status: 'draft', kpType: 'standard',
   recipient: { name: 'ООО Тест' },
   metadata: { number: 'КП-001', validityDays: 10, prepaymentPercent: 50, productionDays: 15 },
+  companySnapshot: {
+    companyId: 'c1',
+    companyName: 'Компания',
+    templateKey: 't1',
+    templateName: 'Template',
+    kpType: 'standard',
+    assets: { kpPage1: '' },
+    texts: {}
+  },
   items: [], conditions: [], vatPercent: 20,
   createdAt: '2024-01-01', updatedAt: '2024-01-01'
 };
@@ -38,7 +56,7 @@ describe('ApiService', () => {
   });
 
   it('createProduct() — POST /api/products', () => {
-    const payload = { name: 'Тест', description: '', unit: 'шт.', price: 100, imageUrl: '' };
+    const { _id, ...payload } = mockProduct;
     service.createProduct(payload).subscribe(res => expect(res).toEqual(mockProduct));
     const req = http.expectOne(`${BASE}/products`);
     expect(req.request.method).toBe('POST');
@@ -59,6 +77,14 @@ describe('ApiService', () => {
     req.flush(null);
   });
 
+  it('getProductsPage() — GET /api/products?page=&limit=', () => {
+    service.getProductsPage({ page: 1, limit: 24 }).subscribe(res => expect(res.total).toBe(1));
+    const req = http.expectOne(r => r.url === `${BASE}/products`);
+    expect(req.request.params.get('page')).toBe('1');
+    expect(req.request.params.get('limit')).toBe('24');
+    req.flush({ items: [mockProduct], page: 1, limit: 24, total: 1 });
+  });
+
   // ─── KP ───────────────────────────────────────────────
   it('getKpList() — GET /api/kp', () => {
     service.getKpList().subscribe(res => expect(res).toEqual([mockKp]));
@@ -71,7 +97,7 @@ describe('ApiService', () => {
   });
 
   it('createKp() — POST /api/kp', () => {
-    service.createKp({ title: 'Новое КП' }).subscribe(res => expect(res).toEqual(mockKp));
+    service.createKp({ title: 'Новое КП', status: 'draft', recipient: { name: '' }, items: [], conditions: [] }).subscribe(res => expect(res).toEqual(mockKp));
     const req = http.expectOne(`${BASE}/kp`);
     expect(req.request.method).toBe('POST');
     req.flush(mockKp);

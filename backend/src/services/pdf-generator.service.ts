@@ -6,6 +6,7 @@ import { Kp } from '../models/kp.model';
 interface GenerateKpPdfInput {
   kpId: string;
   accessToken?: string;
+  version?: number;
 }
 
 export class PdfGeneratorService {
@@ -20,9 +21,23 @@ export class PdfGeneratorService {
   }
 
   async generateKpPdf(input: GenerateKpPdfInput): Promise<Buffer> {
-    const kp = await Kp.findById(input.kpId).select('updatedAt metadata.createdAt').lean();
-    const updatedAt = kp?.updatedAt || (kp as any)?.metadata?.createdAt || new Date();
-    const cachePath = pdfCacheService.getCachePath(input.kpId, updatedAt, 'kp-full');
+    const kp = await Kp.findById(input.kpId).select('updatedAt metadata.createdAt versions').lean();
+    const resolvedVersion = typeof input.version === 'number' && Number.isFinite(input.version)
+      ? input.version
+      : undefined;
+    const versionEntry = resolvedVersion && Array.isArray((kp as any)?.versions)
+      ? (kp as any).versions.find((v: any) => Number(v?.version) === resolvedVersion)
+      : null;
+    if (resolvedVersion && !versionEntry) {
+      throw new Error('Версия КП не найдена');
+    }
+
+    const updatedAt = versionEntry?.createdAt
+      || kp?.updatedAt
+      || (kp as any)?.metadata?.createdAt
+      || new Date();
+    const cacheKey = resolvedVersion ? `kp-full-v${resolvedVersion}` : 'kp-full';
+    const cachePath = pdfCacheService.getCachePath(input.kpId, updatedAt, cacheKey);
 
     const cached = await pdfCacheService.get(cachePath);
     if (cached) return cached;
@@ -39,7 +54,8 @@ export class PdfGeneratorService {
         }, input.accessToken);
       }
 
-      const targetUrl = `${this.getFrontendBaseUrl().replace(/\/$/, '')}/kp/${encodeURIComponent(input.kpId)}?pdf=1`;
+      const versionParam = resolvedVersion ? `&version=${encodeURIComponent(String(resolvedVersion))}` : '';
+      const targetUrl = `${this.getFrontendBaseUrl().replace(/\/$/, '')}/kp/${encodeURIComponent(input.kpId)}?pdf=1${versionParam}`;
       await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 60000 });
 
       // Wait until Angular renders document preview.

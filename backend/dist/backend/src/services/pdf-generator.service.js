@@ -15,9 +15,22 @@ class PdfGeneratorService {
         return raw.replace(/\/$/, '');
     }
     async generateKpPdf(input) {
-        const kp = await kp_model_1.Kp.findById(input.kpId).select('updatedAt metadata.createdAt').lean();
-        const updatedAt = kp?.updatedAt || kp?.metadata?.createdAt || new Date();
-        const cachePath = pdf_cache_service_1.pdfCacheService.getCachePath(input.kpId, updatedAt, 'kp-full');
+        const kp = await kp_model_1.Kp.findById(input.kpId).select('updatedAt metadata.createdAt versions').lean();
+        const resolvedVersion = typeof input.version === 'number' && Number.isFinite(input.version)
+            ? input.version
+            : undefined;
+        const versionEntry = resolvedVersion && Array.isArray(kp?.versions)
+            ? kp.versions.find((v) => Number(v?.version) === resolvedVersion)
+            : null;
+        if (resolvedVersion && !versionEntry) {
+            throw new Error('Версия КП не найдена');
+        }
+        const updatedAt = versionEntry?.createdAt
+            || kp?.updatedAt
+            || kp?.metadata?.createdAt
+            || new Date();
+        const cacheKey = resolvedVersion ? `kp-full-v${resolvedVersion}` : 'kp-full';
+        const cachePath = pdf_cache_service_1.pdfCacheService.getCachePath(input.kpId, updatedAt, cacheKey);
         const cached = await pdf_cache_service_1.pdfCacheService.get(cachePath);
         if (cached)
             return cached;
@@ -31,7 +44,8 @@ class PdfGeneratorService {
                     window.localStorage.removeItem('kp_refresh_token');
                 }, input.accessToken);
             }
-            const targetUrl = `${this.getFrontendBaseUrl().replace(/\/$/, '')}/kp/${encodeURIComponent(input.kpId)}?pdf=1`;
+            const versionParam = resolvedVersion ? `&version=${encodeURIComponent(String(resolvedVersion))}` : '';
+            const targetUrl = `${this.getFrontendBaseUrl().replace(/\/$/, '')}/kp/${encodeURIComponent(input.kpId)}?pdf=1${versionParam}`;
             await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 60000 });
             // Wait until Angular renders document preview.
             await page.waitForSelector('app-kp-document', { timeout: 30000 });

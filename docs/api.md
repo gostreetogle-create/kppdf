@@ -95,6 +95,24 @@ Client-side session persistence:
 Дополнительно в ответе списка/карточки товара возвращается:
 - `specId?: string` — id технического профиля (`ProductSpec`), если он существует.
 
+Пагинация:
+- если переданы `page` и/или `limit`, сервер возвращает пагинированный ответ `{ items, page, limit, total }`;
+- `limit` ограничен `1..200` (по умолчанию `50`);
+- `includeSpecId=false` позволяет убрать `specId` из ответа (полезно для облегчённых списков).
+
+Пример (пагинация + поиск):
+`GET /api/products?page=1&limit=24&q=стойка&category=МФ&hasSpec=true`
+
+Ответ:
+```json
+{
+  "items": [ "Product[]" ],
+  "page": 1,
+  "limit": 24,
+  "total": 123
+}
+```
+
 ---
 
 ## Product Specs
@@ -171,7 +189,8 @@ RBAC:
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/api/kp` | Список (новые первые) |
-| GET | `/api/kp/:id` | Одно КП |
+| GET | `/api/kp/:id` | Одно КП (поддерживает `?version=N` для просмотра сохранённой версии) |
+| GET | `/api/kp/:id/versions` | Список сохранённых версий КП |
 | GET | `/api/kp/:id/export` | HQ-экспорт КП в PDF через frontend route (`application/pdf`, `Content-Disposition: attachment`) |
 | GET | `/api/kp/passport/:productId/export` | Экспорт технического паспорта товара в PDF |
 | POST | `/api/kp` | Создать черновик (можно без `companyId`/`kpType` — сервер возьмёт default-инициатора и `kpType=standard`; опц. `templateKey`) |
@@ -179,14 +198,17 @@ RBAC:
 | PUT | `/api/kp/:id/switch-type` | Переключить тип/шаблон существующего КП с пересборкой `companySnapshot` и безопасной политикой условий |
 | DELETE | `/api/kp/:id` | Удалить |
 | POST | `/api/kp/:id/duplicate` | Дублировать → новый `_id`, `status: draft`, `title: "Копия — ..."` |
+| POST | `/api/kp/:id/versions` | Зафиксировать версию КП (снимок данных на текущий момент) |
+
+`PUT /api/kp/:id`:
+- в статусе `draft` — сохраняет КП целиком;
+- в статусах `sent/accepted/rejected` — разрешает только смену статуса по `KP_STATUS_TRANSITIONS` (остальные поля игнорируются/запрещены).
 
 `GET /api/kp/:id/export` (HQ):
-- backend рендерит server-side HTML документа (`kp-pdf.service`) и генерирует PDF через Puppeteer без промежуточного браузерного маршрута;
-- ожидание готовности: `page.setContent(..., { waitUntil: 'networkidle0' })`;
-- параметры PDF: `A4`, `printBackground: true`, `displayHeaderFooter: true`;
-- колонтитулы: header с названием КП и датой, footer с нумерацией `Страница X из Y`;
-- поля страницы: top/bottom увеличены под колонтитулы (`top: 18mm`, `bottom: 16mm`);
-- ошибки: `404` если КП не найдено, `500` если генерация PDF завершилась неуспешно.
+- PDF генерируется через Puppeteer, который открывает frontend-роут `/kp/:id?pdf=1` и печатает уже отрендеренный `app-kp-document`;
+- поддерживает `?version=N` для экспорта сохранённой версии;
+- ожидание готовности: `networkidle0` + проверка загрузки изображений (`img.complete`);
+- ошибки: `404` если КП/версия не найдены, `500` если генерация PDF завершилась неуспешно.
 
 **KP schema (ключевые поля):**
 ```json

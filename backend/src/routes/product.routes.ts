@@ -54,38 +54,78 @@ function validateProduct(req: Request, res: Response, next: NextFunction): void 
 // GET /api/products?category=&kind=&isActive=true&q=
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { category, kind, isActive, q, hasSpec } = req.query;
+    const { category, kind, isActive, q, hasSpec, page, limit, includeSpecId } = req.query;
     const filter: Record<string, any> = {};
     if (category) filter.category = category;
     if (kind)     filter.kind     = kind;
     if (isActive !== undefined) filter.isActive = isActive === 'true';
     if (q)        filter.$text    = { $search: String(q) };
-    const products = await Product.aggregate([
-      { $match: filter },
-      {
+
+    const pageNum = Math.max(1, Number.parseInt(String(page ?? ''), 10) || 1);
+    const limitNumRaw = Number.parseInt(String(limit ?? ''), 10);
+    const limitNum = Math.min(200, Math.max(1, Number.isFinite(limitNumRaw) ? limitNumRaw : 50));
+    const isPaged = page !== undefined || limit !== undefined;
+    const shouldIncludeSpecId = includeSpecId !== 'false';
+    const needsSpecJoin = hasSpec === 'true' || hasSpec === 'false' || shouldIncludeSpecId;
+
+    const sort = q
+      ? { score: -1 as const, name: 1 as const }
+      : { category: 1 as const, name: 1 as const };
+
+    const pipeline: any[] = [{ $match: filter }];
+    if (q) pipeline.push({ $addFields: { score: { $meta: 'textScore' } } });
+
+    if (needsSpecJoin) {
+      pipeline.push({
         $lookup: {
           from: 'productspecs',
-          localField: '_id',
-          foreignField: 'productId',
+          let: { pid: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$productId', '$$pid'] } } },
+            { $project: { _id: 1 } },
+            { $limit: 1 }
+          ],
           as: 'spec'
         }
-      },
-      {
+      });
+      pipeline.push({
         $addFields: {
           specId: {
             $cond: [
               { $gt: [{ $size: '$spec' }, 0] },
               { $toString: { $arrayElemAt: ['$spec._id', 0] } },
-              undefined
+              '$$REMOVE'
             ]
           }
         }
-      },
-      ...(hasSpec === 'true' ? [{ $match: { specId: { $exists: true } } }] : []),
-      ...(hasSpec === 'false' ? [{ $match: { specId: { $exists: false } } }] : []),
-      { $project: { spec: 0 } },
-      { $sort: { category: 1, name: 1 } }
-    ]);
+      });
+      pipeline.push({ $project: { spec: 0 } });
+    }
+
+    if (hasSpec === 'true') pipeline.push({ $match: { specId: { $exists: true } } });
+    if (hasSpec === 'false') pipeline.push({ $match: { specId: { $exists: false } } });
+
+    if (!shouldIncludeSpecId) pipeline.push({ $unset: ['specId'] });
+
+    if (isPaged) {
+      const skip = (pageNum - 1) * limitNum;
+      const [result] = await Product.aggregate([
+        ...pipeline,
+        {
+          $facet: {
+            items: [{ $sort: sort }, { $skip: skip }, { $limit: limitNum }],
+            total: [{ $count: 'count' }]
+          }
+        }
+      ]);
+
+      const items = (result?.items ?? []).map(mapProductToDto);
+      const total = result?.total?.[0]?.count ?? 0;
+      res.json({ items, page: pageNum, limit: limitNum, total });
+      return;
+    }
+
+    const products = await Product.aggregate([...pipeline, { $sort: sort }]);
     res.json(products.map(mapProductToDto));
   } catch {
     res.status(500).json({ message: 'Ошибка сервера' });

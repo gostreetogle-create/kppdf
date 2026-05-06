@@ -32,6 +32,10 @@ router.get('/passport/:productId/export', kp_controller_1.exportProductPassportP
 // GET /api/kp/passport/:productId/preview
 router.get('/passport/:productId/preview', kp_controller_1.previewProductPassportPdf);
 // GET /api/kp/:id
+// GET /api/kp/:id/versions
+router.get('/:id/versions', kp_controller_1.listKpVersions);
+// POST /api/kp/:id/versions
+router.post('/:id/versions', kp_controller_1.createKpVersion);
 router.get('/:id', kp_controller_1.getKpById);
 // PUT /api/kp/:id
 router.put('/:id', kp_controller_1.updateKp);

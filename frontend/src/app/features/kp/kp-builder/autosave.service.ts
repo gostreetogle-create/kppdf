@@ -1,6 +1,6 @@
 import { Injectable, inject, OnDestroy, signal } from '@angular/core';
-import { Subject, Subscription } from 'rxjs';
-import { debounceTime, switchMap } from 'rxjs/operators';
+import { Subject, Subscription, merge, timer, EMPTY } from 'rxjs';
+import { switchMap, take, catchError, tap } from 'rxjs/operators';
 import { ApiService, Kp } from '../../../core/services/api.service';
 
 export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
@@ -9,6 +9,7 @@ export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 export class AutosaveService implements OnDestroy {
   private readonly api      = inject(ApiService);
   private readonly trigger$ = new Subject<Kp>();
+  private readonly flush$   = new Subject<void>();
   private readonly sub: Subscription;
 
   // Signal для реактивного отображения в шаблоне
@@ -17,16 +18,21 @@ export class AutosaveService implements OnDestroy {
   constructor() {
     this.sub = this.trigger$
       .pipe(
-        debounceTime(2000),
-        switchMap(kp => {
-          this.status.set('saving');
-          return this.api.updateKp(kp._id, kp);
-        })
+        switchMap(kp =>
+          merge(timer(2000), this.flush$)
+            .pipe(
+              take(1),
+              tap(() => this.status.set('saving')),
+              switchMap(() => this.api.updateKp(kp._id, kp)),
+              tap(() => this.status.set('saved')),
+              catchError(() => {
+                this.status.set('error');
+                return EMPTY;
+              })
+            )
+        )
       )
-      .subscribe({
-        next:  () => this.status.set('saved'),
-        error: () => this.status.set('error')
-      });
+      .subscribe();
   }
 
   /** Запустить дебаунс-таймер */
@@ -35,16 +41,11 @@ export class AutosaveService implements OnDestroy {
     this.trigger$.next(kp);
   }
 
-  /** Немедленное сохранение — сбрасывает pending debounce через switchMap */
+  /** Немедленное сохранение */
   saveNow(kp: Kp): void {
     this.status.set('saving');
-    // Эмитим с debounceTime(0) — switchMap отменит предыдущий debounced запрос
     this.trigger$.next(kp);
-    // Принудительно сбрасываем debounce через новый Subject
-    this.api.updateKp(kp._id, kp).subscribe({
-      next:  () => this.status.set('saved'),
-      error: () => this.status.set('error')
-    });
+    this.flush$.next();
   }
 
   get isDirty(): boolean {

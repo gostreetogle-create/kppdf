@@ -7,7 +7,7 @@ import { environment } from '../../../environments/environment';
 import { Product, ProductImage, ProductKind, ImageContext, createImage } from '@shared/types/Product';
 import { ProductSpec, ProductSpecGroup, ProductSpecParam } from '@shared/types/ProductSpec';
 import { Counterparty, LegalForm, CpRole, CpContact, KpType, CpStatus } from '@shared/types/Counterparty';
-import { Kp, KpItem, KpStatus, KP_TYPE_LABELS } from '@shared/types/Kp';
+import { Kp, KpItem, KpStatus, KP_TYPE_LABELS, KpVersionMeta } from '@shared/types/Kp';
 import { AuthUser as AppUser, PermissionModule, PermissionMeta as PermissionDefinition } from '@shared/types/User';
 
 // Экспортируем типы повторно для удобства использования в других частях фронтенда
@@ -17,6 +17,7 @@ export type { ProductSpec, ProductSpecGroup, ProductSpecParam };
 export type { Counterparty, LegalForm, CpRole, CpContact, KpType, CpStatus };
 export type { Kp, KpItem, KpStatus };
 export { KP_TYPE_LABELS };
+export type { KpVersionMeta };
 export type { AppUser, PermissionModule, PermissionDefinition };
 
 const BASE = environment.apiUrl;
@@ -26,6 +27,13 @@ export interface ProductSpecDrawings {
   viewSide?: string;
   viewTop?: string;
   view3D?: string;
+}
+
+export interface PagedResponse<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
 }
 
 export interface ProductSpecTemplate {
@@ -148,6 +156,28 @@ export class ApiService {
     return this.http.get<Product[]>(`${BASE}/products`, { params: normalizedParams });
   }
 
+  getProductsPage(params: {
+    page: number;
+    limit: number;
+    category?: string;
+    kind?: string;
+    isActive?: boolean;
+    q?: string;
+    hasSpec?: boolean | null;
+    includeSpecId?: boolean;
+  }): Observable<PagedResponse<Product>> {
+    const normalizedParams: Record<string, string> = {};
+    normalizedParams['page'] = String(params.page);
+    normalizedParams['limit'] = String(params.limit);
+    if (params.category) normalizedParams['category'] = params.category;
+    if (params.kind) normalizedParams['kind'] = params.kind;
+    if (params.q) normalizedParams['q'] = params.q;
+    if (typeof params.isActive === 'boolean') normalizedParams['isActive'] = String(params.isActive);
+    if (typeof params.hasSpec === 'boolean') normalizedParams['hasSpec'] = String(params.hasSpec);
+    if (typeof params.includeSpecId === 'boolean') normalizedParams['includeSpecId'] = String(params.includeSpecId);
+    return this.http.get<PagedResponse<Product>>(`${BASE}/products`, { params: normalizedParams });
+  }
+
   getProduct(id: string): Observable<Product> {
     return this.http.get<Product>(`${BASE}/products/${id}`);
   }
@@ -242,12 +272,24 @@ export class ApiService {
     return this.http.get<Kp>(`${BASE}/kp/${id}`);
   }
 
+  getKpVersion(id: string, version: number): Observable<Kp> {
+    return this.http.get<Kp>(`${BASE}/kp/${id}`, { params: { version: String(version) } as any });
+  }
+
   createKp(data: CreateKpPayload): Observable<Kp> {
     return this.http.post<Kp>(`${BASE}/kp`, data);
   }
 
   updateKp(id: string, data: Partial<Kp>): Observable<Kp> {
     return this.http.put<Kp>(`${BASE}/kp/${id}`, data);
+  }
+
+  getKpVersions(id: string): Observable<{ items: KpVersionMeta[] }> {
+    return this.http.get<{ items: KpVersionMeta[] }>(`${BASE}/kp/${id}/versions`);
+  }
+
+  createKpVersion(id: string): Observable<Kp> {
+    return this.http.post<Kp>(`${BASE}/kp/${id}/versions`, {});
   }
 
   switchKpType(id: string, payload: { kpType: KpType; companyId?: string; templateKey?: string; overwriteConditions?: boolean }): Observable<SwitchKpTypeResponse> {
@@ -269,6 +311,13 @@ export class ApiService {
   exportToPdf(id: string): Observable<Blob> {
     return this.http.get(`${BASE}/kp/${id}/export`, {
       responseType: 'blob'
+    });
+  }
+
+  exportToPdfVersion(id: string, version: number): Observable<Blob> {
+    return this.http.get(`${BASE}/kp/${id}/export`, {
+      responseType: 'blob',
+      params: { version: String(version) } as any
     });
   }
 

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.clampPercent = clampPercent;
 exports.parsePercentInput = parsePercentInput;
+exports.calculateEffectivePrice = calculateEffectivePrice;
 exports.calculateItemUnitPrice = calculateItemUnitPrice;
 exports.calculateKpTotals = calculateKpTotals;
 /**
@@ -23,15 +24,23 @@ function parsePercentInput(value) {
     return Number.isFinite(n) ? n : 0;
 }
 /**
- * Вычисляет эффективную цену за единицу товара с учетом наценки и скидки
- * round(item.price × (1 + markup%/100) × (1 - discount%/100))
+ * Вычисляет эффективную цену за единицу товара с учетом наценки и скидки.
+ * Является чистой функцией (pure function).
+ * Формула: round(price * (1 + markup/100) * (1 - discount/100))
+ */
+function calculateEffectivePrice(basePrice, markupPercent = 0, discountPercent = 0, markupEnabled = true, discountEnabled = true) {
+    const m = markupEnabled ? clampPercent(markupPercent, 0, 500) : 0;
+    const d = discountEnabled ? clampPercent(discountPercent, 0, 100) : 0;
+    const priceWithMarkup = basePrice * (1 + m / 100);
+    const finalPrice = priceWithMarkup * (1 - d / 100);
+    // Округляем до ближайшего целого (копейки в системе не используются для итоговых КП)
+    return Math.max(0, Math.round(finalPrice));
+}
+/**
+ * Вычисляет эффективную цену за единицу товара на основе объекта KpItem
  */
 function calculateItemUnitPrice(item) {
-    const markupPercent = item.markupEnabled ? clampPercent(item.markupPercent, 0, 500) : 0;
-    const discountPercent = item.discountEnabled ? clampPercent(item.discountPercent, 0, 100) : 0;
-    const withMarkup = item.price * (1 + markupPercent / 100);
-    const withDiscount = withMarkup * (1 - discountPercent / 100);
-    return Math.max(0, Math.round(withDiscount));
+    return calculateEffectivePrice(item.price, item.markupPercent, item.discountPercent, item.markupEnabled, item.discountEnabled);
 }
 /**
  * Вычисляет итоги КП на основе списка товаров и процента НДС.

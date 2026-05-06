@@ -4,3 +4,31 @@
   --search-max-width: 400px;
   --filter-min-width: 160px;
 }
+
+.products-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-3 0 0;
+  margin-top: $space-4;
+  border-top: 1px solid color-mix(in srgb, var(--ui-border-light) 88%, transparent);
+  color: var(--ui-text-muted);
+
+  &__meta {
+    font-size: $font-sm;
+  }
+
+  &__pager {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__page {
+    font-size: $font-sm;
+    color: var(--ui-text-secondary);
+    min-width: 84px;
+    text-align: center;
+  }
+}

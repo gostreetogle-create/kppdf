@@ -44,6 +44,15 @@ export function mapKpToDto(doc: IMongoKp): ISharedKp {
     },
     conditions: doc.conditions || [],
     vatPercent: doc.vatPercent,
+    versions: Array.isArray((doc as any).versions)
+      ? (doc as any).versions.map((v: any) => ({
+          version: Number(v?.version) || 0,
+          createdAt: (v?.createdAt instanceof Date ? v.createdAt : new Date(v?.createdAt)).toISOString(),
+          status: v?.status,
+          number: String(v?.number ?? v?.metadata?.number ?? ''),
+          title: String(v?.title ?? '')
+        })).filter((v: any) => v.version > 0 && v.number && v.title)
+      : [],
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };

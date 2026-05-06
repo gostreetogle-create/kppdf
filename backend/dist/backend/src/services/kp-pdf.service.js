@@ -4,6 +4,8 @@ exports.kpPdfService = exports.KpPdfService = void 0;
 const puppeteer_service_1 = require("./puppeteer.service");
 const pdf_cache_service_1 = require("./pdf-cache.service");
 const price_utils_1 = require("../../../shared/utils/price.utils");
+const MAX_PDF_RETRIES = 3;
+const PDF_ASSET_BASE_URL = process.env['PDF_ASSET_BASE_URL'] || 'http://localhost:3000';
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -23,6 +25,15 @@ function formatDate(value) {
         ? new Intl.DateTimeFormat('ru-RU').format(new Date())
         : new Intl.DateTimeFormat('ru-RU').format(date);
 }
+function normalizeAssetUrl(url) {
+    if (!url)
+        return '';
+    if (url.startsWith('http'))
+        return url;
+    const base = PDF_ASSET_BASE_URL.replace(/\/$/, '');
+    const path = url.startsWith('/') ? url : `/${url}`;
+    return `${base}${path}`;
+}
 function renderKpHtml(kp) {
     const items = Array.isArray(kp?.items) ? kp.items : [];
     const subtotal = items.reduce((sum, item) => sum + (Number(item?.qty) || 0) * (0, price_utils_1.calculateItemUnitPrice)(item), 0);
@@ -41,7 +52,7 @@ function renderKpHtml(kp) {
         const qty = Number(item?.qty) || 0;
         const price = (0, price_utils_1.calculateItemUnitPrice)(item);
         const total = qty * price;
-        const imageUrl = (item?.imageUrl || '').trim();
+        const imageUrl = normalizeAssetUrl((item?.imageUrl || '').trim());
         const photoHtml = imageUrl
             ? `<td class="col-photo">
           <div class="thumb-container" style="width: ${photoSizeMm}mm; height: ${croppedHeightMm}mm;">
@@ -161,10 +172,47 @@ class KpPdfService {
             if (cached)
                 return cached;
         }
+        let lastError;
+        for (let attempt = 1; attempt <= MAX_PDF_RETRIES; attempt++) {
+            try {
+                return await this.performGenerate(kp, cachePath);
+            }
+            catch (err) {
+                lastError = err;
+                console.error(`PDF Generation attempt ${attempt} failed:`, err);
+                if (attempt < MAX_PDF_RETRIES) {
+                    // Ждем немного перед повторной попыткой
+                    await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+                }
+            }
+        }
+        throw new Error(`Failed to generate PDF after ${MAX_PDF_RETRIES} attempts: ${lastError?.message || 'Unknown error'}`);
+    }
+    async performGenerate(kp, cachePath) {
         const browser = await puppeteer_service_1.puppeteerService.getBrowser();
+        let page;
         try {
-            const page = await browser.newPage();
-            await page.setContent(renderKpHtml(kp), { waitUntil: 'networkidle0' });
+            page = await browser.newPage();
+            // Устанавливаем таймаут для всех операций на странице
+            page.setDefaultNavigationTimeout(30000);
+            page.setDefaultTimeout(30000);
+            await page.setContent(renderKpHtml(kp), {
+                waitUntil: ['networkidle0', 'load', 'domcontentloaded'],
+                timeout: 30000
+            });
+            // Дополнительное ожидание для уверенности, что изображения загружены
+            await page.evaluate(async () => {
+                const selectors = Array.from(document.querySelectorAll('img'));
+                await Promise.all(selectors.map(img => {
+                    if (img.complete)
+                        return;
+                    return new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = resolve; // Не блокируем генерацию, если картинка не загрузилась
+                        setTimeout(resolve, 5000); // Fail-safe таймаут для каждой картинки
+                    });
+                }));
+            });
             const title = escapeHtml(kp?.title || 'Коммерческое предложение');
             const pdf = await page.pdf({
                 format: 'A4',
@@ -205,8 +253,7 @@ class KpPdfService {
             return buffer;
         }
         finally {
-            // @ts-ignore
-            if (typeof page !== 'undefined')
+            if (page)
                 await page.close();
         }
     }
