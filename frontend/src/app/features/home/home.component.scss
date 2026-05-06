@@ -9,7 +9,7 @@
   color: var(--ui-text-muted);
   background: var(--ui-bg-soft);
   border: 1px solid var(--ui-border-light);
-  border-radius: $radius-full;
+  border-radius: var(--radius-full, 999px);
 }
 
 .home-actions {
