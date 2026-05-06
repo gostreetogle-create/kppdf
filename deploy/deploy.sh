@@ -76,10 +76,19 @@ is_dangerous_path() {
 [[ "$(id -u)" -eq 0 ]] || err "Скрипт нужно запускать от root: sudo bash deploy/deploy.sh"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
-  log "Файл deploy/.env не найден — копирую из .env.example"
-  cp "${SCRIPT_DIR}/.env.example" "${ENV_FILE}"
-  log "Отредактируйте deploy/.env и запустите скрипт снова."
-  exit 1
+   log "Файл deploy/.env не найден — копирую из .env.example"
+   cp "${SCRIPT_DIR}/.env.example" "${ENV_FILE}"
+   # Заполняем значения по умолчанию, если они являются placeholder'ами
+   if grep -q '^JWT_SECRET=replace_with_strong_random_secret_min_32_chars$' "${ENV_FILE}"; then
+      JWT_SECRET_GEN=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+      sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET_GEN}/" "${ENV_FILE}"
+   fi
+   # Автоматически заполняем MONGO_URI из MONGO_DB, если пусто
+   if grep -q '^MONGO_URI=$' "${ENV_FILE}"; then
+      MONGO_DB_VAL=$(awk -F= '/^MONGO_DB=/ {print $2}' "${ENV_FILE}")
+      sed -i "s|^MONGO_URI=.*|MONGO_URI=mongodb://127.0.0.1:27017/${MONGO_DB_VAL}|" "${ENV_FILE}"
+   fi
+   log "Создан deploy/.env с автоматическими значениями. Не забудьте заменить JWT_SECRET и другие параметры на реальные после деплоя."
 fi
 
 # shellcheck source=/dev/null
