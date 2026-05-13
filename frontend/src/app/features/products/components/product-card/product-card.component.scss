@@ -7,94 +7,121 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
   position: relative;
 
   &:hover {
     box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
-    border-color: var(--ui-primary-soft);
-    
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--ui-primary) 30%, transparent);
+
     .card__image img {
-      transform: scale(1.05);
+      transform: scale(1.04);
     }
   }
 
+  &--inactive {
+    opacity: 0.72;
+
+    .card__image {
+      filter: grayscale(0.4);
+    }
+  }
+
+  /* ── Image ───────────────────────────────────── */
   &__image {
-    height: 168px;
+    height: 180px;
     overflow: hidden;
     background: var(--ui-bg-soft);
     position: relative;
+    flex-shrink: 0;
 
-    img { 
-      width: 100%; 
-      height: 100%; 
-      object-fit: cover; 
-      transition: transform 0.5s ease;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.45s ease;
+      display: block;
     }
   }
 
+  /* ── Badges ──────────────────────────────────── */
   &__badge {
     position: absolute;
     z-index: 2;
     font-size: 10px;
     font-weight: 700;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
 
-    &--archive { 
-      top: 12px; 
-      left: 12px; 
-      background: color-mix(in srgb, var(--ui-text-main) 72%, transparent);
-      color: var(--ui-text-on-primary);
-      backdrop-filter: blur(4px);
+    &--archive {
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      backdrop-filter: blur(6px);
     }
-    &--kind { 
-      top: 12px; 
-      right: 12px; 
-      background: color-mix(in srgb, var(--ui-bg) 90%, transparent);
+
+    &--kind {
+      top: 10px;
+      right: 10px;
+      background: var(--ui-bg-glass, rgba(255, 255, 255, 0.82));
       color: var(--ui-text-main);
-      backdrop-filter: blur(4px);
-      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
     }
   }
 
+  /* ── Body ────────────────────────────────────── */
   &__body {
-    padding: 14px;
+    padding: 14px 16px 12px;
     flex: 1;
     display: flex;
     flex-direction: column;
+    gap: 0;
   }
 
   &__code {
     font-size: 11px;
     font-weight: 600;
     color: var(--ui-text-muted);
-    margin-bottom: 4px;
-    font-family: var(--ui-font-family);
-    letter-spacing: 0.02em;
+    margin: 0 0 4px;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
   }
 
   &__name {
     font-size: 15px;
     font-weight: 700;
     color: var(--ui-text-main);
-    margin-bottom: 8px;
+    margin: 0 0 4px;
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: 40px;
+    min-height: 39px;
+  }
+
+  &__category {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ui-primary);
+    margin: 0 0 6px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__desc {
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--ui-text-secondary);
     line-height: 1.5;
-    margin-bottom: 12px;
+    margin: 0 0 12px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -102,6 +129,7 @@
     flex: 1;
   }
 
+  /* ── Price ───────────────────────────────────── */
   &__meta {
     display: flex;
     align-items: baseline;
@@ -112,10 +140,11 @@
   }
 
   &__price {
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 800;
     color: var(--ui-primary);
     letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
   }
 
   &__unit {
@@ -124,46 +153,83 @@
     color: var(--ui-text-muted);
   }
 
+  /* ── Actions ─────────────────────────────────── */
   &__actions {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
     background: var(--ui-bg-soft);
     border-top: 1px solid var(--ui-border-light);
   }
 }
 
+/* ── Action buttons ──────────────────────────────── */
 .card__action {
   --btn-bg: transparent;
-  --btn-bg-hover: color-mix(in srgb, var(--ui-bg) 90%, var(--ui-bg-soft));
-  --btn-bg-active: var(--ui-bg-soft);
+  --btn-bg-hover: color-mix(in srgb, var(--ui-primary) 6%, var(--ui-bg-soft));
+  --btn-bg-active: color-mix(in srgb, var(--ui-primary) 12%, var(--ui-bg-soft));
   --btn-border: transparent;
 
   width: 100%;
   border-radius: 0;
-  padding: 0 0.5rem;
+  padding: 0.45rem 0.5rem;
   justify-content: center;
   font-size: 0.75rem;
+  font-weight: 500;
+  gap: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    color: var(--ui-primary);
+  }
+
+  /* grid borders */
+  &--edit {
+    border-right: 1px solid var(--ui-border-light);
+    border-bottom: 1px solid var(--ui-border-light);
+  }
+
+  &--duplicate {
+    border-bottom: 1px solid var(--ui-border-light);
+  }
+
+  &--passport {
+    border-right: 1px solid var(--ui-border-light);
+    grid-column: 1;
+  }
+
+  &--delete {
+    grid-column: 2;
+
+    &:hover {
+      color: var(--ui-danger);
+      background: color-mix(in srgb, var(--ui-danger) 6%, var(--ui-bg-soft));
+    }
+  }
 }
 
-.card__action--edit,
-.card__action--passport {
-  border-right: 1px solid var(--ui-border-light);
-}
-
-.card__action--edit,
-.card__action--duplicate {
-  border-bottom: 1px solid var(--ui-border-light);
-}
-
+/* ── Passport icon ───────────────────────────────── */
 .card__action-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 12px;
-  height: 12px;
-  border: 1px solid currentColor;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid currentColor;
   border-radius: 3px;
-  font-size: 7px;
-  line-height: 1;
-  opacity: 0.75;
+  font-size: 0;
+  position: relative;
+  flex-shrink: 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 1.5px;
+    background: currentColor;
+    border-radius: 1px;
+    top: 3px;
+    left: 2.5px;
+    box-shadow: 0 2.5px 0 currentColor, 0 5px 0 currentColor;
+  }
 }
