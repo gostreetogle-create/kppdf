@@ -29,18 +29,28 @@ cd backend && npm run seed:admin           # admin@example.com / admin123
 cd backend && npm run seed:demo            # 20 товаров, 5 контрагентов, 7 КП
 ```
 
-## Переменные окружения (`backend/.env`)
+## Переменные окружения
 
-```env
-PORT=3000
-MONGO_URI=mongodb://localhost:27017/kp-app
-CORS_ORIGIN=http://localhost:4200
-JWT_SECRET=your-secret-here
-DADATA_TOKEN=your-dadata-token   # для поиска по ИНН
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=admin123
-ADMIN_NAME=Администратор
+Скопируйте шаблон и заполните:
+
+```bash
+cp deploy/.env.example deploy/.env
+# Отредактируйте deploy/.env — все обязательные переменные описаны в комментариях.
 ```
+
+Или для локальной разработки создайте `backend/.env` на основе `backend/.env.example`:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+> ⚠️ **Никогда** не коммитьте `.env` с реальными паролями/токенами. Файл `.gitignore` уже исключает `backend/.env` и `deploy/.env`.
+
+Обязательные переменные:
+- `JWT_SECRET` — минимум 32 символа, сгенерируйте: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+- `MONGO_URI` — строка подключения MongoDB
+- `CORS_ORIGIN` — URL фронтенда (напр. `http://localhost:4200`)
+- `DOMAIN` — домен для HTTPS (для deploy.sh)
 
 ## Тесты
 

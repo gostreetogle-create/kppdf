@@ -10,7 +10,7 @@
  * Заглушка лежит в frontend/public/kp-1str.png (без /media/).
  */
 
-const FALLBACK_IMAGE = '/kp-1str.png';
+const FALLBACK_IMAGE = '/kp/kp-1str.png';
 
 export function normalizeImageUrl(
   images: { url?: string | null; isMain?: boolean }[] | undefined | null,
