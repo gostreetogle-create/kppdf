@@ -88,6 +88,33 @@ function resolveTemplateForType(templates: any[], kpType: KpType, templateKey?: 
     ?? null;
 }
 
+function calculateTotals(kp: any) {
+  let totalAmount = 0;
+
+  const items = (kp.items ?? []).map((item: any) => {
+    const basePrice = Number(item.price) || 0;
+    const hasMarkup = item.markupEnabled === true;
+    const hasDiscount = item.discountEnabled === true;
+    const markupMultiplier = hasMarkup ? (1 + (Number(item.markupPercent) || 0) / 100) : 1;
+    const discountMultiplier = hasDiscount ? (1 - (Number(item.discountPercent) || 0) / 100) : 1;
+
+    const effectivePrice = Math.round(basePrice * markupMultiplier * discountMultiplier * 100) / 100;
+    const cost = Math.round(effectivePrice * (Number(item.qty) || 1) * 100) / 100;
+
+    totalAmount += cost;
+
+    return {
+      ...item,
+      effectivePrice,
+      cost,
+    };
+  });
+
+  kp.items = items;
+  kp.totalAmount = Math.round(totalAmount * 100) / 100;
+  return kp;
+}
+
 export class KpService {
   private async generateDocNumber(kpType: KpType): Promise<string> {
     const prefix = numberPrefixForType(kpType);
@@ -116,6 +143,14 @@ export class KpService {
 
   async getById(id: string) {
     return Kp.findById(id);
+  }
+
+  async recalculateKp(id: string) {
+    const kp = await Kp.findById(id);
+    if (!kp) return null;
+
+    const updated = calculateTotals(kp);
+    return updated.save();
   }
 
   async create(data: any) {
@@ -207,7 +242,8 @@ export class KpService {
     body.metadata.defaultMarkupPercent = Number((company as any).defaultMarkupPercent ?? body.metadata.defaultMarkupPercent ?? 0) || 0;
     body.metadata.defaultDiscountPercent = Number((company as any).defaultDiscountPercent ?? body.metadata.defaultDiscountPercent ?? 0) || 0;
 
-    return Kp.create(body);
+    const created = await Kp.create(body);
+    return calculateTotals(created).save();
   }
 
   async duplicate(id: string) {
@@ -216,7 +252,7 @@ export class KpService {
     const sourceType = ((original as any).kpType ?? original.companySnapshot?.kpType ?? 'standard') as KpType;
     const generatedNumber = await this.generateDocNumber(sourceType);
 
-    return Kp.create({
+    const dup = await Kp.create({
       title: `Копия — ${original.title}`,
       status: 'draft',
       companyId: original.companyId,
@@ -228,6 +264,7 @@ export class KpService {
       conditions: original.conditions,
       vatPercent: original.vatPercent,
     });
+    return calculateTotals(dup).save();
   }
 
   async createRevision(id: string) {
@@ -250,7 +287,7 @@ export class KpService {
 
     const sourceType = ((original as any).kpType ?? original.companySnapshot?.kpType ?? 'standard') as KpType;
 
-    return Kp.create({
+    const rev = await Kp.create({
       title: original.title, // Для ревизии оставляем то же название
       status: 'draft',
       companyId: original.companyId,
@@ -262,6 +299,7 @@ export class KpService {
       conditions: original.conditions,
       vatPercent: original.vatPercent,
     });
+    return calculateTotals(rev).save();
   }
 
   async switchType(id: string, payload: any) {
@@ -408,6 +446,7 @@ export class KpService {
         : entry.companySnapshot,
       conditions: entry.conditions ?? [],
       vatPercent: entry.vatPercent,
+      totalAmount: entry.totalAmount ?? 0,
       createdAt: createdAt.toISOString(),
       updatedAt: createdAt.toISOString(),
       versions: Array.isArray((kp as any).versions)
@@ -438,6 +477,7 @@ export class KpService {
       recipient: kp.recipient,
       metadata: kp.metadata,
       items: kp.items,
+      totalAmount: kp.totalAmount,
       companySnapshot: kp.companySnapshot,
       conditions: kp.conditions,
       vatPercent: kp.vatPercent,
@@ -486,6 +526,7 @@ export class KpService {
           (kp as any)[key] = (data as any)[key];
         }
       });
+      calculateTotals(kp);
     }
 
     await kp.validate();

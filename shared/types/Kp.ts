@@ -22,6 +22,8 @@ export interface KpItem {
   markupPercent?: number;
   discountEnabled?: boolean;
   discountPercent?: number;
+  effectivePrice?: number;
+  cost?: number;
 }
 
 export interface KpRecipient {
@@ -96,6 +98,7 @@ export interface IKp {
   items:           KpItem[];
   conditions:      string[];
   vatPercent:      number;
+  totalAmount?:    number;
   versions?:       KpVersionMeta[];
   createdAt?:      string;
   updatedAt?:      string;

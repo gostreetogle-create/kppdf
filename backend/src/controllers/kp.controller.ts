@@ -136,6 +136,19 @@ export async function updateKp(req: Request, res: Response) {
   }
 }
 
+export async function calculateKpPrices(req: Request, res: Response) {
+  try {
+    const kp = await kpService.recalculateKp(req.params.id);
+    if (!kp) {
+      res.status(404).json({ message: 'Not found' });
+      return;
+    }
+    res.json(mapKpToDto(kp));
+  } catch (error: any) {
+    res.status(400).json({ message: validationMessage(error) });
+  }
+}
+
 export async function deleteKp(req: Request, res: Response) {
   try {
     await kpService.remove(req.params.id);

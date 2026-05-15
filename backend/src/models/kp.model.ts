@@ -66,6 +66,8 @@ const KpItemSchema = new Schema<KpItem>({
   markupPercent:   { type: Number, default: 0, min: [0, 'markupPercent должен быть >= 0'] },
   discountEnabled: { type: Boolean, default: false },
   discountPercent: { type: Number, default: 0, min: [0, 'discountPercent должен быть >= 0'], max: [100, 'discountPercent должен быть <= 100'] },
+  effectivePrice: { type: Number, default: 0 },
+  cost: { type: Number, default: 0 },
 }, { _id: false });
 
 const KpVersionSchema = new Schema({
@@ -109,6 +111,7 @@ const KpVersionSchema = new Schema({
     defaultDiscountPercent: { type: Number, default: 0, min: [0, 'defaultDiscountPercent должен быть >= 0'], max: [100, 'defaultDiscountPercent должен быть <= 100'] },
   },
   items: { type: [KpItemSchema], default: [] },
+  totalAmount: { type: Number, default: 0 },
   conditions: { type: [String], default: [] },
   vatPercent: { type: Number, default: 20 },
   companySnapshot: {
@@ -184,6 +187,7 @@ const KpSchema = new Schema<IKp>({
     defaultDiscountPercent: { type: Number, default: 0, min: [0, 'defaultDiscountPercent должен быть >= 0'], max: [100, 'defaultDiscountPercent должен быть <= 100'] },
   },
   items:      { type: [KpItemSchema], default: [] },
+  totalAmount: { type: Number, default: 0 },
   conditions: { type: [String], default: [] },
   vatPercent: { type: Number, default: 20 },
   versions: { type: [KpVersionSchema], default: [] },

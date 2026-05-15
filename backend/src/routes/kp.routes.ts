@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requirePermission } from '../middleware/rbac.guard';
 import {
+  calculateKpPrices,
   createKp,
   createKpRevision,
   createKpVersion,
@@ -64,6 +65,9 @@ router.get('/:id', getKpById);
 
 // PUT /api/kp/:id
 router.put('/:id', updateKp);
+
+// POST /api/kp/:id/calculate — пересчёт цен
+router.post('/:id/calculate', calculateKpPrices);
 
 // DELETE /api/kp/:id
 router.delete('/:id', deleteKp);
